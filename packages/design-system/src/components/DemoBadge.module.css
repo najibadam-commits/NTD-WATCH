@@ -1,0 +1,11 @@
+.demo {
+  display: inline-flex;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-demo-bg);
+  color: var(--color-demo);
+  border: 1px solid currentcolor;
+  font: 700 var(--text-xs) / 1.2 var(--font-mono);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}

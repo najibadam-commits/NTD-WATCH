@@ -1,0 +1,108 @@
+{
+  "app": {
+    "name": "NTD-WATCH",
+    "subtitle": "Community Health Intelligence",
+    "tagline": "From community signals to timely public-health action."
+  },
+  "banner": {
+    "demo": "DEMO DATA. Every record is synthetic.",
+    "auth": "Simulated login and roles. Not security controls.",
+    "role": "Demo role"
+  },
+  "skip": "Skip to main content",
+  "roles": {
+    "chw": "Community Health Worker",
+    "facility": "Health Facility Worker",
+    "lga": "LGA Programme Officer",
+    "state": "State Programme Manager",
+    "admin": "Super Administrator"
+  },
+  "landing": {
+    "what": "A community-level digital system that captures NTD-related symptoms and contextual risk factors, assesses potential risk using demonstration rules, supports referral and follow-up, and turns anonymised community data into GIS-based intelligence for health programmes.",
+    "notDiagnosis": "NTD-WATCH supports early recognition, triage, referral and programme decisions. It does not diagnose disease.",
+    "loopTitle": "The core loop",
+    "chwTitle": "Community Health Worker app",
+    "chwBody": "Mobile-first workflow: assess, see a demonstration risk result, refer, follow up.",
+    "chwOpen": "Open the CHW app",
+    "progTitle": "Programme dashboard",
+    "progBody": "Responsive web dashboard for facility, LGA and state users, and the administrator.",
+    "progOpenAs": "Open as",
+    "limitsTitle": "What this prototype does not do",
+    "statusTitle": "Build status",
+    "noticesTitle": "Prototype notices"
+  },
+  "loop": {
+    "signal": "Signal",
+    "assessment": "Assessment",
+    "action": "Action",
+    "referral": "Referral",
+    "followUp": "Follow-up",
+    "intelligence": "Intelligence",
+    "response": "Response"
+  },
+  "limits": {
+    "diagnose": "Diagnose disease or prescribe medication.",
+    "outbreak": "Declare outbreaks. Signals are investigation triggers.",
+    "validated": "Apply validated clinical rules. All rules are demonstration-only.",
+    "real": "Hold real patient data. All data is synthetic.",
+    "integrations": "Connect to DHIS2 or other systems."
+  },
+  "chw": {
+    "nav": {
+      "label": "CHW navigation",
+      "dashboard": "Dashboard",
+      "assessments": "Assessments",
+      "referrals": "Referrals",
+      "followUps": "Follow-ups",
+      "profile": "Profile",
+      "newAssessment": "New assessment"
+    },
+    "screens": {
+      "login": "Login",
+      "dashboard": "Dashboard",
+      "newAssessment": "New assessment",
+      "person": "Person information",
+      "symptoms": "Symptom assessment",
+      "context": "Risk and exposure context",
+      "wash": "WASH and environment",
+      "summary": "Assessment summary",
+      "result": "Risk assessment result",
+      "referral": "Generate referral",
+      "referralList": "Referrals",
+      "referralStatus": "Referral status",
+      "followUp": "Follow-up",
+      "history": "Assessment history",
+      "profile": "Profile"
+    }
+  },
+  "programme": {
+    "nav": {
+      "label": "Programme navigation",
+      "overview": "Overview",
+      "gis": "GIS map",
+      "signals": "Risk signals",
+      "vulnerability": "Community vulnerability",
+      "referrals": "Referral monitoring",
+      "trends": "Trends",
+      "reports": "Reports",
+      "users": "User management",
+      "settings": "Settings"
+    }
+  },
+  "placeholder": {
+    "badge": "Not built yet",
+    "planned": "Planned for {{stage}}",
+    "body": "Navigation, role access and page structure are in place. The content for this screen is built in a later stage.",
+    "spec": "Specification: {{ref}}"
+  },
+  "access": {
+    "title": "Your demo role cannot open this page",
+    "body": "This page is hidden for the {{role}} role. Permissions here are simulated and only shape the interface.",
+    "back": "Go to your home page"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "That address does not match any screen in the prototype.",
+    "back": "Back to the start"
+  }
+}

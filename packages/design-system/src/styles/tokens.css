@@ -1,0 +1,123 @@
+/*
+ * NTD-WATCH design tokens.
+ * River blue = water, WASH and primary action. Risk hues are a separate semantic scale and
+ * are always paired with a symbol and a text label (never colour alone).
+ */
+:root {
+  --color-bg: #f1f5f8;
+  --color-surface: #ffffff;
+  --color-surface-2: #e7eef3;
+  --color-ink: #0c2030;
+  --color-ink-2: #455e6e;
+  --color-line: #d1dce4;
+  --color-accent: #0a6a94;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #d5ebf4;
+
+  --color-low: #1e7745;
+  --color-low-bg: #daf1e2;
+  --color-moderate: #855400;
+  --color-moderate-bg: #fbeac2;
+  --color-high: #a23600;
+  --color-high-bg: #ffdfcb;
+  --color-urgent: #9e0f3a;
+  --color-urgent-bg: #f9d7e2;
+  --color-urgent-solid: #9e0f3a;
+  --color-urgent-solid-ink: #ffffff;
+
+  --color-demo: #855400;
+  --color-demo-bg: #fbeac2;
+  --color-success: #1e7745;
+  --color-success-bg: #daf1e2;
+  --color-error: #9e0f3a;
+  --color-error-bg: #f9d7e2;
+
+  --font-display: 'Bricolage Grotesque Variable', 'Public Sans Variable', system-ui, sans-serif;
+  --font-body: 'Public Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-pill: 999px;
+
+  --touch-target: 3rem;
+  --shadow: 0 1px 2px rgb(12 32 48 / 6%), 0 6px 20px rgb(12 32 48 / 7%);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #0a1822;
+    --color-surface: #102331;
+    --color-surface-2: #183142;
+    --color-ink: #e4eef4;
+    --color-ink-2: #9db4c3;
+    --color-line: #26414f;
+    --color-accent: #4db4e0;
+    --color-accent-ink: #04202d;
+    --color-accent-soft: #12394d;
+    --color-low: #62cb8c;
+    --color-low-bg: #10372a;
+    --color-moderate: #edbb55;
+    --color-moderate-bg: #3a2d0c;
+    --color-high: #ff9a6b;
+    --color-high-bg: #442010;
+    --color-urgent: #ff7fa3;
+    --color-urgent-bg: #4a1226;
+    --color-urgent-solid: #ff7fa3;
+    --color-urgent-solid-ink: #3a0a1a;
+    --color-demo: #edbb55;
+    --color-demo-bg: #3a2d0c;
+    --color-success: #62cb8c;
+    --color-success-bg: #10372a;
+    --color-error: #ff7fa3;
+    --color-error-bg: #4a1226;
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 6px 20px rgb(0 0 0 / 35%);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #0a1822;
+  --color-surface: #102331;
+  --color-surface-2: #183142;
+  --color-ink: #e4eef4;
+  --color-ink-2: #9db4c3;
+  --color-line: #26414f;
+  --color-accent: #4db4e0;
+  --color-accent-ink: #04202d;
+  --color-accent-soft: #12394d;
+  --color-low: #62cb8c;
+  --color-low-bg: #10372a;
+  --color-moderate: #edbb55;
+  --color-moderate-bg: #3a2d0c;
+  --color-high: #ff9a6b;
+  --color-high-bg: #442010;
+  --color-urgent: #ff7fa3;
+  --color-urgent-bg: #4a1226;
+  --color-urgent-solid: #ff7fa3;
+  --color-urgent-solid-ink: #3a0a1a;
+  --color-demo: #edbb55;
+  --color-demo-bg: #3a2d0c;
+  --color-success: #62cb8c;
+  --color-success-bg: #10372a;
+  --color-error: #ff7fa3;
+  --color-error-bg: #4a1226;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 6px 20px rgb(0 0 0 / 35%);
+  color-scheme: dark;
+}

@@ -1,0 +1,1204 @@
+<title>NTD-WATCH</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout concept: two-mode workbench. CHW phone app with a journey rail, and a programme GIS dashboard.
+   River blue = water/WASH and primary action. Risk hues are a separate semantic scale. */
+:root{
+ --bg:#F1F5F8;--surface:#FFFFFF;--surface2:#E7EEF3;--ink:#0C2030;--ink2:#455E6E;--line:#D1DCE4;
+ --accent:#0A6A94;--accent-ink:#FFFFFF;--accent-soft:#D5EBF4;
+ --low:#1E7745;--low-bg:#DAF1E2;--mod:#855400;--mod-bg:#FBEAC2;--high:#A23600;--high-bg:#FFDFCB;--urg:#9E0F3A;--urg-bg:#F9D7E2;
+ --land:#E6EDF0;--landline:#B5C4CE;--river:#8EC3DD;
+ --shadow:0 1px 2px rgba(12,32,48,.06),0 6px 20px rgba(12,32,48,.07);
+ --f-display:'Bricolage Grotesque','Public Sans',system-ui,sans-serif;
+ --f-body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+ --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:#0A1822;--surface:#102331;--surface2:#183142;--ink:#E4EEF4;--ink2:#9DB4C3;--line:#26414F;
+ --accent:#4DB4E0;--accent-ink:#04202D;--accent-soft:#12394D;
+ --low:#62CB8C;--low-bg:#10372A;--mod:#EDBB55;--mod-bg:#3A2D0C;--high:#FF9A6B;--high-bg:#442010;--urg:#FF7FA3;--urg-bg:#4A1226;
+ --land:#14303F;--landline:#2C4B5C;--river:#2B6E8F;
+ --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);color-scheme:dark}}
+:root[data-theme="dark"]{
+ --bg:#0A1822;--surface:#102331;--surface2:#183142;--ink:#E4EEF4;--ink2:#9DB4C3;--line:#26414F;
+ --accent:#4DB4E0;--accent-ink:#04202D;--accent-soft:#12394D;
+ --low:#62CB8C;--low-bg:#10372A;--mod:#EDBB55;--mod-bg:#3A2D0C;--high:#FF9A6B;--high-bg:#442010;--urg:#FF7FA3;--urg-bg:#4A1226;
+ --land:#14303F;--landline:#2C4B5C;--river:#2B6E8F;
+ --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body);
+ padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 28px;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:24px;line-height:1.15}h2{font-size:17px}h3{font-size:14px}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--ink2)}
+.small{font-size:12px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+svg.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* top bar */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:14px 0;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink)}
+.brand b{font-family:var(--f-display);font-size:19px;letter-spacing:.01em;display:block;line-height:1}
+.brand span{font-size:11.5px;color:var(--ink2)}
+.demo-pill{font:600 11px var(--f-mono);letter-spacing:.06em;padding:5px 9px;border-radius:99px;background:var(--mod-bg);color:var(--mod);border:1px solid color-mix(in srgb,var(--mod) 35%,transparent)}
+.seg{display:inline-flex;background:var(--surface2);border-radius:12px;padding:3px;margin-left:auto}
+.seg button{border:0;background:transparent;padding:9px 14px;border-radius:9px;font-weight:600;color:var(--ink2);min-height:40px}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.linkbtn{background:none;border:0;color:var(--accent);font-weight:600;padding:8px 4px;text-decoration:underline;text-underline-offset:3px}
+
+/* core loop */
+.loop{display:flex;gap:6px;align-items:center;overflow-x:auto;padding:12px 0 4px;scrollbar-width:thin}
+.loop button{white-space:nowrap;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;font:600 11px var(--f-mono);letter-spacing:.05em;color:var(--ink2)}
+.loop button[aria-current=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.loop i{color:var(--ink2);font-style:normal;font-size:12px}
+
+/* generic */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card.flat{box-shadow:none}
+.card h2{margin-bottom:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:12px;border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-weight:700;text-align:center}
+.btn.sec{background:var(--surface);color:var(--accent)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn.block{width:100%}
+.btn.sm{min-height:36px;padding:0 12px;border-radius:9px;font-size:13px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.chip{min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:500;text-align:left}
+.chip[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);font-weight:700;box-shadow:inset 0 0 0 1px var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.field>label,.field>.lbl{font-weight:700;font-size:13px}
+.hint{font-size:12px;color:var(--ink2)}
+.sel,.inp{min-height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:0 12px;font:inherit;width:100%}
+.sel.sm,.inp.sm{min-height:38px;font-size:13px}
+.ro{min-height:44px;display:flex;align-items:center;padding:0 12px;border-radius:10px;background:var(--surface2);color:var(--ink2)}
+.rb{display:inline-flex;align-items:center;gap:5px;font:700 11px var(--f-mono);letter-spacing:.05em;padding:4px 8px;border-radius:7px;white-space:nowrap}
+.rb[data-l=LOW]{background:var(--low-bg);color:var(--low)}
+.rb[data-l=MODERATE]{background:var(--mod-bg);color:var(--mod)}
+.rb[data-l=HIGH]{background:var(--high-bg);color:var(--high)}
+.rb[data-l=URGENT]{background:var(--urg);color:#fff}
+.tag{display:inline-flex;font:600 11px var(--f-mono);letter-spacing:.04em;padding:3px 7px;border-radius:6px;background:var(--surface2);color:var(--ink2);white-space:nowrap}
+.tag.demo{background:var(--mod-bg);color:var(--mod)}
+.tag.ok{background:var(--low-bg);color:var(--low)}
+.tag.warn{background:var(--high-bg);color:var(--high)}
+.tag.info{background:var(--accent-soft);color:var(--accent)}
+.notice{border-radius:10px;padding:10px 12px;font-size:12.5px;background:var(--mod-bg);color:var(--ink);border:1px solid color-mix(in srgb,var(--mod) 30%,transparent)}
+.notice.info{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.notice b{font-weight:700}
+.disc{border-left:4px solid var(--accent);background:var(--surface2);padding:10px 12px;border-radius:4px 10px 10px 4px;font-size:12px;color:var(--ink2)}
+.meter{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center}
+.between{justify-content:space-between}
+.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.sp{height:12px}
+
+/* CHW stage */
+.chw{display:grid;grid-template-columns:minmax(0,260px) minmax(0,400px) minmax(0,260px);gap:28px;justify-content:center;padding-top:20px}
+.rail,.guide{display:flex;flex-direction:column;gap:14px;align-self:start;position:sticky;top:12px}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.rail li button{width:100%;display:flex;gap:10px;align-items:center;border:0;background:transparent;padding:7px 8px;border-radius:9px;text-align:left;color:var(--ink2)}
+.rail li button b{font:600 11px var(--f-mono);width:22px;color:var(--ink2)}
+.rail li button[aria-current=true]{background:var(--accent-soft);color:var(--ink);font-weight:700}
+.rail li button:hover{background:var(--surface2)}
+.phone{width:100%;max-width:400px;height:min(800px,calc(100dvh - 150px));min-height:640px;background:var(--bg);border:8px solid var(--ink);border-radius:36px;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:var(--shadow);justify-self:center}
+.pstatus{display:flex;justify-content:space-between;align-items:center;padding:8px 16px 4px;font:600 12px var(--f-mono);background:var(--surface)}
+.net{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 10px;font:700 10.5px var(--f-mono);letter-spacing:.05em}
+.net i{width:8px;height:8px;border-radius:50%;background:var(--low)}
+.net[data-st=off] i{background:var(--high)}.net[data-st=err] i{background:var(--urg)}
+.net[data-st=sync] i{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.net i{animation:none!important}.spin{animation:none!important}}
+.pbar{display:flex;align-items:center;gap:8px;padding:6px 12px 10px;background:var(--surface);border-bottom:1px solid var(--line)}
+.pbar h2{font-size:16px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ibtn{width:44px;height:44px;border-radius:12px;border:0;background:transparent;display:grid;place-items:center;position:relative;color:var(--ink)}
+.ibtn:hover{background:var(--surface2)}
+.ibtn .dot{position:absolute;top:6px;right:6px;min-width:17px;height:17px;border-radius:9px;background:var(--urg);color:#fff;font:700 10px/17px var(--f-mono);text-align:center;padding:0 4px}
+.steps{display:flex;gap:4px;padding:0 14px 10px;background:var(--surface)}
+.steps i{flex:1;height:5px;border-radius:3px;background:var(--surface2)}
+.steps i.on{background:var(--accent)}
+.pbody{flex:1;overflow-y:auto;padding:16px 14px 90px;display:flex;flex-direction:column;gap:14px}
+.pnav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px))}
+.pnav button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:10.5px;font-weight:600;color:var(--ink2);min-height:52px;position:relative}
+.pnav button[aria-current=true]{color:var(--accent)}
+.pnav .cnt{position:absolute;top:2px;left:calc(50% + 6px);background:var(--accent);color:var(--accent-ink);font:700 9px/15px var(--f-mono);min-width:15px;border-radius:8px;padding:0 4px}
+.fab{position:absolute;right:14px;bottom:72px;z-index:5;min-height:52px;padding:0 20px;border-radius:99px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;display:flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(10,106,148,.4)}
+.hello{font-family:var(--f-display);font-size:23px;line-height:1.1}
+.sync{display:flex;align-items:center;gap:10px;border-radius:12px;padding:11px 12px;font:700 11.5px var(--f-mono);letter-spacing:.04em}
+.sync[data-st=on]{background:var(--low-bg);color:var(--low)}
+.sync[data-st=off]{background:var(--mod-bg);color:var(--mod)}
+.sync[data-st=sync]{background:var(--accent-soft);color:var(--accent)}
+.sync[data-st=err]{background:var(--urg-bg);color:var(--urg)}
+.sync .btn{margin-left:auto}
+.sum4{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sumc{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px;text-align:left}
+.sumc b{font:700 28px var(--f-display);display:block;line-height:1.1}
+.sumc span{font-size:12px;color:var(--ink2)}
+.cta{min-height:60px;font-size:16px;border-radius:14px}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);text-align:left;width:100%}
+.opt[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}
+.opt[disabled]{opacity:.55}
+.sec-h{font:700 11px var(--f-mono);letter-spacing:.08em;color:var(--ink2);text-transform:uppercase;margin:4px 0 8px}
+.list{display:flex;flex-direction:column;gap:8px}
+.li{display:flex;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);text-align:left;width:100%}
+.li .t{flex:1;min-width:0}
+.li .t b{display:block}
+.riskbig{border-radius:16px;padding:16px;text-align:center}
+.riskbig[data-l=LOW]{background:var(--low-bg);color:var(--low)}
+.riskbig[data-l=MODERATE]{background:var(--mod-bg);color:var(--mod)}
+.riskbig[data-l=HIGH]{background:var(--high-bg);color:var(--high)}
+.riskbig[data-l=URGENT]{background:var(--urg);color:#fff}
+.riskbig b{display:block;font:800 40px var(--f-display);letter-spacing:.02em;line-height:1.1}
+.riskbig span{font:700 11px var(--f-mono);letter-spacing:.1em}
+.why li{margin:4px 0}
+.tl{list-style:none;margin:0;padding:0 0 0 4px}
+.tl li{position:relative;padding:0 0 14px 22px;color:var(--ink2);font-size:13px}
+.tl li::before{content:"";position:absolute;left:3px;top:4px;width:10px;height:10px;border-radius:50%;border:2px solid var(--line);background:var(--surface)}
+.tl li::after{content:"";position:absolute;left:7px;top:16px;bottom:-2px;width:2px;background:var(--line)}
+.tl li:last-child::after{display:none}
+.tl li.done{color:var(--ink)}
+.tl li.done::before{background:var(--accent);border-color:var(--accent)}
+.tl li b{display:block;font-size:12.5px}
+.sheetbg{position:absolute;inset:0;background:rgba(5,15,22,.5);z-index:20;display:flex;align-items:flex-end}
+.sheet{background:var(--surface);width:100%;max-height:88%;overflow-y:auto;border-radius:22px 22px 0 0;padding:16px 16px 22px;display:flex;flex-direction:column;gap:12px}
+.spin{width:16px;height:16px;border:2.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.login{align-items:stretch;justify-content:center;padding-top:28px}
+.empty{text-align:center;padding:28px 12px;color:var(--ink2);border:1.5px dashed var(--line);border-radius:14px}
+
+/* programme */
+.prog{display:grid;grid-template-columns:232px minmax(0,1fr);gap:24px;padding-top:20px}
+.side{position:sticky;top:12px;align-self:start;display:flex;flex-direction:column;gap:6px}
+.side nav{display:flex;flex-direction:column;gap:2px}
+.side nav button{display:flex;gap:10px;align-items:center;border:0;background:transparent;border-radius:10px;padding:10px 12px;font-weight:600;color:var(--ink2);text-align:left;min-height:42px}
+.side nav button:hover{background:var(--surface2)}
+.side nav button[aria-current=true]{background:var(--accent);color:var(--accent-ink)}
+.main{min-width:0;display:flex;flex-direction:column;gap:16px}
+.phead{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-end;justify-content:space-between}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.filters label{font:600 10.5px var(--f-mono);letter-spacing:.05em;color:var(--ink2);display:flex;flex-direction:column;gap:3px;text-transform:uppercase;min-width:120px;flex:1 1 120px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi small{font:600 10.5px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);display:block}
+.kpi b{font:700 30px var(--f-display);display:block;margin:4px 0 2px;line-height:1.05}
+.kpi span{font-size:12px;color:var(--ink2)}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+.tblw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font:600 10.5px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface2)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr.click{cursor:pointer}.tbl tr.click:hover td{background:var(--surface2)}
+.tbl tr.sel td{background:var(--accent-soft)}
+.hb{display:grid;grid-template-columns:minmax(80px,140px) 1fr auto;gap:10px;align-items:center;margin:7px 0;font-size:13px}
+.hb .tr{height:12px;background:var(--surface2);border-radius:6px;overflow:hidden}
+.hb .tr i{display:block;height:100%;border-radius:6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}
+.mapbox{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.mapsvg{display:block;width:100%;height:auto;touch-action:none;cursor:grab;user-select:none}
+.mapctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.mapctl button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font:700 18px var(--f-body);box-shadow:var(--shadow)}
+.maplegend{position:absolute;left:10px;bottom:10px;background:color-mix(in srgb,var(--surface) 92%,transparent);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11.5px;display:flex;flex-direction:column;gap:5px;max-width:230px}
+.layers label{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-weight:600}
+.layers label:last-child{border:0}
+.layers input{width:20px;height:20px;accent-color:var(--accent)}
+.mx{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mx div{border-radius:10px;padding:9px;font-size:12px;border:1px solid var(--line)}
+.mx b{display:block;font-size:12.5px}
+.mx .hh{background:var(--urg-bg);color:var(--ink)}.mx .hl{background:var(--high-bg)}.mx .lh{background:var(--accent-soft)}.mx .ll{background:var(--surface2)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:transparent;padding:10px 14px;font-weight:600;color:var(--ink2);border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected=true]{color:var(--accent);border-color:var(--accent)}
+.emerge{border:1.5px solid var(--urg);background:var(--urg-bg);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start}
+.modalbg{position:fixed;inset:0;background:rgba(5,15,22,.55);z-index:50;display:grid;place-items:center;padding:16px}
+.modal{background:var(--surface);border-radius:16px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.modal textarea{width:100%;min-height:160px;font:12px/1.5 var(--f-mono);background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;z-index:80;font-weight:600;max-width:90vw;box-shadow:var(--shadow)}
+.notifp{position:absolute;right:0;top:46px;z-index:30;width:min(340px,80vw);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px;display:flex;flex-direction:column;gap:8px}
+.feed{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.feed li{display:flex;gap:10px;font-size:13px}
+.feed .d{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none;background:var(--accent)}
+.big{font:700 54px var(--f-display);line-height:1}
+.pcard{display:flex;flex-direction:column;gap:8px}
+.hide-sm{display:initial}
+
+@media (max-width:1100px){
+ .chw{grid-template-columns:minmax(0,400px);}
+ .rail,.guide{position:static}
+ .chw .phone{order:-1}
+ .mapwrap{grid-template-columns:1fr}
+}
+@media (max-width:860px){
+ .prog{grid-template-columns:1fr}
+ .side{position:static}
+ .side nav{flex-direction:row;overflow-x:auto;padding-bottom:4px}
+ .side nav button{white-space:nowrap}
+}
+@media (max-width:560px){
+ .phone{border:0;border-radius:14px;height:calc(100dvh - 130px)}
+ .loop{display:none}
+ .seg{margin-left:0;width:100%}.seg button{flex:1}
+ h1{font-size:21px}
+}
+</style>
+<div id="app"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script>
+'use strict';
+/* ============ CORE HELPERS ============ */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const fmt=n=>Number(n).toLocaleString('en-US');
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+function mulberry(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const NOW=Date.now(), DAY=864e5;
+function ago(ts){const m=Math.round((Date.now()-ts)/6e4);if(m<1)return'just now';if(m<60)return m+' min ago';const h=Math.round(m/60);if(h<24)return h+' h ago';return Math.round(h/24)+' d ago'}
+const dstr=ts=>new Date(ts).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+const tstr=ts=>new Date(ts).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const getPath=(o,p)=>p.split('.').reduce((a,k)=>a==null?a:a[k],o);
+function setPath(o,p,v){const k=p.split('.');const l=k.pop();k.reduce((a,x)=>a[x],o)[l]=v}
+const IC={home:'M3 11l9-8 9 8M5 10v10h14V10',list:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',ref:'M4 12h13m-5-5l5 5-5 5M20 5v14',check:'M5 13l4 4L19 7',user:'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 4-6 8-6s8 2 8 6',plus:'M12 5v14M5 12h14',bell:'M6 16V11a6 6 0 1112 0v5l2 2H4l2-2zM10 21h4',map:'M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14',pulse:'M3 12h4l3-8 4 16 3-8h4',drop:'M12 3s6 6.5 6 11a6 6 0 11-12 0c0-4.5 6-11 6-11z',trend:'M3 17l6-6 4 4 8-9M15 6h6v6',doc:'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',users:'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5M17 4.5a3.5 3.5 0 010 6.5M19 15c2 .7 3 2.2 3 5',sliders:'M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M6 15v4',sync:'M20 12a8 8 0 00-14-5L4 9M4 4v5h5M4 12a8 8 0 0014 5l2-2M20 20v-5h-5',warn:'M12 3l10 18H2zM12 10v5M12 18h.01',back:'M15 5l-7 7 7 7',pin:'M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11zM12 12a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',shield:'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',dl:'M12 4v11m-4-4l4 4 4-4M5 20h14',x:'M6 6l12 12M18 6L6 18',clip:'M9 4h6l1 2h3v15H5V6h3zM9 12h6M9 16h4'};
+const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]||''}"/></svg>`;
+const SYMB={LOW:'●',MODERATE:'◆',HIGH:'▲',URGENT:'!'};
+const rb=l=>`<span class="rb" data-l="${l}">${SYMB[l]} ${l}</span>`;
+const lcol=l=>({LOW:'var(--low)',MODERATE:'var(--mod)',HIGH:'var(--high)',URGENT:'var(--urg)'}[l]);
+const lbg=l=>({LOW:'var(--low-bg)',MODERATE:'var(--mod-bg)',HIGH:'var(--high-bg)',URGENT:'var(--urg-bg)'}[l]);
+let toastT;
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},2800)}
+/* ============ DEMO DATA (ALL SYNTHETIC) ============ */
+const STATE='Arewa Demo State';
+const LGAS=['Dutsen Rafi','Kogin Ruwa','Gidan Bishiya','Tudun Kasa','Garin Ruwa','Rafin Dawa'];
+const CATKEYS=['skin','eye','general'];
+const CATNAME={skin:'Skin signals',eye:'Eye signals',general:'General symptoms'};
+const LEVELS=['LOW','MODERATE','HIGH','URGENT'];
+const CATSH=[[.55,.2,.25],[.45,.3,.25],[.6,.15,.25],[.4,.35,.25]];
+// id,name,lga,ward,x,y,pop,[higher-risk per 3-week bucket],higher-risk share,[water,sanitation,hygiene,environment vulnerability 0-100]
+const CDEF=[
+['makera','Unguwar Makera',0,'Makera',90,110,3200,[2,4,3,4],.07,[28,30,25,22]],
+['zango','Tudun Zango',0,'Makera',180,95,2100,[0,1,1,2],.05,[35,40,38,30]],
+['kofar','Kofar Rafi',0,'Dutse East',150,215,4100,[1,0,2,1],.04,[22,25,20,18]],
+['tsangaya','Tsangaya Kudu',1,'Tsangaya',330,95,2800,[1,7,12,19],.19,[68,72,74,70]],
+['rijiya','Rijiyar Dorawa',1,'Tsangaya',420,70,1900,[1,2,3,3],.09,[62,66,60,58]],
+['gandun','Gandun Kogi',1,'Kogin North',470,150,2400,[2,2,4,6],.11,[64,60,58,66]],
+['kwarin','Kwarin Rafi',1,'Kogin North',385,215,3300,[1,1,1,2],.05,[40,38,35,42]],
+['bishiya','Bishiya Ta Gabas',2,'Bishiya',590,110,2700,[0,1,2,1],.05,[30,35,32,28]],
+['fadama','Fadama Sabuwa',2,'Bishiya',680,90,1500,[1,1,2,3],.08,[58,64,60,62]],
+['magaji','Unguwar Magaji',2,'Tsakiya',640,200,3900,[0,0,1,1],.03,[20,18,22,15]],
+['tudunkasa','Tudun Kasa Gari',3,'Tudun Kasa',90,360,5200,[1,1,0,1],.03,[25,22,24,20]],
+['dutsi','Kauyen Dutsi',3,'Dutsi',190,400,1700,[0,1,1,2],.06,[48,52,45,40]],
+['rimin','Rimin Tsamiya',3,'Dutsi',130,470,2300,[1,0,1,0],.04,[36,30,34,32]],
+['gidanruwa','Gidan Ruwa',4,'Garin Ruwa',330,350,3600,[7,11,18,26],.22,[72,78,70,76]],
+['kududdufi','Kududdufi Arewa',4,'Kududdufi',430,340,2200,[2,3,4,5],.12,[66,62,64,70]],
+['tsohon','Tsohon Kogi',4,'Garin Ruwa',380,430,1800,[1,2,2,3],.09,[64,58,62,66]],
+['layin','Layin Masaka',4,'Kududdufi',480,455,3000,[0,1,1,1],.04,[30,28,26,32]],
+['rafindawa','Rafin Dawa Gari',5,'Rafin Dawa',610,370,4400,[1,1,0,1],.03,[24,26,20,22]],
+['gonar','Gonar Sabo',5,'Rafin Dawa',700,360,1600,[0,0,1,1],.05,[42,44,40,35]],
+['kurmin','Kurmin Dawa',5,'Kurmi',650,460,2000,[1,2,1,2],.06,[50,46,48,52]]
+];
+const COMM=CDEF.map((d,i)=>({id:d[0],name:d[1],lga:d[2],ward:d[3],x:d[4],y:d[5],pop:d[6],hrB:d[7],rate:d[8],wash:{water:d[9][0],san:d[9][1],hyg:d[9][2],env:d[9][3]},cat:CATSH[i%4]}));
+const CBY={};COMM.forEach(c=>{CBY[c.id]=c});
+COMM.forEach(c=>{
+ const r=mulberry(c.name.length*977+c.x);
+ ['low','mod','high','urg'].forEach(k=>{c[k]=Array(12).fill(0)});
+ c.hrB.forEach((hb,b)=>{
+  const tot=Math.max(hb+2,Math.round(hb/c.rate));
+  for(let i=0;i<hb;i++){const w=b*3+Math.floor(r()*3);(r()<.13?c.urg:c.high)[w]++}
+  for(let i=0;i<tot-hb;i++){const w=b*3+Math.floor(r()*3);(r()<.35?c.mod:c.low)[w]++}
+ });
+});
+const vscore=c=>Math.round((c.wash.water+c.wash.san+c.wash.hyg+c.wash.env)/4);
+const vlevel=s=>s>=60?'HIGH':s>=40?'MODERATE':'LOW';
+const FAC=[
+{id:'f1',name:'Makera Primary Health Centre',lga:0,x:125,y:165,type:'Primary health centre'},
+{id:'f2',name:'Kogin Ruwa General Hospital',lga:1,x:430,y:120,type:'General hospital'},
+{id:'f3',name:'Tsangaya Primary Health Centre',lga:1,x:350,y:165,type:'Primary health centre'},
+{id:'f4',name:'Bishiya Primary Health Centre',lga:2,x:640,y:150,type:'Primary health centre'},
+{id:'f5',name:'Tudun Kasa Comprehensive Health Centre',lga:3,x:150,y:420,type:'Comprehensive health centre'},
+{id:'f6',name:'Garin Ruwa Primary Health Centre',lga:4,x:395,y:385,type:'Primary health centre'},
+{id:'f7',name:'Garin Ruwa Cottage Hospital',lga:4,x:470,y:315,type:'Cottage hospital'},
+{id:'f8',name:'Rafin Dawa Primary Health Centre',lga:5,x:665,y:410,type:'Primary health centre'}
+];
+const FBY={};FAC.forEach(f=>{FBY[f.id]=f});
+const distKm=(c,f)=>Math.round(Math.hypot(c.x-f.x,c.y-f.y)*0.045*10)/10;
+const facByDist=c=>[...FAC].sort((a,b)=>distKm(c,a)-distKm(c,b));
+const STAGES=['GENERATED','ACCEPTED','PATIENT ARRIVED','ASSESSED','FOLLOW-UP','CLOSED'];
+const refId=n=>'NTDW-2026-'+String(n).padStart(6,'0');
+const R=[];
+(function(){
+ const rr=mulberry(777);
+ const hrT=COMM.map(c=>sum(c.high)+sum(c.urg)), tot=sum(hrT);
+ const pick=()=>{let x=rr()*tot;for(let i=0;i<COMM.length;i++){x-=hrT[i];if(x<=0)return COMM[i]}return COMM[0]};
+ const sl=[];[[5,28],[4,15],[3,20],[2,8],[1,16],[0,7]].forEach(([s,n])=>{for(let i=0;i<n;i++)sl.push(s)});
+ for(let k=0;k<30;k++){const i=Math.floor(rr()*94),j=Math.max(0,Math.min(93,i+Math.floor(rr()*21)-10));const t=sl[i];sl[i]=sl[j];sl[j]=t}
+ const ages=Array.from({length:94},()=>1+Math.floor(Math.pow(rr(),1.35)*82)).sort((a,b)=>b-a);
+ for(let i=0;i<94;i++){
+  const c=pick(),fl=facByDist(c),f=rr()<.8?fl[0]:fl[1];
+  const t0=NOW-ages[i]*DAY-Math.floor(rr()*20)*36e5,stage=sl[i],t=[t0];
+  for(let s=1;s<=stage;s++){const p=t[s-1];t.push(p+(NOW-p)*(.08+rr()*.4))}
+  R.push({id:refId(91+i),comm:c.id,fac:f.id,level:rr()<.13?'URGENT':'HIGH',t,stage,chw:null,synced:true,aid:null});
+ }
+})();
+const CHW={name:'Hauwa Sani',id:'CHW-0142',role:'Community Health Worker',state:STATE,lga:1,ward:'Tsangaya',comms:['tsangaya','rijiya']};
+const FW_FAC='f3';
+const MYA=[];
+(function(){
+ const rr=mulberry(31337);
+ const ages=['0–4','5–14','15–49','50+'],sexes=['Female','Male'];
+ const sy=[['Lesion/rash','Swelling'],['Wound/ulcer','Swelling','Persistent itching'],['Eye irritation','Visual difficulty'],['Fever','Persistent weakness'],['Persistent itching'],['Skin discoloration']];
+ const mine=R.filter(r=>CHW.comms.includes(r.comm));
+ const due=mine.filter(r=>r.stage>=1&&r.stage<5&&(NOW-r.t[0])/DAY>=3).slice(0,3);
+ const closed=mine.filter(r=>r.stage===5).slice(0,1);
+ const recent=mine.filter(r=>(NOW-r.t[0])/DAY<3&&!due.includes(r)).slice(0,1);
+ [...due,...closed,...recent].forEach(r=>{
+  r.chw=CHW.id;
+  MYA.push({at:r.t[0]-8*6e4,comm:r.comm,level:r.level,ref:r.id,age:ages[Math.floor(rr()*4)],sex:sexes[Math.floor(rr()*2)],symptoms:sy[Math.floor(rr()*3)],synced:true});
+ });
+ const times=[NOW-25*6e4*10,NOW-25*6e4*30];
+ for(let i=0;i<8;i++){
+  const c=CHW.comms[i%2],lv=i%3===0?'MODERATE':'LOW';
+  const at=i<2?Math.min(NOW-20*6e4,new Date().setHours(8+i*2,15,0,0)):NOW-(1+i*1.4)*DAY;
+  MYA.push({at,comm:c,level:lv,ref:null,age:ages[Math.floor(rr()*4)],sex:sexes[Math.floor(rr()*2)],symptoms:sy[3+Math.floor(rr()*3)],synced:true});
+ }
+ MYA.sort((a,b)=>a.at-b.at).forEach((a,i)=>{a.id='NTDA-'+String(i+1).padStart(4,'0')});
+ MYA.forEach(a=>{if(a.ref){const r=R.find(x=>x.id===a.ref);r.aid=a.id}});
+})();
+const FU=[];
+(function(){
+ R.filter(r=>r.chw&&r.stage<5&&(NOW-r.t[0])/DAY>=3).forEach((r,i)=>FU.push({id:'FU-'+(i+1),type:'referral',ref:r.id,aid:r.aid,due:r.t[0]+3*DAY,done:false}));
+ const m=MYA.find(a=>a.level==='MODERATE'&&!a.ref);
+ if(m)FU.push({id:'FU-M1',type:'monitor',ref:null,aid:m.id,due:NOW-.5*DAY,done:false});
+})();
+const USERS=[
+{id:'u1',name:'Hauwa Sani',role:'CHW',geo:'Kogin Ruwa · Tsangaya',contact:'0800 000 0142',status:'Active',last:NOW-2*6e4},
+{id:'u2',name:'Musa Ibrahim',role:'CHW',geo:'Garin Ruwa · Garin Ruwa',contact:'0800 000 0143',status:'Active',last:NOW-3*36e5},
+{id:'u3',name:'Zainab Aliyu',role:'CHW',geo:'Dutsen Rafi · Makera',contact:'0800 000 0144',status:'Active',last:NOW-26*36e5},
+{id:'u4',name:'Bashir Lawal',role:'CHW',geo:'Rafin Dawa · Rafin Dawa',contact:'0800 000 0145',status:'Disabled',last:NOW-40*DAY},
+{id:'u5',name:'Amina Yusuf',role:'Health Facility Worker',geo:'Tsangaya Primary Health Centre',contact:'amina.yusuf@demo.example',status:'Active',last:NOW-5*36e5},
+{id:'u6',name:'Sani Garba',role:'Health Facility Worker',geo:'Garin Ruwa Primary Health Centre',contact:'sani.garba@demo.example',status:'Active',last:NOW-2*DAY},
+{id:'u7',name:'Dr. Maryam Idris',role:'LGA Programme Officer',geo:'Kogin Ruwa',contact:'maryam.idris@demo.example',status:'Active',last:NOW-36e5},
+{id:'u8',name:'Ibrahim Danladi',role:'LGA Programme Officer',geo:'Garin Ruwa',contact:'ibrahim.d@demo.example',status:'Active',last:NOW-DAY},
+{id:'u9',name:'Dr. Fatima Abdullahi',role:'State Programme Manager',geo:STATE,contact:'fatima.a@demo.example',status:'Active',last:NOW-4*36e5},
+{id:'u10',name:'Admin Demo',role:'Administrator',geo:'All',contact:'admin@demo.example',status:'Active',last:NOW-6e4*12}
+];
+const ROLES=['CHW','Health Facility Worker','LGA Programme Officer','State Programme Manager','Administrator'];
+const AUDIT=[];
+function audit(user,action,rec,meta){AUDIT.unshift({t:Date.now(),user,action,rec:rec||'—',meta:meta||''})}
+[['Hauwa Sani','Login','CHW-0142','device DEMO-A41',1.2],['Hauwa Sani','Assessment created','NTDA-0012','offline',1.1],['Hauwa Sani','Assessment submitted','NTDA-0012','synced',1.05],['Hauwa Sani','Referral generated','NTDW-2026-000170','HIGH',1.05],['Amina Yusuf','Referral status changed','NTDW-2026-000170','GENERATED → ACCEPTED',.9],['Dr. Maryam Idris','Report exported','Risk distribution','CSV · Kogin Ruwa',.7],['Admin Demo','User created','u10','role: Administrator',.5],['Admin Demo','Configuration changed','R-H3','enabled → enabled (level HIGH)',.4],['Hauwa Sani','Follow-up created','FU-1','referral follow-up',.3],['Hauwa Sani','Follow-up completed','FU-0','outcome: Completed',.2]].reverse().forEach(a=>{AUDIT.unshift({t:NOW-a[4]*DAY,user:a[0],action:a[1],rec:a[2],meta:a[3]})});
+AUDIT.sort((a,b)=>b.t-a.t);
+/* ============ DEMO RULE ENGINE (PLACEHOLDER, NOT CLINICAL GUIDANCE) ============ */
+const SYM={
+ Skin:['Lesion/rash','Persistent itching','Swelling','Skin discoloration','Wound/ulcer','Other (skin)'],
+ Eyes:['Eye irritation','Visual difficulty','Eye swelling','Other (eyes)'],
+ General:['Fever','Persistent weakness','Pain','Swelling (general)','Other (general)'],
+ 'Other categories':['Abdominal symptoms','Neurological symptoms']
+};
+const WARN=['Wound/ulcer','Visual difficulty','Eye swelling']; // demo warning-indicator list
+const DURS=['Less than 1 week','1–4 weeks','1–3 months','More than 3 months'];
+const RULES=[
+ {id:'R-U1',level:'URGENT',on:true,when:[['symptom_signal','>=',2],['warning_indicator','=',true],['progression_worse','=',true],['persistent','=',true]]},
+ {id:'R-H1',level:'HIGH',on:true,when:[['symptom_signal','>=',2],['warning_indicator','=',true]]},
+ {id:'R-H2',level:'HIGH',on:true,when:[['symptom_signal','>=',3],['persistent','=',true]]},
+ {id:'R-H3',level:'HIGH',on:true,when:[['symptom_signal','>=',1],['persistent','=',true],['exposure','=',true],['progression_worse','=',true]]},
+ {id:'R-M1',level:'MODERATE',on:true,when:[['symptom_signal','>=',1],['exposure','=',true]]},
+ {id:'R-M2',level:'MODERATE',on:true,when:[['symptom_signal','>=',1],['persistent','=',true]]},
+ {id:'R-M3',level:'MODERATE',on:true,when:[['symptom_signal','>=',1],['cluster','=',true]]},
+ {id:'R-M4',level:'MODERATE',on:true,when:[['symptom_signal','>=',1],['progression_worse','=',true]]}
+];
+const ACTIONS={
+ LOW:'Provide health education and prevention information. No referral is suggested at this time.',
+ MODERATE:'Monitor and consider a consultation at the health facility. A follow-up visit is suggested.',
+ HIGH:'Referral to a health facility for professional assessment is recommended.',
+ URGENT:'Immediate professional assessment is recommended. Initiate a referral now.'
+};
+const MEANING={LOW:'No significant warning pattern identified.',MODERATE:'Some relevant indicators identified.',HIGH:'Multiple concerning indicators.',URGENT:'Potential serious warning signs.'};
+function facts(d){
+ const n=d.symptoms.filter(s=>s!=='None of these').length;
+ return {
+  symptom_signal:n>=3?3:n,
+  persistent:DURS.indexOf(d.duration)>=2,
+  progression_worse:d.progression==='Yes',
+  exposure:d.contact_water==='Yes'||d.vector==='Yes'||d.animal==='Yes',
+  cluster:d.similar_hh==='Yes'||d.similar_comm==='Yes',
+  warning_indicator:d.symptoms.some(s=>WARN.includes(s)),
+  delayed_care:d.delay==='Yes'
+ };
+}
+function condTxt(c){const [f,o,v]=c;const nm={0:'NONE',1:'LOW',2:'MODERATE',3:'HIGH'};return `${f} ${o==='>='?'≥':'='} ${f==='symptom_signal'?nm[v]:v}`}
+function cond(f,c){const [k,o,v]=c;return o==='>='?f[k]>=v:f[k]===v}
+function assess(d){
+ const f=facts(d),fired=RULES.filter(r=>r.on&&r.when.every(c=>cond(f,c)));
+ let level='LOW';fired.forEach(r=>{if(LEVELS.indexOf(r.level)>LEVELS.indexOf(level))level=r.level});
+ const why=[];
+ if(f.symptom_signal>0)why.push('Relevant symptoms reported ('+d.symptoms.filter(s=>s!=='None of these').length+')');
+ if(f.persistent)why.push('Symptoms persistent ('+d.duration.toLowerCase()+')');
+ if(f.progression_worse)why.push('Symptoms reported as getting worse');
+ if(f.exposure)why.push('Relevant exposure reported');
+ if(f.warning_indicator)why.push('Additional warning indicator identified');
+ if(f.cluster)why.push('Similar signals reported in household or community');
+ if(f.delayed_care)why.push('Delay in seeking care reported');
+ if(!why.length)why.push('No significant warning pattern identified');
+ return {level,why,fired:fired.map(r=>r.id),facts:f,action:ACTIONS[level],wash:washScore(d)};
+}
+function washScore(d){
+ let p=0;const m=18;
+ p+={'River/stream/pond':2,'Open well':1.5,'Vendor/tanker':.5}[d.water_source]||0;
+ p+={Rarely:1,Sometimes:.5}[d.reliability]||0;
+ p+=d.wtreat==='None'?1:0;
+ p+=d.toilet==='No toilet / open defecation'?2:d.toilet==='Shared pit latrine'?1:0;
+ p+={'Poor':1,'Not usable':1.5}[d.san_cond]||0;
+ p+=d.handwash==='No'?2:d.handwash==='Yes, no water'?1:0;
+ p+=d.soap==='Never'?1:d.soap==='Sometimes'?.5:0;
+ p+=d.stagnant==='Yes'?1:0;p+=d.breeding==='Yes'?1:0;p+=d.housing==='Poor'?1:0;
+ const s=Math.round(p/ (m-5) *100);
+ return {score:Math.min(100,s),level:s>=55?'HIGH':s>=30?'MODERATE':'LOW'};
+}
+function washNote(w){
+ if(w.level==='HIGH')return 'The assessment indicates elevated environmental vulnerability associated with the reported symptoms.';
+ if(w.level==='MODERATE')return 'The assessment indicates some environmental vulnerability alongside the reported symptoms.';
+ return 'No notable environmental vulnerability was reported.';
+}
+const DEMO_HIGH=()=>({type:'individual',age:'5–14',sex:'Female',community:'tsangaya',gps:null,symptoms:['Lesion/rash','Wound/ulcer','Swelling'],duration:'More than 3 months',progression:'Not sure',before:'No',treated:'No',similar_hh:'Yes',water_source:'River/stream/pond',contact_water:'Yes',freq:'Weekly',activities:['Fishing','Domestic water collection'],vector:'Yes',animal:'No',travel:'No',similar_comm:'Yes',treat_where:null,delay:'Yes',delay_reason:'Distance',reliability:'Rarely',wtreat:'None',toilet:'No toilet / open defecation',san_cond:null,handwash:'No',soap:'Never',stagnant:'Yes',breeding:'Yes',housing:'Poor',startedAt:Date.now(),result:null,saved:null,ref:null});
+const DEMO_LOW=()=>({type:'individual',age:'15–49',sex:'Male',community:'rijiya',gps:null,symptoms:['Persistent itching'],duration:'Less than 1 week',progression:'No',before:'No',treated:'No',similar_hh:'No',water_source:'Borehole/handpump',contact_water:'No',freq:'Never',activities:[],vector:'No',animal:'No',travel:'No',similar_comm:'No',treat_where:null,delay:'No',delay_reason:null,reliability:'Always',wtreat:'Boil',toilet:'Private pit latrine',san_cond:'Clean / usable',handwash:'Yes, with water',soap:'Always',stagnant:'No',breeding:'No',housing:'Good',startedAt:Date.now(),result:null,saved:null,ref:null});
+const BLANK=()=>({type:'individual',age:null,sex:null,community:CHW.comms[0],gps:null,symptoms:[],duration:null,progression:null,before:null,treated:null,similar_hh:null,water_source:null,contact_water:null,freq:null,activities:[],vector:null,animal:null,travel:null,similar_comm:null,treat_where:null,delay:null,delay_reason:null,reliability:null,wtreat:null,toilet:null,san_cond:null,handwash:null,soap:null,stagnant:null,breeding:null,housing:null,startedAt:Date.now(),result:null,saved:null,ref:null});
+/* ============ STATE + CHART HELPERS ============ */
+const S={mode:'chw',_key:'',
+ chw:{screen:'login',user:null,login:{id:'0800 000 0142',pw:'demo-password'},err:null,online:true,sync:'idle',simErr:false,draft:null,hist:{when:'all',comm:'all',risk:'all',ref:'all'},sheet:null,fu:null,notif:false,notifExtra:[],lang:'English'},
+ prog:{role:'state',page:'overview',filters:{lga:'all',risk:'all',cat:'all',period:'12'},layers:{signals:true,vuln:true,flows:true,fac:true,priority:true},selComm:null,selSig:null,selFac:null,view:[0,0,800,560],modal:null,stab:'rules',notif:false,vsel:null,refFilter:'all',rptSel:null}};
+function niceMax(v){if(v<=4)return 4;const p=Math.pow(10,Math.floor(Math.log10(v)));const m=[1,2,2.5,5,10].find(x=>x*p>=v);return m*p}
+function spark(vals,o={}){
+ const w=o.w||110,h=o.h||30,col=o.color||'var(--accent)',max=Math.max(1,...vals),n=vals.length;
+ const pts=vals.map((v,i)=>[3+(n<2?0:i/(n-1))*(w-6),h-4-(v/max)*(h-9)]);
+ const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join('');
+ const e=pts[n-1];
+ return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><path d="${d}L${e[0]},${h-3}L${pts[0][0]},${h-3}Z" style="fill:${col}" opacity=".13"/><path d="${d}" fill="none" style="stroke:${col}" stroke-width="2" stroke-linejoin="round"/><circle cx="${e[0]}" cy="${e[1]}" r="3" style="fill:${col}"/></svg>`;
+}
+function lineChart(series,labels,o={}){
+ const w=o.w||560,h=o.h||240,L=36,Rr=14,T=14,B=28;
+ const max=niceMax(Math.max(1,...series.flatMap(s=>s.vals)));
+ const n=labels.length,X=i=>L+(n<2?0:i/(n-1))*(w-L-Rr),Y=v=>T+(1-v/max)*(h-T-B);
+ let g='';
+ for(let i=0;i<=4;i++){const v=max/4*i;g+=`<line x1="${L}" x2="${w-Rr}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)" stroke-width="1"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="10" style="fill:var(--ink2)">${Math.round(v*10)/10}</text>`}
+ const step=Math.ceil(n/6);
+ labels.forEach((lb,i)=>{if(i%step===0||i===n-1)g+=`<text x="${X(i)}" y="${h-8}" text-anchor="middle" font-size="10" style="fill:var(--ink2)">${esc(lb)}</text>`});
+ series.forEach(s=>{
+  const pts=s.vals.map((v,i)=>[X(i),Y(v)]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join('');
+  if(s.area)g+=`<path d="${d}L${X(n-1)},${Y(0)}L${X(0)},${Y(0)}Z" style="fill:${s.color}" opacity=".12"/>`;
+  g+=`<path d="${d}" fill="none" style="stroke:${s.color}" stroke-width="2.4" stroke-linejoin="round" ${s.dash?'stroke-dasharray="5 4"':''}/>`;
+  const e=pts[pts.length-1];g+=`<circle cx="${e[0]}" cy="${e[1]}" r="4" style="fill:${s.color}"/>`;
+ });
+ return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${esc(o.label||'Line chart')}">${g}</svg>`;
+}
+function vbars(items,o={}){
+ const w=o.w||560,h=o.h||200,L=34,Rr=10,T=12,B=28;
+ const max=niceMax(Math.max(1,...items.map(i=>i.value)));
+ const bw=(w-L-Rr)/items.length,Y=v=>T+(1-v/max)*(h-T-B);
+ let g='';
+ for(let i=0;i<=4;i++){const v=max/4*i;g+=`<line x1="${L}" x2="${w-Rr}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:var(--line)"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="10" style="fill:var(--ink2)">${Math.round(v*10)/10}</text>`}
+ items.forEach((it,i)=>{
+  const x=L+i*bw+bw*.18,ww=bw*.64;
+  g+=`<rect x="${x.toFixed(1)}" y="${Y(it.value).toFixed(1)}" width="${ww.toFixed(1)}" height="${(Y(0)-Y(it.value)).toFixed(1)}" rx="3" style="fill:${it.color||'var(--accent)'}"/>`;
+  g+=`<text x="${(x+ww/2).toFixed(1)}" y="${h-10}" text-anchor="middle" font-size="10" style="fill:var(--ink2)">${esc(it.label)}</text>`;
+ });
+ return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${esc(o.label||'Bar chart')}">${g}</svg>`;
+}
+const hbar=(label,val,max,color,right)=>`<div class="hb"><span>${esc(label)}</span><div class="tr"><i style="width:${Math.max(2,Math.round(val/Math.max(1,max)*100))}%;background:${color||'var(--accent)'}"></i></div><b class="num">${right!=null?right:fmt(val)}</b></div>`;
+const legend=a=>`<div class="legend">${a.map(x=>`<span><i style="background:${x[1]}"></i>${esc(x[0])}</span>`).join('')}</div>`;
+/* ============ CHW MOBILE APP ============ */
+const D=()=>S.chw.draft;
+const myRefs=()=>R.filter(r=>r.chw===CHW.id).sort((a,b)=>b.t[0]-a.t[0]);
+const pendingA=()=>MYA.filter(a=>!a.synced);
+const pendingR=()=>R.filter(r=>r.chw&&!r.synced);
+const dueFU=()=>FU.filter(f=>!f.done&&f.due<=Date.now());
+function aStatus(a){if(!a.synced)return'Pending sync';if(a.ref){const r=R.find(x=>x.id===a.ref);return r&&r.stage>=5?'Completed':'Referral active'}return a.level==='LOW'?'Closed':'Follow-up'}
+const stTag=s=>`<span class="tag ${s==='Completed'||s==='Closed'?'ok':s==='Pending sync'?'warn':'info'}">${s}</span>`;
+const JOURNEY=[['login','Login'],['dash','Dashboard'],['newtype','New assessment'],['person','Person information'],['symptoms','Symptom assessment'],['context','Risk & exposure context'],['wash','WASH & environment'],['summary','Assessment summary'],['result','Risk result'],['referral','Referral'],['followups','Follow-up'],['history','Assessment history']];
+const TABOF={dash:'dash',history:'history',referrals:'referrals',followups:'followups',followform:'followups',profile:'profile',sync:'profile'};
+const BACK={newtype:'dash',person:'newtype',symptoms:'person',context:'symptoms',wash:'context',summary:'wash',result:'dash',referral:'result',refdone:'dash',followform:'followups',sync:'profile'};
+const STEP={person:1,symptoms:2,context:3,wash:4,summary:5};
+const TITLE={newtype:'New assessment',person:'Person information',symptoms:'Symptom assessment',context:'Risk & exposure context',wash:'WASH & environment',summary:'Assessment summary',result:'Risk assessment result',referral:'Referral',refdone:'Referral generated',followups:'Follow-ups',followform:'Follow-up',history:'My assessments',referrals:'Referrals',profile:'Profile',sync:'Sync data'};
+function cgo(s){
+ const c=S.chw;
+ if(s!=='login'&&!c.user){c.user=CHW;audit(CHW.name,'Login',CHW.id,'role: CHW')}
+ if(['person','symptoms','context','wash'].includes(s)&&!c.draft)c.draft=BLANK();
+ if(s==='summary'&&!c.draft)c.draft=DEMO_HIGH();
+ if(['result','referral','refdone'].includes(s)&&(!c.draft||!c.draft.saved)){if(!c.draft)c.draft=DEMO_HIGH();completeDraft()}
+ if(s==='refdone'&&!c.draft.ref)s='referral';
+ c.screen=s;c.sheet=null;c.notif=false;
+}
+function completeDraft(){
+ const d=D();d.result=assess(d);
+ const online=S.chw.online;
+ const a={id:'LOC-'+Math.random().toString(36).slice(2,8).toUpperCase(),at:Date.now(),comm:d.community,level:d.result.level,ref:null,age:d.age,sex:d.sex,symptoms:d.symptoms.slice(),synced:false};
+ MYA.unshift(a);d.saved=a;audit(CHW.name,'Assessment created',a.id,online?'online':'saved offline');
+ if(online)finalizeSync();
+}
+function finalizeSync(){
+ let n=MYA.filter(x=>/^NTDA/.test(x.id)).length;
+ MYA.filter(a=>!a.synced).reverse().forEach(a=>{
+  n++;const old=a.id;a.id='NTDA-'+String(n).padStart(4,'0');a.synced=true;
+  const c=CBY[a.comm],k={LOW:'low',MODERATE:'mod',HIGH:'high',URGENT:'urg'}[a.level];c[k][11]++;
+  R.filter(r=>r.aid===old).forEach(r=>{r.aid=a.id});
+  audit(CHW.name,'Assessment submitted',a.id,'synced from '+old);
+ });
+ R.filter(r=>r.chw&&!r.synced).forEach(r=>{r.synced=true;S.chw.notifExtra.unshift('Referral '+r.id+' delivered to '+FBY[r.fac].name)});
+}
+function startSync(){
+ const c=S.chw;
+ if(!pendingA().length&&!pendingR().length){toast('Everything is already synchronized');return render()}
+ c.sync='syncing';render();
+ setTimeout(()=>{
+  if(c.simErr){c.simErr=false;c.sync='error';c.notifExtra.unshift('Sync error: server unreachable. Your data is safe on this device.');render();return}
+  finalizeSync();c.sync='done';render();
+  setTimeout(()=>{if(c.sync==='done'){c.sync='idle';render()}},2400);
+ },1600);
+}
+function setStage(r,stage,who){
+ while(r.t.length<=stage)r.t.push(Date.now());
+ r.stage=stage;audit(who,'Referral status changed',r.id,'→ '+STAGES[stage]);
+ if(r.chw)S.chw.notifExtra.unshift('Referral '+r.id+': '+STAGES[stage].toLowerCase()+' at '+FBY[r.fac].name);
+}
+function genRef(facId){
+ const d=D(),a=d.saved,r={id:refId(91+R.length),comm:d.community,fac:facId,level:d.result.level,t:[Date.now()],stage:0,chw:CHW.id,synced:S.chw.online,aid:a.id};
+ R.push(r);a.ref=r.id;d.ref=r.id;
+ FU.push({id:'FU-'+(FU.length+1),type:'referral',ref:r.id,aid:a.id,due:Date.now()+3*DAY,done:false});
+ audit(CHW.name,'Referral generated',r.id,d.result.level+' · '+FBY[facId].name);
+ audit(CHW.name,'Follow-up created',FU[FU.length-1].id,'due in 3 days');
+ return r;
+}
+/* ---- small UI helpers ---- */
+const chips=(f,opts,multi)=>`<div class="chips">${opts.map(v=>{const on=multi?D()[f].includes(v):D()[f]===v;return `<button class="chip" aria-pressed="${on}" data-a="${multi?'tog':'pick'}" data-f="${f}" data-v="${esc(v)}">${esc(v)}</button>`}).join('')}</div>`;
+const fld=(l,inner,h)=>`<div class="field"><div class="lbl">${l}</div>${inner}${h?`<div class="hint">${h}</div>`:''}</div>`;
+const YN=['Yes','No','Not sure'];
+const WATER=['Piped water','Borehole/handpump','Protected well','Open well','River/stream/pond','Rainwater','Vendor/tanker'];
+function selectEl(path,opts,cls){const cur=getPath(S,path);return `<select id="s-${path.replace(/\./g,'-')}" class="sel ${cls||''}" data-bind="${path}">${opts.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(v)}" ${String(cur)===String(v)?'selected':''}>${esc(l)}</option>`}).join('')}</select>`}
+const demoNote='<div class="notice"><b>DEMO question set.</b> Placeholder content, pending review and validation by qualified NTD, clinical and public-health experts. It is not clinical guidance.</div>';
+const DISC='<div class="disc">NTD-WATCH does not diagnose disease. This assessment provides decision-support based on predefined public-health guidance and should not replace assessment by a qualified health professional.</div>';
+function gps(c){return {lat:(11.8+(560-c.y)/560*.5).toFixed(3),lon:(8.4+c.x/800*.6).toFixed(3)}}
+/* ---- phone shell ---- */
+function notifList(){
+ const c=S.chw,l=[];
+ const n=dueFU().length;if(n)l.push(`${n} follow-up${n>1?'s':''} due. Open Follow-ups.`);
+ c.notifExtra.slice(0,3).forEach(x=>l.push(x));
+ myRefs().filter(r=>r.stage>=1&&r.stage<5&&Date.now()-r.t[r.stage]<5*DAY).slice(0,2).forEach(r=>l.push('Referral '+r.id+': '+STAGES[r.stage].toLowerCase()+' ('+ago(r.t[r.stage])+')'));
+ return l.slice(0,5);
+}
+function phone(body,o={}){
+ const c=S.chw,pend=pendingA().length;
+ const net=c.sync==='syncing'?['SYNCING','sync']:c.sync==='error'?['SYNC ERROR','err']:c.online?['ONLINE','on']:['OFFLINE','off'];
+ const nl=notifList();
+ const bar=o.bar===false?'':`<div class="pbar">${BACK[c.screen]?`<button class="ibtn" data-a="back" aria-label="Back">${ic('back')}</button>`:''}<h2>${esc(o.title||TITLE[c.screen]||'NTD-WATCH')}</h2><button class="ibtn" data-a="notif" aria-label="Notifications">${ic('bell')}${nl.length?`<span class="dot">${nl.length}</span>`:''}</button></div>${STEP[c.screen]?`<div class="steps" aria-label="Step ${STEP[c.screen]} of 5">${[1,2,3,4,5].map(i=>`<i class="${i<=STEP[c.screen]?'on':''}"></i>`).join('')}</div>`:''}`;
+ const nav=o.nav===false?'':`<nav class="pnav" aria-label="Main">${[['dash','Dashboard','home'],['history','Assessments','list'],['referrals','Referrals','ref'],['followups','Follow-ups','clip'],['profile','Profile','user']].map(([k,l,i])=>`<button data-a="tab" data-s="${k}" ${TABOF[c.screen]===k?'aria-current="true"':''}>${ic(i)}${l}${k==='followups'&&dueFU().length?`<span class="cnt">${dueFU().length}</span>`:''}</button>`).join('')}</nav>`;
+ const fab=o.fab?`<button class="fab" data-a="new">${ic('plus')}New assessment</button>`:'';
+ return `<div class="phone" role="application" aria-label="NTD-WATCH CHW app, demo"><div class="pstatus"><span>${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</span><button class="net" data-st="${net[1]}" data-a="toggleNet" title="Switch connectivity (demo)"><i></i>${net[0]}</button></div>${bar}<div class="pbody">${body}</div>${fab}${nav}${c.notif?`<div class="sheetbg" data-a="notifx"><div class="sheet" data-stop><h2>Notifications</h2>${nl.length?`<ul class="feed">${nl.map(x=>`<li><span class="d"></span><span>${esc(x)}</span></li>`).join('')}</ul>`:'<div class="empty">Nothing new.</div>'}<button class="btn sec block" data-a="notifx">Close</button></div></div>`:''}${sheetHtml()}</div>`;
+}
+function syncBanner(){
+ const c=S.chw,p=pendingA().length;
+ let st='on',tx='ALL DATA SYNCHRONIZED',btn='';
+ if(c.sync==='syncing'){st='sync';tx='SYNCING…'}
+ else if(c.sync==='error'){st='err';tx='SYNC ERROR · '+p+' pending';btn='<button class="btn sm" data-a="sync">Retry</button>'}
+ else if(c.sync==='done'){st='on';tx='SYNC COMPLETE'}
+ else if(!c.online){st='off';tx='OFFLINE · '+p+' assessment'+(p===1?'':'s')+' pending synchronization'}
+ else if(p){st='off';tx=p+' pending';btn='<button class="btn sm" data-a="sync">Sync</button>'}
+ return `<div class="sync" data-st="${st}">${c.sync==='syncing'?'<span class="spin"></span>':ic(st==='on'?'check':st==='err'?'warn':'sync')}<span>${tx}</span>${btn}</div>`;
+}
+/* ---- screens ---- */
+function scrLogin(){
+ const c=S.chw;
+ return `<div class="pbody login" style="padding-bottom:20px;gap:16px"><div style="text-align:center"><div class="logo" style="margin:0 auto 10px;width:56px;height:56px;border-radius:16px">${logoSvg(30)}</div><div class="hello">NTD-WATCH</div><div class="muted">Community Health Intelligence</div></div>
+ <div class="field"><label for="in-id">Phone or email</label><input id="in-id" class="inp" data-in="chw.login.id" value="${esc(c.login.id)}" autocomplete="off"></div>
+ <div class="field"><label for="in-pw">Password</label><input id="in-pw" class="inp" type="password" data-in="chw.login.pw" value="${esc(c.login.pw)}" autocomplete="off"></div>
+ ${c.err?`<div class="notice" style="background:var(--urg-bg)" role="alert"><b>${esc(c.err)}</b></div>`:''}
+ <button class="btn cta block" data-a="login">Log in</button>
+ <div class="row between"><button class="linkbtn" data-a="forgot">Forgot password</button><button class="linkbtn" data-a="help">Help</button></div>
+ <div class="field" style="margin:0"><label for="s-lang">Language</label>${selectEl('chw.lang',['English','Hausa (coming in Phase 2)','Yoruba (coming in Phase 2)','Igbo (coming in Phase 2)'],'sm')}</div>
+ <div class="notice info"><b>Demo access.</b> Credentials are pre-filled. The app resolves your role, state, LGA, ward and permissions after login.</div></div>`;
+}
+const logoSvg=n=>`<svg width="${n}" height="${n}" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="16" cy="16" r="3.2" fill="currentColor" stroke="none"/><path d="M9.5 9.5a9.2 9.2 0 000 13M22.5 9.5a9.2 9.2 0 010 13M5 5a15.5 15.5 0 000 22M27 5a15.5 15.5 0 010 22"/></svg>`;
+function scrDash(){
+ const c=S.chw,h=new Date().getHours(),g=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+ const today=MYA.filter(a=>new Date(a.at).toDateString()===new Date().toDateString()).length;
+ const act=myRefs().filter(r=>r.stage<5).length;
+ const done=MYA.filter(a=>['Completed','Closed'].includes(aStatus(a))).length;
+ return `<div><div class="hello">${g}, ${esc(CHW.name.split(' ')[0])}</div><div class="muted">Community: <b>${esc(CHW.ward)} ward</b>, ${esc(LGAS[CHW.lga])} LGA</div></div>
+ ${syncBanner()}
+ <div class="sum4"><button class="sumc" data-a="tab" data-s="history"><b>${today}</b><span>Assessments today</span></button><button class="sumc" data-a="tab" data-s="followups"><b>${dueFU().length}</b><span>Pending follow-ups</span></button><button class="sumc" data-a="tab" data-s="referrals"><b>${act}</b><span>Active referrals</span></button><button class="sumc" data-a="tab" data-s="history"><b>${done}</b><span>Completed</span></button></div>
+ <button class="btn cta block" data-a="new">${ic('plus')} NEW ASSESSMENT</button>
+ <div class="list">${[['history','My assessments','list'],['referrals','Referrals','ref'],['followups','Follow-ups','clip'],['sync','Sync data','sync'],['profile','Profile','user']].map(([k,l,i])=>`<button class="li" data-a="go" data-s="${k}">${ic(i)}<span class="t"><b>${l}</b></span><span class="muted">›</span></button>`).join('')}</div>
+ <span class="tag demo" style="align-self:flex-start">DEMO DATA</span>`;
+}
+function scrNewtype(){
+ const d=D(),resume=d&&!d.saved&&(d.age||d.symptoms.length);
+ return `${resume?`<div class="notice info"><b>Unfinished draft found.</b> It was saved on this device.<div class="row sp" style="margin-top:8px"><button class="btn sm" data-a="resume">Resume draft</button><button class="btn sm sec" data-a="fresh">Start new</button></div></div>`:''}
+ <h2>What are you assessing?</h2>
+ <button class="opt" aria-pressed="true"><span style="font-size:22px;color:var(--accent)">${ic('user')}</span><span><b>Individual</b><br><span class="muted small">Assess one person's symptoms and context.</span></span></button>
+ <button class="opt" disabled aria-pressed="false"><span style="font-size:22px">${ic('users')}</span><span><b>Household / community signal</b><br><span class="muted small">Preview only. Planned for a later phase.</span></span></button>
+ <button class="btn cta block" data-a="go" data-s="person">CONTINUE</button>`;
+}
+function scrPerson(){
+ const d=D(),c=CBY[d.community],ok=d.age&&d.sex,g=d.gps;
+ return `${fld('Age group',chips('age',['0–4','5–14','15–49','50+']))}
+ ${fld('Sex',chips('sex',['Female','Male']))}
+ ${fld('Community',selectEl('chw.draft.community',CHW.comms.map(id=>[id,CBY[id].name])))}
+ <div class="g3" style="grid-template-columns:1fr 1fr;gap:10px"><div class="field" style="margin:0"><div class="lbl">Ward</div><div class="ro">${esc(c.ward)}</div></div><div class="field" style="margin:0"><div class="lbl">LGA</div><div class="ro">${esc(LGAS[c.lga])}</div></div><div class="field" style="margin:0"><div class="lbl">State</div><div class="ro">${esc(STATE)}</div></div><div class="field" style="margin:0"><div class="lbl">CHW ID</div><div class="ro mono">${CHW.id}</div></div></div>
+ <div class="field" style="margin:0"><div class="lbl">Date and time</div><div class="ro">${tstr(d.startedAt)}</div></div>
+ ${fld('Location',g?`<div class="ro mono">${g.lat}, ${g.lon} (approximate)</div>`:`<button class="btn sec" data-a="gps">${ic('pin')} Capture approximate location</button>`,'Optional. Rounded to the community level before it is used on programme maps.')}
+ <div class="notice info">Only the minimum data is collected. No name, address or ID number is requested.</div>
+ <button class="btn cta block" data-a="go" data-s="symptoms" ${ok?'':'disabled'}>CONTINUE TO SYMPTOMS</button>${ok?'':'<div class="hint" style="text-align:center">Select age group and sex to continue.</div>'}`;
+}
+function scrSymptoms(){
+ const d=D(),ok=d.symptoms.length&&d.duration&&d.progression;
+ return `${demoNote}
+ <div class="hint">Select the signs or symptoms you can see or that the person reports. Do not ask about a named disease.</div>
+ ${Object.entries(SYM).map(([k,v])=>`<div><div class="sec-h">${k}</div>${chips('symptoms',v,true)}</div>`).join('')}
+ <div>${chips('symptoms',['None of these'],true)}</div>
+ ${fld('How long have you experienced this?',chips('duration',DURS))}
+ ${fld('Is it getting worse?',chips('progression',YN))}
+ ${fld('Has this happened before?',chips('before',YN))}
+ ${fld('Has the person received treatment?',chips('treated',['Yes','No']))}
+ ${fld('Is there a similar condition in the household?',chips('similar_hh',YN))}
+ <button class="btn cta block" data-a="go" data-s="context" ${ok?'':'disabled'}>CONTINUE</button>${ok?'':'<div class="hint" style="text-align:center">Select at least one symptom (or none), the duration and progression.</div>'}`;
+}
+function scrContext(){
+ const d=D(),ok=d.water_source&&d.contact_water;
+ return `${demoNote}
+ <div class="sec-h">Water exposure</div>
+ ${fld('Main water source',chips('water_source',WATER))}
+ ${fld('Contact with potentially contaminated water?',chips('contact_water',YN))}
+ ${d.contact_water==='Yes'?fld('How often?',chips('freq',['Daily','Weekly','Occasionally'])):''}
+ <div class="sec-h">Environment</div>
+ ${fld('Living or working activities',chips('activities',['Farming','Fishing','Irrigation','Livestock','Domestic water collection','Other'],true))}
+ ${fld('Exposure to vectors (for example biting insects)?',chips('vector',YN))}
+ ${fld('Animal or environmental contact where relevant?',chips('animal',YN))}
+ <div class="sec-h">Household and community</div>
+ ${fld('Similar symptoms in the wider community?',chips('similar_comm',YN))}
+ ${fld('Recent travel or movement?',chips('travel',YN))}
+ <div class="sec-h">Care seeking</div>
+ ${d.treated==='Yes'?fld('Where was treatment sought?',chips('treat_where',['Health facility','Pharmacy / patent medicine','Traditional provider','Self-care'])):'<div class="hint">No previous treatment reported.</div>'}
+ ${fld('Delay in seeking care?',chips('delay',['Yes','No']))}
+ ${d.delay==='Yes'?fld('Reason for delay',chips('delay_reason',['Cost','Distance','Did not seem serious','Fear','Other'])):''}
+ <button class="btn cta block" data-a="go" data-s="wash" ${ok?'':'disabled'}>CONTINUE</button>${ok?'':'<div class="hint" style="text-align:center">Select the main water source and contact answer.</div>'}`;
+}
+function scrWash(){
+ const d=D(),ok=d.toilet&&d.handwash&&d.water_source;
+ return `<div class="sec-h">Water</div>
+ ${fld('Main water source',chips('water_source',WATER))}
+ ${fld('Water reliability',chips('reliability',['Always','Sometimes','Rarely']))}
+ ${fld('Water treatment method',chips('wtreat',['None','Boil','Chlorine tablets','Filter','Other']))}
+ <div class="sec-h">Sanitation</div>
+ ${fld('Toilet availability',chips('toilet',['Private pit latrine','Shared pit latrine','Flush / improved','No toilet / open defecation']))}
+ ${d.toilet&&d.toilet!=='No toilet / open defecation'?fld('Sanitation condition',chips('san_cond',['Clean / usable','Poor','Not usable'])):''}
+ <div class="sec-h">Hygiene</div>
+ ${fld('Handwashing facility',chips('handwash',['Yes, with water','Yes, no water','No']))}
+ ${fld('Soap availability',chips('soap',['Always','Sometimes','Never']))}
+ <div class="sec-h">Environment</div>
+ ${fld('Stagnant water nearby?',chips('stagnant',['Yes','No']))}
+ ${fld('Vector breeding conditions nearby?',chips('breeding',['Yes','No']))}
+ ${fld('Housing and environment condition',chips('housing',['Good','Fair','Poor']))}
+ <button class="btn cta block" data-a="go" data-s="summary" ${ok?'':'disabled'}>CONTINUE TO SUMMARY</button>${ok?'':'<div class="hint" style="text-align:center">Select water source, toilet and handwashing answers.</div>'}`;
+}
+function scrSummary(){
+ const d=D(),c=CBY[d.community],w=washScore(d);
+ const sec=(t,s,rows)=>`<div class="card flat"><div class="row between"><div class="sec-h" style="margin:0">${t}</div><button class="btn sm sec" data-a="go" data-s="${s}">EDIT</button></div><div class="stack" style="gap:6px;margin-top:8px">${rows.map(([k,v])=>`<div class="row between" style="align-items:flex-start;gap:14px"><span class="muted">${k}</span><b style="text-align:right">${esc(v||'Not answered')}</b></div>`).join('')}</div></div>`;
+ return `<div class="notice info">Check the details before generating the result.</div>
+ ${sec('Person','person',[['Age group',d.age],['Sex',d.sex],['Community',c.name]])}
+ ${sec('Symptoms','symptoms',[['Selected',d.symptoms.join(', ')||'None'],['Duration',d.duration],['Progression',d.progression]])}
+ ${sec('Risk context','context',[['Exposure',[d.contact_water==='Yes'?'water contact':'',d.vector==='Yes'?'vector exposure':'',d.animal==='Yes'?'animal contact':''].filter(Boolean).join(', ')||'None reported'],['Household / community',[d.similar_hh==='Yes'?'household':'',d.similar_comm==='Yes'?'community':''].filter(Boolean).join(', ')||'None reported'],['Care seeking',(d.treated==='Yes'?'treated':'not treated')+(d.delay==='Yes'?', delayed ('+(d.delay_reason||'reason not given')+')':'')]])}
+ ${sec('WASH / environment','wash',[['Water',[d.water_source,d.reliability&&'reliability: '+d.reliability.toLowerCase()].filter(Boolean).join(' · ')],['Sanitation',d.toilet],['Hygiene',[d.handwash,d.soap&&'soap: '+d.soap.toLowerCase()].filter(Boolean).join(' · ')],['Environment',[d.stagnant==='Yes'?'stagnant water':'',d.breeding==='Yes'?'breeding conditions':'',d.housing&&'housing: '+d.housing.toLowerCase()].filter(Boolean).join(', ')]])}
+ <button class="btn cta block" data-a="complete">COMPLETE ASSESSMENT</button>`;
+}
+function scrResult(){
+ const d=D(),r=d.result,l=r.level,hi=l==='HIGH'||l==='URGENT';
+ return `<div class="notice"><b>DEMO rule set v0.1.</b> Placeholder rules, not clinical guidance.</div>
+ <div class="riskbig" data-l="${l}"><span>OVERALL RISK SIGNAL</span><b>${l}</b><span style="font-weight:500;letter-spacing:0;font-family:var(--f-body);font-size:13px">${MEANING[l]}</span></div>
+ <div><div class="sec-h">Why?</div><ul class="why" style="margin:0;padding-left:20px">${r.why.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>
+ <div class="card flat"><div class="sec-h">Recommended action</div><b>${r.action}</b></div>
+ <div class="card flat"><div class="sec-h">WASH and environment</div><div class="row between" style="margin-bottom:6px"><span>Environmental vulnerability indicators</span>${rb(r.wash.level)}</div><div class="small muted">${washNote(r.wash)}</div></div>
+ <details class="card flat"><summary style="cursor:pointer;font-weight:600">How this was calculated (demo)</summary><div class="small muted" style="margin-top:8px">Rules fired: ${r.fired.length?r.fired.map(x=>`<span class="tag mono">${x}</span>`).join(' '):'none'}.<br>Rules are configurable by the administrator and must be replaced with validated guidance.</div></details>
+ ${hi?`<button class="btn cta block" data-a="go" data-s="referral">INITIATE REFERRAL</button><button class="btn sec block" data-a="saveFollow">SAVE &amp; FOLLOW UP</button>`:l==='MODERATE'?`<button class="btn cta block" data-a="saveFollow">SAVE &amp; FOLLOW UP</button><button class="btn ghost block" data-a="go" data-s="referral">Refer anyway</button>`:`<div class="card flat"><div class="sec-h">Prevention information (demo content)</div><div class="small">Share general messages on safe water handling, handwashing with soap, using a toilet, and returning for care early if anything changes.</div></div><button class="btn cta block" data-a="saveClose">SAVE &amp; CLOSE</button>`}
+ ${DISC}`;
+}
+function scrReferral(){
+ const d=D(),c=CBY[d.community],fl=facByDist(c).slice(0,3);
+ if(!d.fac)d.fac=fl[0].id;
+ return `<div class="sec-h">Recommended facility</div>
+ <div class="list">${fl.map((f,i)=>`<button class="opt" aria-pressed="${d.fac===f.id}" data-a="fac" data-id="${f.id}"><span><b>${esc(f.name)}</b> ${i===0?'<span class="tag ok">NEAREST</span>':''}<br><span class="muted small">${distKm(c,f)} km · ${esc(LGAS[f.lga])} LGA · ${esc(f.type)}</span><br><span class="muted small">NTD service listing: to be verified with the facility directory</span><br><span class="muted small">Contact: 0800 000 0000 (demo)</span></span></button>`).join('')}</div>
+ <div class="card flat"><div class="sec-h">Referral reason</div>Higher-risk NTD-related signal requiring professional assessment.</div>
+ ${S.chw.online?'':'<div class="notice">You are offline. The referral will be queued and delivered to the facility when you reconnect.</div>'}
+ <button class="btn cta block" data-a="genRef">GENERATE REFERRAL</button>${DISC}`;
+}
+function tlHtml(r){return `<ol class="tl">${STAGES.map((s,i)=>`<li class="${i<=r.stage?'done':''}"><b>${s}</b>${i<=r.stage?tstr(r.t[i]):'Waiting'}</li>`).join('')}</ol>`}
+function scrRefDone(){
+ const r=R.find(x=>x.id===D().ref),f=FBY[r.fac];
+ return `<div class="riskbig" data-l="LOW"><span>${r.synced?'REFERRAL GENERATED':'REFERRAL QUEUED (OFFLINE)'}</span><b class="mono" style="font-size:23px;word-break:break-all">${r.id}</b><span style="font-weight:500;letter-spacing:0;font-family:var(--f-body);font-size:13px">${esc(f.name)}</span></div>
+ <div class="card flat"><div class="sec-h">Closed-loop pathway</div>${tlHtml(r)}</div>
+ <div class="notice info">A follow-up task was created for 3 days from now. ${r.synced?'The facility has been notified.':'The facility is notified after sync.'}</div>
+ <button class="btn cta block" data-a="tab" data-s="followups">VIEW FOLLOW-UPS</button><button class="btn sec block" data-a="tab" data-s="dash">BACK TO DASHBOARD</button>`;
+}
+function fuRow(f){
+ const r=f.ref&&R.find(x=>x.id===f.ref),due=f.due<=Date.now();
+ const txt=f.type==='referral'?(due?`Referral generated ${Math.max(1,Math.round((Date.now()-(r?r.t[0]:f.due))/DAY))} days ago.`:'Follow-up planned for '+dstr(f.due)):'Monitor and re-check the person.';
+ return `<button class="li" data-a="openFU" data-id="${f.id}"><span class="t"><b>${due?'FOLLOW-UP DUE':'Planned follow-up'}</b><span class="muted small">${txt}${r?'<br><span class="mono">'+r.id+'</span>':''}</span></span>${due?'<span class="tag warn">DUE</span>':'<span class="tag">'+dstr(f.due)+'</span>'}</button>`;
+}
+function scrFollowups(){
+ const open=FU.filter(f=>!f.done).sort((a,b)=>a.due-b.due),done=FU.filter(f=>f.done).slice(-3).reverse();
+ return `${open.length?`<div class="list">${open.map(fuRow).join('')}</div>`:'<div class="empty"><b>No follow-ups waiting.</b><br>New tasks appear after you refer or save a moderate-risk assessment.</div>'}
+ ${done.length?`<div class="sec-h">Recently completed</div><div class="list">${done.map(f=>`<div class="li"><span class="t"><b>${f.ref||f.aid}</b><span class="muted small">Outcome: ${esc(f.result.outcome)}</span></span><span class="tag ok">DONE</span></div>`).join('')}</div>`:''}`;
+}
+function scrFollowForm(){
+ const c=S.chw,f=FU.find(x=>x.id===c.fu.id),a=c.fu.ans;
+ const q=(k,l,o)=>fld(l,`<div class="chips">${o.map(v=>`<button class="chip" aria-pressed="${a[k]===v}" data-a="fuAns" data-f="${k}" data-v="${esc(v)}">${v}</button>`).join('')}</div>`);
+ const ok=a.outcome&&a.eval;
+ return `<div class="card flat"><b>${f.type==='referral'?'Referral '+f.ref:'Monitoring visit'}</b><div class="muted small">Keep answers brief. Do not record clinical details.</div></div>
+ ${q('attended','Did the person attend the facility?',['Yes','No','Unknown'])}
+ ${q('assessed','Was the person assessed?',['Yes','No','Unknown'])}
+ ${q('further','Was further referral required?',['Yes','No','Unknown'])}
+ ${q('mgmt','Was management initiated where applicable?',['Yes','No','Not applicable','Unknown'])}
+ ${q('more','Is additional follow-up required?',['Yes','No'])}
+ ${q('outcome','Outcome',['Completed','Further follow-up','Referred onward','Unable to reach','Declined','Other'])}
+ ${q('eval','Did the risk signal lead to appropriate action?',['Yes','Partly','No','Too early to say'])}
+ <button class="btn cta block" data-a="submitFU" ${ok?'':'disabled'}>SAVE FOLLOW-UP</button>`;
+}
+function scrHistory(){
+ const h=S.chw.hist,now=Date.now();
+ let L=MYA.filter(a=>(h.when==='all'||(h.when==='today'?new Date(a.at).toDateString()===new Date().toDateString():now-a.at<7*DAY))&&(h.comm==='all'||a.comm===h.comm)&&(h.risk==='all'||a.level===h.risk)&&(h.ref==='all'||(h.ref==='Yes'?!!a.ref:!a.ref)));
+ L=L.slice().sort((a,b)=>b.at-a.at);
+ return `<div class="g3" style="grid-template-columns:1fr 1fr;gap:8px">${selectEl('chw.hist.when',[['all','All dates'],['today','Today'],['7','Last 7 days']],'sm')}${selectEl('chw.hist.comm',[['all','All communities'],...CHW.comms.map(i=>[i,CBY[i].name])],'sm')}${selectEl('chw.hist.risk',[['all','All risk'],...LEVELS],'sm')}${selectEl('chw.hist.ref',[['all','Referral: any'],['Yes','Referral: yes'],['No','Referral: no']],'sm')}</div>
+ ${L.length?`<div class="list">${L.map(a=>`<button class="li" data-a="openA" data-id="${a.id}"><span class="t"><b class="mono">${a.id}</b><span class="muted small">${dstr(a.at)} · ${esc(CBY[a.comm].name)}</span></span><span style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">${rb(a.level)}<span class="small">${a.ref?'Referral: Yes':'Referral: No'}</span>${stTag(aStatus(a))}</span></button>`).join('')}</div>`:'<div class="empty">No assessments match these filters.</div>'}`;
+}
+function scrReferrals(){
+ const L=myRefs();
+ return L.length?`<div class="list">${L.map(r=>`<button class="li" data-a="openR" data-id="${r.id}"><span class="t"><b class="mono">${r.id}</b><span class="muted small">${esc(FBY[r.fac].name)} · ${dstr(r.t[0])}</span></span><span style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">${rb(r.level)}<span class="tag ${r.stage>=5?'ok':'info'}">${STAGES[r.stage]}</span>${r.synced?'':'<span class="tag warn">QUEUED</span>'}</span></button>`).join('')}</div>`:'<div class="empty">No referrals yet.</div>';
+}
+function scrProfile(){
+ return `<div class="card flat"><div class="row"><div class="logo" style="border-radius:50%">${ic('user')}</div><div><b>${CHW.name}</b><div class="muted small">${CHW.role} · <span class="mono">${CHW.id}</span></div></div></div>
+ <div class="stack" style="gap:6px;margin-top:12px">${[['State',STATE],['LGA',LGAS[CHW.lga]],['Ward',CHW.ward],['Communities',CHW.comms.map(i=>CBY[i].name).join(', ')]].map(([k,v])=>`<div class="row between"><span class="muted">${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>
+ <div class="card flat"><div class="sec-h">Your permissions</div><div class="small"><b>Can:</b> register assessments, capture symptoms and risk factors, initiate referrals, perform follow-up, view own history.<br><br><b>Cannot:</b> modify system rules, view unrestricted programme data, manage users.</div></div>
+ <button class="li" data-a="go" data-s="sync">${ic('sync')}<span class="t"><b>Sync data</b><span class="muted small">${pendingA().length} pending</span></span><span class="muted">›</span></button>
+ <button class="btn ghost block" data-a="logout">Log out</button>`;
+}
+function scrSync(){
+ const c=S.chw,pa=pendingA(),pr=pendingR();
+ return `${syncBanner()}
+ <div class="card flat"><div class="sec-h">Queue on this device</div>${pa.length||pr.length?`<div class="stack" style="gap:8px">${pa.map(a=>`<div class="row between"><span><b class="mono">${a.id}</b><br><span class="muted small">Assessment · ${esc(CBY[a.comm].name)}</span></span><span class="tag warn">PENDING</span></div>`).join('')}${pr.map(r=>`<div class="row between"><span><b class="mono">${r.id}</b><br><span class="muted small">Referral · ${esc(FBY[r.fac].name)}</span></span><span class="tag warn">PENDING</span></div>`).join('')}</div>`:'<div class="muted">Nothing is waiting. All records are on the server.</div>'}</div>
+ <button class="btn block" data-a="sync" ${c.online?'':'disabled'}>${ic('sync')} Sync now</button>${c.online?'':'<div class="hint">Go online (tap OFFLINE at the top) to synchronize.</div>'}
+ <label class="row" style="gap:10px"><input type="checkbox" id="chk-simerr" data-a="simErr" ${c.simErr?'checked':''} style="width:20px;height:20px"><span>Simulate a sync error on the next attempt</span></label>
+ <div class="card flat small"><div class="sec-h">How offline capture works</div>Assessments are saved on the device first and queued. Each record carries a unique client key, so a retry never creates a duplicate. If a record is edited in two places, the server keeps the newer referral status and the CHW keeps assessment answers. Nothing is deleted until the server confirms receipt.</div>`;
+}
+function sheetHtml(){
+ const s=S.chw.sheet;if(!s)return '';
+ let b='';
+ if(s.t==='A'){const a=MYA.find(x=>x.id===s.id),r=a.ref&&R.find(x=>x.id===a.ref);
+  b=`<h2 class="mono">${a.id}</h2>${rb(a.level)}<div class="stack" style="gap:6px">${[['Date',tstr(a.at)],['Community',CBY[a.comm].name],['Age group',a.age],['Sex',a.sex],['Symptoms',a.symptoms.join(', ')],['Status',aStatus(a)]].map(([k,v])=>`<div class="row between" style="align-items:flex-start"><span class="muted">${k}</span><b style="text-align:right">${esc(v)}</b></div>`).join('')}</div>${r?`<div class="sec-h">Referral ${r.id}</div>${tlHtml(r)}`:''}`}
+ if(s.t==='R'){const r=R.find(x=>x.id===s.id);b=`<h2 class="mono">${r.id}</h2>${rb(r.level)}<div class="muted">${esc(FBY[r.fac].name)} · ${esc(CBY[r.comm].name)}</div>${tlHtml(r)}`}
+ if(s.t==='help')b=`<h2>Help</h2><div class="small stack"><p><b>Cannot log in?</b> Check your phone or email and password, or ask your LGA programme officer to reset your access.</p><p><b>No network?</b> Keep working. Assessments save on the phone and sync later.</p><p><b>Need clinical advice?</b> Refer the person to the nearest health facility. NTD-WATCH does not diagnose.</p></div>`;
+ return `<div class="sheetbg" data-a="sheetx"><div class="sheet" data-stop>${b}<button class="btn sec block" data-a="sheetx">Close</button></div></div>`;
+}
+function chwScreen(){
+ const c=S.chw;
+ if(c.screen==='login')return `<div class="phone" role="application" aria-label="NTD-WATCH CHW app, demo"><div class="pstatus"><span>${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</span><button class="net" data-st="${c.online?'on':'off'}" data-a="toggleNet"><i></i>${c.online?'ONLINE':'OFFLINE'}</button></div>${scrLogin()}${sheetHtml()}</div>`;
+ const m={dash:scrDash,newtype:scrNewtype,person:scrPerson,symptoms:scrSymptoms,context:scrContext,wash:scrWash,summary:scrSummary,result:scrResult,referral:scrReferral,refdone:scrRefDone,followups:scrFollowups,followform:scrFollowForm,history:scrHistory,referrals:scrReferrals,profile:scrProfile,sync:scrSync};
+ const fab=['dash','history','referrals','followups'].includes(c.screen);
+ return phone(m[c.screen](),{fab,title:c.screen==='dash'?'NTD-WATCH':undefined});
+}
+const LOOPSTAGE={login:0,dash:0,newtype:0,person:0,symptoms:0,context:1,wash:1,summary:1,result:2,referral:3,refdone:3,followups:4,followform:4,history:4,referrals:3,profile:0,sync:0};
+function chwView(){
+ const c=S.chw;
+ return `<div class="chw"><aside class="rail card flat"><h2>Journey</h2><div class="small muted">Click any step to jump to it. The 12 CHW screens follow the specification.</div><ol>${JOURNEY.map(([k,l],i)=>`<li><button data-a="jump" data-s="${k}" ${(c.screen===k||(k==='followups'&&c.screen==='followform'))?'aria-current="true"':''}><b>${String(i+1).padStart(2,'0')}</b>${l}</button></li>`).join('')}</ol></aside>
+ ${chwScreen()}
+ <aside class="guide"><div class="card flat"><h2>Quick scenarios</h2><div class="stack"><button class="btn sm" data-a="scn" data-v="high">Higher-risk sample, to summary</button><button class="btn sm sec" data-a="scn" data-v="low">Low-risk sample, to summary</button></div><div class="hint" style="margin-top:8px">Pre-fills answers so you can see each result and the referral loop quickly.</div></div>
+ <div class="card flat small"><h2>Try this</h2><ol style="margin:0;padding-left:18px" class="stack"><li style="margin:0">Complete a higher-risk assessment and generate a referral.</li><li style="margin:0">Tap ONLINE to go offline and repeat. The queue shows on the dashboard.</li><li style="margin:0">Switch to Programme dashboard, choose Facility Worker, and accept the referral.</li><li style="margin:0">Return here to see the status update, then complete the follow-up.</li></ol></div></aside></div>`;
+}
+/* ============ PROGRAMME DASHBOARD ============ */
+const P=()=>S.prog;
+const ALLP=['overview','gis','signals','vuln','referrals','trends','reports'];
+const ROLEDEF={
+ state:{label:'State Programme Manager',pages:ALLP},
+ lga:{label:'LGA Programme Officer (Kogin Ruwa)',pages:ALLP},
+ facility:{label:'Health Facility Worker (Tsangaya PHC)',pages:['referrals']},
+ admin:{label:'Super Administrator',pages:[...ALLP,'users','settings']}
+};
+const PAGES={overview:['Overview','home'],gis:['GIS map','map'],signals:['Risk signals','pulse'],vuln:['Community vulnerability','drop'],referrals:['Referrals','ref'],trends:['Trends','trend'],reports:['Reports','doc'],users:['User management','users'],settings:['Settings','sliders']};
+const PRIO={HH:{t:'Priority investigation / intervention',c:'var(--urg)'},HL:{t:'Investigate unusual signal',c:'var(--high)'},LH:{t:'Prevention / active surveillance opportunity',c:'var(--accent)'},LL:{t:'Lower immediate priority',c:'var(--ink2)'}};
+const roleLga=()=>P().role==='lga'?1:null;
+function scopeComms(){
+ const f=P().filters,rl=roleLga(),sel=rl!==null?rl:(f.lga==='all'?null:+f.lga);
+ let l=sel===null?COMM:COMM.filter(c=>c.lga===sel);
+ if(f.ward&&f.ward!=='all')l=l.filter(c=>c.ward===f.ward);
+ if(f.comm&&f.comm!=='all')l=l.filter(c=>c.id===f.comm);
+ return l;
+}
+const levelsSel=()=>{const r=P().filters.risk;return r==='all'?['low','mod','high','urg']:r==='HIGHER'?['high','urg']:[{LOW:'low',MODERATE:'mod',HIGH:'high',URGENT:'urg'}[r]]};
+const catK=c=>{const k=P().filters.cat;return k==='all'?1:c.cat[CATKEYS.indexOf(k)]};
+const W=()=>+P().filters.period;
+const win=(a,k)=>a.slice(12-W()).map(v=>Math.round(v*k));
+function agg(c){
+ const k=catK(c),s=x=>sum(win(c[x],k)),o={low:s('low'),mod:s('mod'),high:s('high'),urg:s('urg')},ls=levelsSel();
+ o.total=sum(ls.map(x=>o[x]));o.hrAll=o.high+o.urg;o.hrSel=(ls.includes('high')?o.high:0)+(ls.includes('urg')?o.urg:0);return o;
+}
+const hrW=c=>{const k=catK(c),h=win(c.high,k),u=win(c.urg,k);return h.map((v,i)=>v+u[i])};
+const totW=(c,ls)=>{const k=catK(c);const a=ls.map(x=>win(c[x],k));return a[0].map((_,i)=>sum(a.map(z=>z[i])))};
+function sigLevel(c){const hr=agg(c).hrAll,th=Math.max(2,Math.round(W()*.8)),tm=Math.max(1,Math.round(W()*.4));return hr>=th?'HIGH':hr>=tm?'MODERATE':'LOW'}
+const prioCode=c=>(sigLevel(c)==='HIGH'?'H':'L')+(vlevel(vscore(c))==='HIGH'?'H':'L');
+function buckets(c){const a=hrW(c),n=W()/4,b=[];for(let i=0;i<4;i++)b.push(sum(a.slice(Math.round(i*n),Math.round((i+1)*n))));return b}
+function emerging(c){const b=buckets(c);if(b[0]<=b[1]&&b[1]<=b[2]&&b[2]<=b[3]&&b[3]>=Math.max(3,2*b[0])&&sum(b)>=5){const ratio=b[3]/Math.max(1,b[0]);return {ratio,b,kind:ratio>=3?'EMERGING':'RISING'}}return null}
+function prioScore(c){const hr=agg(c).hrAll;return Math.min(1.6,hr/(W()*.8))*60+vscore(c)*.4+(emerging(c)?10:0)}
+function refsScope(){
+ const ids=new Set(scopeComms().map(c=>c.id)),from=Date.now()-W()*7*DAY;
+ if(P().role==='facility')return R.filter(r=>r.synced&&r.fac===FW_FAC);
+ return R.filter(r=>r.synced&&ids.has(r.comm)&&r.t[0]>=from);
+}
+function funnel(l){const g=l.length;return {g,acc:l.filter(r=>r.stage>=1).length,arr:l.filter(r=>r.stage>=2).length,ass:l.filter(r=>r.stage>=3).length,fu:l.filter(r=>r.stage>=4).length,cl:l.filter(r=>r.stage>=5).length,rate:pct(l.filter(r=>r.stage>=3).length,g),unres:l.filter(r=>r.stage<3&&Date.now()-r.t[0]>7*DAY).length}}
+function scopeLabel(){const rl=roleLga();if(rl!==null)return LGAS[rl]+' LGA';const f=P().filters;return f.lga==='all'?'Statewide · '+STATE:LGAS[+f.lga]+' LGA'}
+/* ---- shared widgets ---- */
+function pageHead(key,sub){
+ const nl=progNotifs();
+ return `<div class="phead" style="position:relative"><div><h1>${PAGES[key][0]}</h1><p class="muted">${sub}</p></div><div class="row"><span class="tag demo">DEMO DATA</span><span class="tag info">${esc(scopeLabel())}</span><button class="ibtn" data-a="pnotif" aria-label="Alerts">${ic('bell')}${nl.length?`<span class="dot">${nl.length}</span>`:''}</button></div>${P().notif?`<div class="notifp"><b>Programme alerts</b>${nl.length?`<ul class="feed">${nl.map(x=>`<li><span class="d" style="background:${x[1]}"></span><span>${esc(x[0])}</span></li>`).join('')}</ul>`:'<div class="muted">Nothing needs attention.</div>'}</div>`:''}</div>`;
+}
+function progNotifs(){
+ const l=[];
+ if(P().role==='facility'){
+  const n0=R.filter(r=>r.synced&&r.fac===FW_FAC&&r.stage===0).length,n1=R.filter(r=>r.synced&&r.fac===FW_FAC&&r.stage>=1&&r.stage<3).length;
+  if(n0)l.push([n0+' new referral'+(n0>1?'s':'')+' waiting to be accepted','var(--urg)']);
+  if(n1)l.push([n1+' referral'+(n1>1?'s':'')+' awaiting arrival or assessment','var(--high)']);
+  return l;
+ }
+ const cs=scopeComms();
+ cs.filter(emerging).slice(0,2).forEach(c=>l.push(['Emerging signal: '+c.name+' shows an increasing number of higher-risk assessments.','var(--urg)']));
+ const u=funnel(refsScope()).unres;if(u)l.push([u+' referral'+(u>1?'s':'')+' unresolved for more than 7 days.','var(--high)']);
+ const hh=cs.filter(c=>prioCode(c)==='HH').length;if(hh)l.push([hh+' communit'+(hh>1?'ies':'y')+' may warrant programme attention.','var(--accent)']);
+ return l.slice(0,3);
+}
+function filtersBar(geo){
+ const rl=roleLga();
+ const wards=[...new Set(COMM.filter(c=>rl!==null?c.lga===rl:(P().filters.lga==='all'||c.lga===+P().filters.lga)).map(c=>c.ward))];
+ const comms=COMM.filter(c=>rl!==null?c.lga===rl:(P().filters.lga==='all'||c.lga===+P().filters.lga));
+ return `<div class="filters"><label>State<select id="f-state" class="sel sm" disabled><option>${STATE}</option></select></label>
+ <label>LGA${rl!==null?`<select id="f-lga" class="sel sm" disabled><option>${LGAS[1]}</option></select>`:selectEl('prog.filters.lga',[['all','All LGAs'],...LGAS.map((l,i)=>[i,l])],'sm')}</label>
+ ${geo?`<label>Ward${selectEl('prog.filters.ward',[['all','All wards'],...wards],'sm')}</label><label>Community${selectEl('prog.filters.comm',[['all','All communities'],...comms.map(c=>[c.id,c.name])],'sm')}</label>`:''}
+ <label>Risk${selectEl('prog.filters.risk',[['all','All levels'],['LOW','Low'],['MODERATE','Moderate'],['HIGH','High'],['URGENT','Urgent'],['HIGHER','Higher-risk (High + Urgent)']],'sm')}</label>
+ <label>NTD category${selectEl('prog.filters.cat',[['all','All categories'],...CATKEYS.map(k=>[k,CATNAME[k]])],'sm')}</label>
+ <label>Period${selectEl('prog.filters.period',[['4','Last 4 weeks'],['8','Last 8 weeks'],['12','Last 12 weeks']],'sm')}</label></div>`;
+}
+const kpi=(l,v,s)=>`<div class="kpi"><small>${l}</small><b class="num">${v}</b><span>${s||''}</span></div>`;
+const meterRow=(l,s)=>{const lv=vlevel(s);return `<div class="hb" style="grid-template-columns:minmax(90px,130px) 1fr auto"><span>${l}</span><div class="meter"><i style="width:${s}%;background:${lcol(lv)}"></i></div>${rb(lv)}</div>`};
+function stackBar(parts){const t=Math.max(1,sum(parts.map(p=>p.v)));return `<div style="display:flex;height:22px;border-radius:8px;overflow:hidden;gap:2px">${parts.map(p=>`<i title="${p.l}: ${p.v}" style="width:${p.v/t*100}%;background:${p.c};display:block;min-width:${p.v?3:0}px"></i>`).join('')}</div>`}
+function events(){
+ const refs=refsScope(),ev=[];
+ refs.forEach(r=>{ev.push({t:r.t[0],x:`Higher-risk signal recorded in ${CBY[r.comm].name} and referral ${r.id} generated`,c:'var(--high)'});for(let s=1;s<=r.stage;s++)if(s<=3||s===5)ev.push({t:r.t[s],x:`Referral ${r.id} ${STAGES[s].toLowerCase()} at ${FBY[r.fac].name}`,c:'var(--accent)'})});
+ return ev.sort((a,b)=>b.t-a.t).slice(0,7);
+}
+/* ---- OVERVIEW ---- */
+function pgOverview(){
+ const cs=scopeComms(),ag=cs.map(agg),tot=sum(ag.map(a=>a.total)),hr=sum(ag.map(a=>a.hrSel)),refs=refsScope(),f=funnel(refs);
+ const assessed=cs.filter((c,i)=>ag[i].total>0).length,elev=cs.filter(c=>vlevel(vscore(c))==='HIGH').length;
+ const top=[...cs].sort((a,b)=>prioScore(b)-prioScore(a)).slice(0,5);
+ const dist=['low','mod','high','urg'].map((k,i)=>({l:LEVELS[i],v:sum(ag.map(a=>a[k])),c:lcol(LEVELS[i])}));
+ return `${pageHead('overview','What is happening right now?')}${filtersBar()}
+ <div class="kpis">${kpi('Total assessments',fmt(tot),'in selected period')}${kpi('Higher-risk signals',fmt(hr),'High and Urgent')}${kpi('Referrals',fmt(f.g),'generated')}${kpi('Completed referrals',fmt(f.ass),f.rate+'% completion')}${kpi('Communities assessed',assessed,'of '+cs.length+' in scope')}${kpi('Elevated vulnerability',elev,'communities')}</div>
+ <div class="g2"><div class="card"><h2>Risk distribution</h2>${stackBar(dist)}<div style="margin-top:10px">${dist.map(d=>hbar(d.l,d.v,Math.max(...dist.map(x=>x.v)),d.c,fmt(d.v)+' · '+pct(d.v,sum(dist.map(x=>x.v)))+'%')).join('')}</div><div class="hint">Risk signals are assessments, not confirmed cases.</div></div>
+ <div class="card"><h2>Referral performance</h2><div class="row wrap" style="gap:18px;align-items:flex-end"><div><div class="big">${f.rate}%</div><div class="muted small">Referral completion rate</div></div><div class="grow" style="min-width:180px">${hbar('Generated',f.g,f.g,'var(--accent)')}${hbar('Accepted',f.acc,f.g,'var(--accent)')}${hbar('Attended',f.arr,f.g,'var(--accent)')}${hbar('Assessed',f.ass,f.g,'var(--low)')}</div></div><button class="linkbtn" data-a="page" data-p="referrals">Open referral monitoring</button></div></div>
+ <div class="g2"><div class="card"><h2>Priority communities</h2><div class="list">${top.map((c,i)=>{const pc=prioCode(c);return `<button class="li" data-a="openComm" data-id="${c.id}"><b class="mono" style="width:18px">${i+1}</b><span class="t"><b>${esc(c.name)}</b><span class="muted small">${esc(LGAS[c.lga])} · ${PRIO[pc].t}</span></span>${rb(vlevel(vscore(c)))}</button>`}).join('')}</div><div class="hint">This location may warrant programme attention. Open the GIS map for context.</div></div>
+ <div class="card"><h2>Recent activity</h2><ul class="feed">${events().map(e=>`<li><span class="d" style="background:${e.c}"></span><span>${esc(e.x)}<br><span class="muted small">${ago(e.t)}</span></span></li>`).join('')||'<li class="muted">No activity in this scope.</li>'}</ul></div></div>`;
+}
+/* ---- GIS ---- */
+const GRID=[[[30,40],[270,25],[530,45],[775,30]],[[20,290],[285,270],[520,300],[780,285]],[[35,535],[260,540],[545,525],[770,540]]];
+function edgeMid(a,b){const sw=(a[0]<b[0]||(a[0]===b[0]&&a[1]<b[1])),p=sw?a:b,q=sw?b:a,dx=q[0]-p[0],dy=q[1]-p[1],L=Math.hypot(dx,dy)||1,j=((Math.round(p[0]*7+p[1]*13+q[0]*5+q[1]*3)%21)-10)*1.6;return [(p[0]+q[0])/2-dy/L*j,(p[1]+q[1])/2+dx/L*j]}
+function cellPts(i){const r=Math.floor(i/3),c=i%3;return [GRID[r][c],GRID[r][c+1],GRID[r+1][c+1],GRID[r+1][c]]}
+function cellPath(i){const p=cellPts(i);let d=`M${p[0][0]},${p[0][1]}`;for(let k=0;k<4;k++){const a=p[k],b=p[(k+1)%4],m=edgeMid(a,b);d+=` Q${m[0].toFixed(1)},${m[1].toFixed(1)} ${b[0]},${b[1]}`}return d+'Z'}
+function lgaView(i){const p=cellPts(i),xs=p.map(a=>a[0]),ys=p.map(a=>a[1]);let x0=Math.min(...xs)-14,x1=Math.max(...xs)+14,y0=Math.min(...ys)-14,y1=Math.max(...ys)+14,w=x1-x0,h=y1-y0;const ar=800/560;if(w/h>ar){const nh=w/ar;y0-=(nh-h)/2;h=nh}else{const nw=h*ar;x0-=(nw-w)/2;w=nw}return [x0,y0,w,h]}
+function sigN(c){const r=P().filters.risk,a=agg(c);return (r==='LOW'||r==='MODERATE')?a.total:a.hrSel}
+function mapSvg(){
+ const v=P().view,L=P().layers,cs=scopeComms(),ids=new Set(cs.map(c=>c.id)),f=P().filters;
+ let g='';
+ for(let i=0;i<6;i++){const on=(roleLga()!==null?roleLga()===i:(f.lga!=='all'&&+f.lga===i));const p=cellPts(i);const cx=sum(p.map(a=>a[0]))/4,cy=sum(p.map(a=>a[1]))/4;
+  g+=`<path d="${cellPath(i)}" style="fill:${on?'var(--accent-soft)':'var(--land)'};stroke:var(--landline)" stroke-width="2"/><text x="${cx}" y="${cy}" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="2" style="fill:var(--ink2)" opacity=".45">${LGAS[i].toUpperCase()}</text>`}
+ g+=`<path d="M395,8 C370,90 340,150 360,230 S470,300 420,380 S380,470 405,552" fill="none" style="stroke:var(--river)" stroke-width="8" stroke-linecap="round" opacity=".7"/>`;
+ if(L.vuln)cs.forEach(c=>{const lv=vlevel(vscore(c)),r=14+c.pop/190,sel=P().selComm===c.id;g+=`<circle data-a="selComm" data-id="${c.id}" cx="${c.x}" cy="${c.y}" r="${r.toFixed(1)}" style="fill:${lcol(lv)};stroke:${sel?'var(--ink)':lcol(lv)};cursor:pointer" fill-opacity=".2" stroke-width="${sel?3:1.5}" ${sel?'':'stroke-dasharray="4 3"'}><title>${esc(c.name)}: ${lv} vulnerability</title></circle>`});
+ if(L.flows){const cnt={};refsScope().forEach(r=>{if(ids.has(r.comm)){const k=r.comm+'|'+r.fac;cnt[k]=(cnt[k]||0)+1}});
+  Object.entries(cnt).forEach(([k,n])=>{const [cid,fid]=k.split('|'),c=CBY[cid],fc=FBY[fid],mx=(c.x+fc.x)/2,my=(c.y+fc.y)/2-18;g+=`<path d="M${c.x},${c.y} Q${mx},${my} ${fc.x},${fc.y}" fill="none" style="stroke:var(--accent);pointer-events:none" stroke-width="${(1+n*.55).toFixed(1)}" opacity=".5" stroke-linecap="round"/>`})}
+ if(L.priority)cs.forEach(c=>{const pc=prioCode(c);if(pc==='LL')return;const n=sigN(c),r=(n>0?7+Math.sqrt(n)*2.6:8)+7;g+=`<circle cx="${c.x}" cy="${c.y}" r="${r.toFixed(1)}" fill="none" style="stroke:${PRIO[pc].c};pointer-events:none" stroke-width="${pc==='HH'?3.5:2.5}" ${pc==='HH'?'':pc==='HL'?'stroke-dasharray="6 3"':'stroke-dasharray="2 4"'}/>`});
+ if(L.fac)FAC.forEach(fc=>{if(roleLga()!==null&&fc.lga!==roleLga())return;if(f.lga!=='all'&&roleLga()===null&&fc.lga!==+f.lga)return;const sel=P().selFac===fc.id;g+=`<g data-a="selFac" data-id="${fc.id}" style="cursor:pointer"><rect x="${fc.x-10}" y="${fc.y-10}" width="20" height="20" rx="5" style="fill:var(--surface);stroke:${sel?'var(--ink)':'var(--accent)'}" stroke-width="${sel?3:2}"/><path d="M${fc.x-5},${fc.y}H${fc.x+5}M${fc.x},${fc.y-5}V${fc.y+5}" style="stroke:var(--accent)" stroke-width="2.4" stroke-linecap="round"/><title>${esc(fc.name)}</title></g>`});
+ if(L.signals)cs.forEach(c=>{const n=sigN(c);if(!n)return;const r=r2(n),r_=P().filters.risk,lv=(r_==='LOW'||r_==='MODERATE')?r_:sigLevel(c),sel=P().selSig===c.id;g+=`<g data-a="selSig" data-id="${c.id}" style="cursor:pointer"><circle cx="${c.x}" cy="${c.y}" r="${r.toFixed(1)}" style="fill:${lcol(lv)};stroke:${sel?'var(--ink)':'var(--surface)'}" fill-opacity=".9" stroke-width="${sel?3:2}"/>${r>=11?`<text x="${c.x}" y="${c.y+4}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" style="pointer-events:none">${n}</text>`:''}<title>${esc(c.name)}: ${n} assessment${n>1?'s':''} (risk signal, not a confirmed case)</title></g>`});
+ cs.forEach(c=>{const n=L.signals?sigN(c):0,r=n?r2(n):6;g+=`<text x="${c.x}" y="${c.y+r+12}" text-anchor="middle" font-size="10.5" font-weight="600" style="fill:var(--ink);stroke:var(--land);stroke-width:3;paint-order:stroke;pointer-events:none">${esc(c.name)}</text>`});
+ return `<svg class="mapsvg" id="mapsvg" viewBox="${v.map(x=>x.toFixed(1)).join(' ')}" role="img" aria-label="Schematic demo map of risk signals, vulnerability, referrals and facilities">${g}</svg>`;
+}
+const r2=n=>7+Math.sqrt(n)*2.6;
+function anonSigs(c){
+ const r=mulberry(c.name.length*31+c.x),ages=['0–4','5–14','15–49','50+'],sx=['F','M'],cats=['Skin signs','Eye signs','General symptoms'];
+ return R.filter(x=>x.comm===c.id&&x.synced).sort((a,b)=>b.t[0]-a.t[0]).slice(0,3).map(x=>({when:x.t[0],age:ages[Math.floor(r()*4)],sex:sx[Math.floor(r()*2)],cat:cats[Math.floor(r()*3)],dur:DURS[1+Math.floor(r()*3)],level:x.level,st:STAGES[x.stage]}));
+}
+function sideDetail(){
+ const p=P(),cs=scopeComms();
+ if(p.selSig&&CBY[p.selSig]){const c=CBY[p.selSig],a=agg(c),l=anonSigs(c);
+  return `<div class="card"><div class="row between"><h2>Risk signal summary</h2><button class="ibtn" data-a="clearSel" aria-label="Close">${ic('x')}</button></div><div><b>${esc(c.name)}</b> <span class="muted">· ${esc(LGAS[c.lga])}</span></div><div class="sp"></div>${stackBar([{l:'Low',v:a.low,c:'var(--low)'},{l:'Moderate',v:a.mod,c:'var(--mod)'},{l:'High',v:a.high,c:'var(--high)'},{l:'Urgent',v:a.urg,c:'var(--urg)'}])}<div class="legend" style="margin:8px 0">${[['Low',a.low,'var(--low)'],['Mod',a.mod,'var(--mod)'],['High',a.high,'var(--high)'],['Urgent',a.urg,'var(--urg)']].map(x=>`<span><i style="background:${x[2]}"></i>${x[0]} ${x[1]}</span>`).join('')}</div><div class="sec-h">Anonymised assessment summaries</div>${l.length?l.map(s=>`<div class="card flat" style="padding:10px;margin-bottom:6px"><div class="row between">${rb(s.level)}<span class="muted small">${dstr(s.when)}</span></div><div class="small" style="margin-top:6px">Age ${s.age} · ${s.sex} · ${s.cat}<br>Duration ${s.dur.toLowerCase()}<br>Referral: ${s.st}</div></div>`).join(''):'<div class="muted small">No higher-risk signals in this period.</div>'}<div class="hint">No names, addresses or ID numbers are shown. Signals are assessments, not confirmed cases.</div><button class="btn sm sec" data-a="openComm" data-id="${c.id}" style="margin-top:8px">Open community profile</button></div>`}
+ if(p.selComm&&CBY[p.selComm])return `<div class="card"><div class="row between"><h2>Community profile</h2><button class="ibtn" data-a="clearSel" aria-label="Close">${ic('x')}</button></div>${profile(CBY[p.selComm],true)}</div>`;
+ if(p.selFac&&FBY[p.selFac]){const fc=FBY[p.selFac],rs=R.filter(r=>r.synced&&r.fac===fc.id),f=funnel(rs);
+  return `<div class="card"><div class="row between"><h2>Health facility</h2><button class="ibtn" data-a="clearSel" aria-label="Close">${ic('x')}</button></div><b>${esc(fc.name)}</b><div class="muted small">${esc(fc.type)} · ${esc(LGAS[fc.lga])} LGA</div><div class="sp"></div><div class="stack" style="gap:6px">${[['Referrals received (all time, demo)',f.g],['Completion rate',f.rate+'%'],['Unresolved over 7 days',f.unres],['Contact','0800 000 0000 (demo)']].map(([k,v])=>`<div class="row between"><span class="muted">${k}</span><b>${v}</b></div>`).join('')}</div><div class="hint">NTD service listing: to be verified with the facility directory before use.</div></div>`}
+ const cnt={HH:0,HL:0,LH:0,LL:0};cs.forEach(c=>cnt[prioCode(c)]++);
+ return `<div class="card"><h2>Priority intelligence</h2><div class="small muted" style="margin-bottom:8px">Signal plus community vulnerability. This is programme intelligence, not an outbreak declaration.</div><div class="mx"><div class="hh"><b>High signal + high vulnerability · ${cnt.HH}</b>Priority investigation or intervention</div><div class="hl"><b>High signal + lower vulnerability · ${cnt.HL}</b>Investigate unusual signal</div><div class="lh"><b>Lower signal + high vulnerability · ${cnt.LH}</b>Prevention or active surveillance opportunity</div><div class="ll"><b>Lower signal + lower vulnerability · ${cnt.LL}</b>Lower immediate priority</div></div><div class="hint">Select a ring, bubble or facility on the map for details.</div></div>`;
+}
+function pgGis(){
+ const p=P(),L=p.layers,lay=[['signals','NTD signals','Elevated-risk assessments'],['vuln','Community vulnerability','WASH and environment'],['flows','Referral activity','Community to facility'],['fac','Health facilities','Referral and service sites'],['priority','Priority intelligence','Signal × vulnerability']];
+ return `${pageHead('gis','Live GIS map of risk signals, vulnerability, referrals and facilities')}${filtersBar(true)}
+ <div class="mapwrap"><div class="mapbox">${mapSvg()}<div class="mapctl"><button data-a="zoom" data-v="in" aria-label="Zoom in">+</button><button data-a="zoom" data-v="out" aria-label="Zoom out">−</button><button data-a="zoom" data-v="reset" aria-label="Reset view" style="font-size:12px">All</button></div>
+ <div class="maplegend"><b>Legend</b>${L.signals?`<span class="row" style="gap:6px"><i style="width:10px;height:10px;border-radius:50%;background:var(--low)"></i>Low<i style="width:10px;height:10px;border-radius:50%;background:var(--mod);margin-left:6px"></i>Mod<i style="width:10px;height:10px;border-radius:50%;background:var(--high);margin-left:6px"></i>High signal</span>`:''}${L.vuln?'<span>Dashed halo: community vulnerability (colour = level)</span>':''}${L.priority?'<span>Ring: priority area (solid red = signal + vulnerability high)</span>':''}${L.flows?'<span>Blue arcs: referral activity</span>':''}${L.fac?'<span>Plus box: health facility</span>':''}<span class="muted">Schematic demo geography. Not real boundaries.</span></div></div>
+ <div class="stack"><div class="card"><h2>Layers</h2><div class="layers">${lay.map(([k,t,s])=>`<label><input type="checkbox" id="lay-${k}" data-a="layer" data-l="${k}" ${L[k]?'checked':''}><span>${t}<br><span class="muted small" style="font-weight:400">${s}</span></span></label>`).join('')}</div></div>${sideDetail()}</div></div>
+ <div class="hint">Terms used on this map: risk signal, assessment, vulnerability, priority area. Signals are not confirmed disease cases. Pan by dragging, zoom with the buttons.</div>`;
+}
+/* ---- COMMUNITY VULNERABILITY ---- */
+function profile(c,compact){
+ const a=agg(c),vs=vscore(c),vl=vlevel(vs),pc=prioCode(c),near=facByDist(c)[0],b=buckets(c);
+ const act=['HH','LH'].includes(pc)||vl==='HIGH'?'Prioritize community education, surveillance and programme review.':pc==='HL'?'Review the signal and data quality before deciding on action.':'Continue routine monitoring.';
+ return `<div><b style="font-size:16px">${esc(c.name)}</b><div class="muted small">${esc(LGAS[c.lga])} LGA · ${esc(c.ward)} ward</div></div>
+ <div class="row wrap" style="gap:6px;margin:8px 0">${rb(vl)}<span class="tag" style="background:var(--surface2);color:${PRIO[pc].c}">${PRIO[pc].t}</span></div>
+ <div class="stack" style="gap:5px;margin-bottom:8px">${[['Population (synthetic)',fmt(c.pop)],['Nearest facility',near.name.replace(' Primary Health Centre',' PHC')+' · '+distKm(c,near)+' km'],['Assessments (period)',a.low+a.mod+a.high+a.urg],['Higher-risk signals',a.hrAll+' ('+b.join(' → ')+')']].map(([k,v])=>`<div class="row between" style="align-items:flex-start;gap:12px"><span class="muted">${k}</span><b style="text-align:right">${v}</b></div>`).join('')}</div>
+ <div class="sec-h">Vulnerability indicators</div>${meterRow('Water access',c.wash.water)}${meterRow('Sanitation',c.wash.san)}${meterRow('Hygiene',c.wash.hyg)}${meterRow('Environmental exposure',c.wash.env)}
+ ${compact?'':`<div class="sec-h" style="margin-top:12px">Historical activity (12 weeks)</div><div class="row between"><span class="muted small">All assessments</span>${spark(c.low.map((_,i)=>c.low[i]+c.mod[i]+c.high[i]+c.urg[i]),{w:200,h:36})}</div><div class="row between"><span class="muted small">Higher-risk signals</span>${spark(c.high.map((v,i)=>v+c.urg[i]),{w:200,h:36,color:'var(--high)'})}</div>`}
+ <div class="card flat" style="margin-top:10px"><div class="sec-h" style="margin:0 0 4px">Suggested programme action (demo)</div>${act}<div class="hint">${pc!=='LL'?'This location may warrant programme attention. ':''}Configurable once validated programme guidance is available. Vulnerability indicators describe context; they do not establish a cause of disease.</div></div>`;
+}
+function pgVuln(){
+ const cs=scopeComms().slice().sort((a,b)=>vscore(b)-vscore(a)),sel=CBY[P().vsel]&&cs.includes(CBY[P().vsel])?CBY[P().vsel]:cs[0];
+ return `${pageHead('vuln','WASH and environmental vulnerability by community')}${filtersBar()}
+ <div class="mapwrap" style="grid-template-columns:minmax(0,1fr) 360px"><div class="tblw"><table class="tbl"><thead><tr><th>Community</th><th>LGA</th><th>Vulnerability</th><th>Water</th><th>Sanit.</th><th>Hyg.</th><th>Env.</th><th>Signals</th><th>Priority</th></tr></thead><tbody>${cs.map(c=>{const vs=vscore(c),pc=prioCode(c);return `<tr class="click ${sel&&sel.id===c.id?'sel':''}" data-a="vsel" data-id="${c.id}"><td><b>${esc(c.name)}</b></td><td>${esc(LGAS[c.lga])}</td><td>${rb(vlevel(vs))} <span class="num muted">${vs}</span></td>${[c.wash.water,c.wash.san,c.wash.hyg,c.wash.env].map(v=>`<td class="num">${v}</td>`).join('')}<td class="num">${agg(c).hrAll}</td><td><span class="small" style="color:${PRIO[pc].c};font-weight:600">${pc==='LL'?'Lower':pc==='HH'?'Priority':pc==='HL'?'Unusual signal':'Prevention'}</span></td></tr>`}).join('')}</tbody></table></div>
+ ${sel?`<div class="card" style="align-self:start"><h2>Community profile</h2>${profile(sel,false)}<button class="btn sm sec" data-a="openComm" data-id="${sel.id}" style="margin-top:10px">${ic('map')} Show on map</button></div>`:''}</div>
+ <div class="hint">Scores run from 0 (low vulnerability) to 100. Bands: Low below 40, Moderate 40 to 59, High 60 and above (DEMO thresholds).</div>`;
+}
+/* ---- RISK SIGNALS ---- */
+function pgSignals(){
+ const cs=scopeComms(),rows=cs.map(c=>({c,b:buckets(c),e:emerging(c)})).sort((a,b)=>(b.e?b.e.ratio:0)-(a.e?a.e.ratio:0)||b.b[3]-a.b[3]);
+ const em=rows.filter(r=>r.e),top=em[0],n=W()/4,pl=['P1','P2','P3','P4'].map((p,i)=>p);
+ const palette=['var(--urg)','var(--accent)','var(--high)','var(--low)','var(--mod)'];
+ const chartRows=rows.slice(0,5);
+ return `${pageHead('signals','Changes and concentrations in higher-risk signals')}${filtersBar()}
+ ${top?`<div class="emerge" role="status"><span style="color:var(--urg)">${ic('warn')}</span><div><b class="mono" style="letter-spacing:.06em">EMERGING SIGNAL</b><div><b>${esc(top.c.name)}</b> shows an increasing number of higher-risk assessments during the selected period (${top.b.join(' → ')}).</div><div class="small muted">This is an investigation trigger, not an outbreak declaration. This location may warrant programme attention.</div></div></div>`:'<div class="notice info">No emerging pattern in this scope and period.</div>'}
+ <div class="card"><h2>Top 5 by recent signal count</h2>${lineChart(chartRows.map((r,i)=>({name:r.c.name,vals:r.b,color:palette[i]})),pl,{h:230,label:'Higher-risk assessments per period by community'})}${legend(chartRows.map((r,i)=>[r.c.name,palette[i]]))}<div class="hint">Each period is ${n} week${n>1?'s':''} (${W()} weeks in total).</div></div>
+ <div class="g3">${rows.filter(r=>r.b[3]>0||r.e).slice(0,12).map(({c,b,e})=>`<button class="card pcard" data-a="openComm" data-id="${c.id}" style="text-align:left"><div class="row between"><b>${esc(c.name)}</b>${e?`<span class="tag ${e.kind==='EMERGING'?'warn':'info'}">${e.kind}</span>`:''}</div><div class="muted small">${esc(LGAS[c.lga])}</div><div class="mono" style="font-size:16px;font-weight:500">${b.join(' → ')}</div>${spark(b,{w:200,h:34,color:e?'var(--urg)':'var(--accent)'})}</button>`).join('')}</div>
+ <div class="hint">Rule (DEMO): non-decreasing across four periods, latest at least double the first, at least five signals in total. Rising = under 3× the first period.</div>`;
+}
+/* ---- REFERRALS ---- */
+function pgReferrals(){
+ const fw=P().role==='facility',refs=refsScope(),f=funnel(refs),flt=P().refFilter;
+ let l=refs.slice();
+ if(flt==='unres')l=l.filter(r=>r.stage<3&&Date.now()-r.t[0]>7*DAY);else if(flt!=='all')l=l.filter(r=>r.stage===+flt);
+ l.sort((a,b)=>b.t[0]-a.t[0]);
+ const acts=r=>{if(!fw)return '';const m=[['Accept','Accept'],['Arrived','Mark arrived'],['Assess','Record assessment'],['Fu','Start follow-up'],['Close','Close referral']][r.stage];return m?`<button class="btn sm" data-a="rs${m[0]}" data-id="${r.id}">${m[1]}</button>`:'<span class="tag ok">CLOSED</span>'};
+ return `${pageHead('referrals',fw?'Referral inbox for Tsangaya Primary Health Centre':'Closed-loop referral pathway and performance')}${fw?'':filtersBar()}
+ <div class="g2"><div class="card"><div class="row wrap" style="gap:20px;align-items:flex-end"><div><div class="big">${f.rate}%</div><div class="muted small">Referral completion rate<br>(assessed ÷ generated)</div></div><div class="grow" style="min-width:200px">${hbar('Generated',f.g,f.g,'var(--accent)')}${hbar('Accepted',f.acc,f.g,'var(--accent)')}${hbar('Patient arrived',f.arr,f.g,'var(--accent)')}${hbar('Assessed',f.ass,f.g,'var(--low)')}${hbar('Follow-up',f.fu,f.g,'var(--low)')}${hbar('Closed',f.cl,f.g,'var(--low)')}</div></div></div>
+ <div class="kpis" style="align-content:start">${kpi('Follow-ups completed',f.cl,'closed referrals')}${kpi('Unresolved',f.unres,'older than 7 days, not assessed')}</div></div>
+ <div class="row wrap"><b>Show</b>${selectEl('prog.refFilter',[['all','All referrals'],['unres','Unresolved over 7 days'],...STAGES.map((s,i)=>[i,s])],'sm')}<span class="muted small">${l.length} referral${l.length===1?'':'s'}</span></div>
+ <div class="tblw"><table class="tbl"><thead><tr><th>Referral ID</th><th>Community</th><th>Facility</th><th>Level</th><th>Created</th><th>Status</th><th>Age</th>${fw?'<th>Action</th>':''}</tr></thead><tbody>${l.slice(0,40).map(r=>`<tr><td class="mono">${r.id}</td><td>${esc(CBY[r.comm].name)}</td><td>${esc(FBY[r.fac].name)}</td><td>${rb(r.level)}</td><td>${tstr(r.t[0])}</td><td><span class="tag ${r.stage>=5?'ok':r.stage<3&&Date.now()-r.t[0]>7*DAY?'warn':'info'}">${STAGES[r.stage]}</span><div class="muted small">${tstr(r.t[r.stage])}</div></td><td class="num">${Math.max(0,Math.round((Date.now()-r.t[0])/DAY))} d</td>${fw?`<td>${acts(r)}</td>`:''}</tr>`).join('')||`<tr><td colspan="8" class="muted">No referrals match.</td></tr>`}</tbody></table></div>
+ ${fw?'<div class="hint">Facility workers see only the minimum referral information needed to act. Each status change is timestamped and logged.</div>':'<div class="hint">Programme roles can monitor referrals but not change their status. Showing up to 40 rows.</div>'}`;
+}
+/* ---- TRENDS ---- */
+function pgTrends(){
+ const cs=scopeComms(),w=W(),ls=levelsSel(),labs=Array.from({length:w},(_,i)=>dstr(NOW-(w-1-i)*7*DAY));
+ const sumArr=(fn)=>Array.from({length:w},(_,i)=>sum(cs.map(c=>fn(c)[i]||0)));
+ const asm=sumArr(c=>totW(c,ls)),hr=sumArr(hrW),ncomm=Array.from({length:w},(_,i)=>cs.filter(c=>hrW(c)[i]>0).length);
+ const refs=refsScope(),rw=Array.from({length:w},(_,i)=>{const t1=NOW-(w-1-i)*7*DAY,t0=t1-7*DAY;return refs.filter(r=>r.t[0]>t0&&r.t[0]<=t1+DAY*0.01).length});
+ const lg=[...new Set(cs.map(c=>c.lga))];
+ const season=[38,34,40,52,66,88,100,96,84,62,46,40],mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+ return `${pageHead('trends','Assessments, signals, referrals and vulnerability over time')}${filtersBar(true)}
+ <div class="g2"><div class="card"><h2>Assessments and risk signals</h2>${lineChart([{name:'Assessments',vals:asm,color:'var(--accent)',area:true},{name:'Higher-risk signals',vals:hr,color:'var(--high)'}],labs,{label:'Weekly assessments and higher-risk signals'})}${legend([['Assessments','var(--accent)'],['Higher-risk signals','var(--high)']])}</div>
+ <div class="card"><h2>Referrals per week</h2>${vbars(rw.map((v,i)=>({label:labs[i],value:v,color:'var(--accent)'})).map((x,i,a)=>({...x,label:i%Math.ceil(a.length/6)===0?x.label:''})),{label:'Referrals generated per week'})}</div>
+ <div class="card"><h2>Communities with higher-risk signals</h2>${lineChart([{name:'Communities',vals:ncomm,color:'var(--urg)'}],labs,{label:'Number of communities with higher-risk signals per week'})}</div>
+ <div class="card"><h2>WASH vulnerability by LGA</h2>${lg.map(i=>{const x=COMM.filter(c=>c.lga===i),s=Math.round(sum(x.map(vscore))/x.length);return hbar(LGAS[i],s,100,lcol(vlevel(s)),s+' · '+vlevel(s))}).join('')}<div class="hint">Average community vulnerability score (0 to 100). Context only; not a cause of disease.</div></div>
+ <div class="card"><h2>Geographic pattern</h2>${lg.map(i=>{const x=cs.filter(c=>c.lga===i),a=sum(x.map(c=>agg(c).hrAll)),t=sum(x.map(c=>{const g=agg(c);return g.low+g.mod+g.high+g.urg}));return hbar(LGAS[i],pct(a,t),Math.max(20,pct(a,t)),'var(--high)',pct(a,t)+'% · '+a+' signals')}).join('')}<div class="hint">Higher-risk signals as a share of all assessments.</div></div>
+ <div class="card"><h2>Seasonal pattern</h2>${vbars(season.map((v,i)=>({label:mn[i],value:v,color:i>=5&&i<=8?'var(--accent)':'color-mix(in srgb,var(--accent) 40%,var(--surface2))'})),{label:'Illustrative monthly activity index'})}<div class="hint"><span class="tag demo">DEMO</span> Illustrative synthetic index with a wet-season window shaded darker. Replace with multi-year programme data.</div></div></div>`;
+}
+/* ---- REPORTS ---- */
+const REPORTS=[['assess','Assessment summary','Assessments by community and risk level'],['risk','Risk distribution','Share of assessments by risk level'],['ref','Referral performance','Funnel and completion rate by facility'],['vuln','Community vulnerability','Indicator scores and priority class'],['geo','Geographic trends','Higher-risk signals by LGA and period'],['fu','Follow-up performance','Follow-up and closure of referrals']];
+function reportData(id){
+ const cs=scopeComms(),ag=cs.map(agg);
+ if(id==='assess')return {cols:['LGA','Community','Assessments','Low','Moderate','High','Urgent'],rows:cs.map((c,i)=>[LGAS[c.lga],c.name,ag[i].low+ag[i].mod+ag[i].high+ag[i].urg,ag[i].low,ag[i].mod,ag[i].high,ag[i].urg])};
+ if(id==='risk'){const t=sum(ag.map(a=>a.low+a.mod+a.high+a.urg));return {cols:['Risk level','Assessments','Share %'],rows:['low','mod','high','urg'].map((k,i)=>{const v=sum(ag.map(a=>a[k]));return [LEVELS[i],v,pct(v,t)]})}}
+ if(id==='ref'){const fs=[...new Set(refsScope().map(r=>r.fac))];return {cols:['Facility','Generated','Accepted','Arrived','Assessed','Completion %'],rows:fs.map(f=>{const x=funnel(refsScope().filter(r=>r.fac===f));return [FBY[f].name,x.g,x.acc,x.arr,x.ass,x.rate]})}}
+ if(id==='vuln')return {cols:['LGA','Community','Water','Sanitation','Hygiene','Environment','Overall','Level','Priority class'],rows:cs.map(c=>[LGAS[c.lga],c.name,c.wash.water,c.wash.san,c.wash.hyg,c.wash.env,vscore(c),vlevel(vscore(c)),PRIO[prioCode(c)].t])};
+ if(id==='geo'){const lg=[...new Set(cs.map(c=>c.lga))];return {cols:['LGA','Period 1','Period 2','Period 3','Period 4'],rows:lg.map(i=>{const b=[0,0,0,0];cs.filter(c=>c.lga===i).forEach(c=>buckets(c).forEach((v,k)=>{b[k]+=v}));return [LGAS[i],...b]})}}
+ const l=refsScope();return {cols:['Measure','Count'],rows:[['Referrals generated',l.length],['Assessed',l.filter(r=>r.stage>=3).length],['Follow-up started',l.filter(r=>r.stage>=4).length],['Closed',l.filter(r=>r.stage>=5).length],['Follow-up closure % (of assessed)',pct(l.filter(r=>r.stage>=5).length,l.filter(r=>r.stage>=3).length)]]};
+}
+const toCsv=d=>[d.cols,...d.rows].map(r=>r.map(v=>/[",\n]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':v).join(',')).join('\n');
+function pgReports(){
+ return `${pageHead('reports','Aggregated reports for programme review')}${filtersBar()}
+ <div class="notice info"><b>Export governance.</b> Reports contain aggregated, anonymised data only and follow your role and geography. Every export is written to the audit log.</div>
+ <div class="g3">${REPORTS.map(([k,t,d])=>`<div class="card pcard"><h3>${t}</h3><div class="muted small">${d}</div><div class="row wrap" style="margin-top:6px"><button class="btn sm sec" data-a="rptPrev" data-id="${k}">Preview</button>${['PDF','CSV','Excel'].map(f=>`<button class="btn sm ghost" data-a="rptExp" data-id="${k}" data-fmt="${f}">${f}</button>`).join('')}</div></div>`).join('')}</div>`;
+}
+/* ---- USERS ---- */
+function pgUsers(){
+ const can=[['Register assessment',1,0,0,0,0],['Capture symptoms and risk factors',1,0,0,0,0],['Initiate referral',1,0,0,0,0],['Perform follow-up',1,0,0,0,0],['Receive and update referrals',0,1,0,0,0],['View LGA assessments and generate reports',0,0,1,0,0],['View statewide intelligence',0,0,0,1,0],['Manage users and configuration',0,0,0,0,1]];
+ return `${pageHead('users','Create, edit and assign users')}
+ <div class="row between wrap"><span class="muted small">${USERS.length} demo users (synthetic)</span><button class="btn sm" data-a="userNew">${ic('plus')} Create user</button></div>
+ <div class="tblw"><table class="tbl"><thead><tr><th>Name</th><th>Role</th><th>Geography</th><th>Contact</th><th>Status</th><th>Last active</th><th></th></tr></thead><tbody>${USERS.map(u=>`<tr><td><b>${esc(u.name)}</b></td><td>${u.role}</td><td>${esc(u.geo)}</td><td class="muted">${esc(u.contact)}</td><td><span class="tag ${u.status==='Active'?'ok':'warn'}">${u.status}</span></td><td class="muted">${ago(u.last)}</td><td><button class="btn sm ghost" data-a="userEdit" data-id="${u.id}">Edit</button></td></tr>`).join('')}</tbody></table></div>
+ <div class="card"><h2>Permission matrix</h2><div class="tblw" style="border:0"><table class="tbl"><thead><tr><th>Capability</th><th>CHW</th><th>Facility</th><th>LGA</th><th>State</th><th>Admin</th></tr></thead><tbody>${can.map(r=>`<tr><td>${r[0]}</td>${r.slice(1).map(v=>`<td>${v?'<span style="color:var(--low)">'+ic('check')+'</span>':''}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+}
+/* ---- SETTINGS ---- */
+function pgSettings(){
+ const t=P().stab,tabs=[['rules','Decision rules'],['modules','Assessment modules'],['audit','Audit log'],['gov','Data governance']];
+ let b='';
+ if(t==='rules')b=`<div class="notice"><b>DEMO / PLACEHOLDER rules.</b> These rules illustrate configurability only. They have not been clinically validated and must not be used as medical guidance. Changes apply to the CHW app immediately.</div><div class="tblw"><table class="tbl"><thead><tr><th>Rule</th><th>Condition (all must be true)</th><th>Result level</th><th>Enabled</th><th>Status</th></tr></thead><tbody>${RULES.map(r=>`<tr><td class="mono">${r.id}</td><td class="small">${r.when.map(condTxt).join(' AND ')}</td><td><select class="sel sm" id="rl-${r.id}" data-a="ruleLevel" data-id="${r.id}" style="width:130px">${LEVELS.map(l=>`<option ${r.level===l?'selected':''}>${l}</option>`).join('')}</select></td><td><input type="checkbox" id="re-${r.id}" data-a="ruleOn" data-id="${r.id}" ${r.on?'checked':''} style="width:20px;height:20px" aria-label="Enable ${r.id}"></td><td><span class="tag demo">DEMO</span></td></tr>`).join('')}</tbody></table></div><div class="hint">Architecture: inputs → configurable rules → risk level → explanation → recommended action.</div>`;
+ if(t==='modules')b=`<div class="tblw"><table class="tbl"><thead><tr><th>Module</th><th>Question set</th><th>Validation</th><th>Enabled</th></tr></thead><tbody>${[['Skin signals (demo)','6 symptoms','Awaiting expert review'],['Eye signals (demo)','4 symptoms','Awaiting expert review'],['General symptoms (demo)','5 symptoms','Awaiting expert review'],['Abdominal and neurological (demo)','2 symptoms','Awaiting expert review'],['WASH and environment','14 questions','Awaiting programme review']].map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td><span class="tag warn">${r[2]}</span></td><td><span class="tag ok">ON</span></td></tr>`).join('')}</tbody></table></div><div class="hint">Only approved modules reach CHW devices. The MVP does not attempt to cover every NTD.</div>`;
+ if(t==='audit')b=`<div class="tblw"><table class="tbl"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Record</th><th>Metadata</th></tr></thead><tbody>${AUDIT.slice(0,30).map(a=>`<tr><td class="num">${tstr(a.t)}</td><td>${esc(a.user)}</td><td><b>${esc(a.action)}</b></td><td class="mono">${esc(a.rec)}</td><td class="muted">${esc(a.meta)}</td></tr>`).join('')}</tbody></table></div><div class="hint">Actions you take in this prototype appear here.</div>`;
+ if(t==='gov')b=`<div class="g2"><div class="card"><h2>Person-level data</h2><div class="small">Held for CHWs and facility workers who act on a referral. Minimum fields only. No names, addresses or ID numbers.</div><div class="sp"></div><div class="tag info">CHW · Facility worker</div></div><div class="card"><h2>Aggregated programme intelligence</h2><div class="small">Programme dashboards default to anonymised, aggregated data. Exports follow role and geography.</div><div class="sp"></div><div class="tag ok">LGA · State · Admin</div></div></div>
+ <div class="card"><h2>Controls</h2><div class="stack" style="gap:8px">${[['Authentication and role-based access','Active (demo)'],['Encryption in transit','Planned for production'],['Secure local storage on device','Planned for production'],['Audit and access logging','Active'],['Controlled exports','Active']].map(r=>`<div class="row between"><span>${r[0]}</span><span class="tag ${r[1].startsWith('Active')?'ok':'demo'}">${r[1]}</span></div>`).join('')}<div class="row between"><span>Data retention</span>${selectEl('prog.retention',[['24','24 months'],['36','36 months'],['60','60 months']],'sm')}</div></div></div>
+ <div class="card"><h2>Interoperability</h2><div class="small muted">A community-level intelligence and action layer that connects with existing health information systems. Clean API boundaries are ready; connections are built once requirements and access are confirmed.</div><div class="row wrap" style="margin-top:8px">${['DHIS2','NTD programme systems','Facility directory','WASH datasets','GIS datasets','Government systems'].map(x=>`<span class="tag">${x} · planned</span>`).join('')}</div></div>`;
+ return `${pageHead('settings','Configuration, modules and audit')}<div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" aria-selected="${t===k}" data-a="stab" data-v="${k}">${l}</button>`).join('')}</div>${b}`;
+}
+/* ---- shell + modals ---- */
+function progView(){
+ const p=P(),allowed=ROLEDEF[p.role].pages,pg={overview:pgOverview,gis:pgGis,signals:pgSignals,vuln:pgVuln,referrals:pgReferrals,trends:pgTrends,reports:pgReports,users:pgUsers,settings:pgSettings}[p.page];
+ return `<div class="prog"><aside class="side"><div class="card flat" style="padding:12px"><div class="field" style="margin:0"><label for="s-prog-role" class="small">Viewing as</label>${selectEl('prog.role',Object.entries(ROLEDEF).map(([k,v])=>[k,v.label]),'sm')}</div></div><nav aria-label="Programme">${allowed.map(k=>`<button data-a="page" data-p="${k}" ${p.page===k?'aria-current="true"':''}>${ic(PAGES[k][1])}${PAGES[k][0]}</button>`).join('')}</nav><div class="card flat small muted" style="padding:12px">A community-level intelligence and action layer that connects with existing health information systems.</div></aside><main class="main">${pg()}</main></div>`;
+}
+function modalHtml(){
+ const m=P().modal;if(!m||S.mode!=='prog')return '';
+ let b='';
+ if(m.t==='rpt'){const d=reportData(m.id),n=REPORTS.find(r=>r[0]===m.id)[1];b=`<h2>${n}</h2><div class="tblw"><table class="tbl"><thead><tr>${d.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${d.rows.slice(0,12).map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><div class="hint">Scope: ${esc(scopeLabel())}. Showing up to 12 rows.</div>`}
+ if(m.t==='exp'){const d=reportData(m.id),n=REPORTS.find(r=>r[0]===m.id)[1];b=`<h2>Export: ${n} (${m.fmt})</h2><div class="notice info"><b>Governance check passed.</b> Aggregated data only · scope: ${esc(scopeLabel())} · role: ${ROLEDEF[P().role].label} · logged in the audit trail.</div>${m.fmt==='CSV'?'':`<div class="notice">File download is turned off in this preview. The CSV below holds the same data and can be copied.</div>`}<textarea readonly id="csvbox" aria-label="CSV data">${esc(toCsv(d))}</textarea><div class="row"><button class="btn sm" data-a="copyCsv">Copy CSV</button></div>`}
+ if(m.t==='outcome'){const r=R.find(x=>x.id===m.id);b=`<h2>Record assessment outcome</h2><div class="muted">${r.id} · ${esc(CBY[r.comm].name)}</div><div class="field"><label for="oc">Basic outcome</label><select id="oc" class="sel"><option>Management initiated</option><option>Referred onward</option><option>No further action needed</option><option>Other</option></select></div><div class="hint">Record only the basic outcome. Do not enter clinical details.</div><button class="btn" data-a="ocSave" data-id="${r.id}">Save outcome</button>`}
+ if(m.t==='user'){const u=m.id?USERS.find(x=>x.id===m.id):null;b=`<h2>${u?'Edit user':'Create user'}</h2><div class="field"><label for="u-name">Full name</label><input id="u-name" class="inp" value="${esc(u?u.name:'')}"></div><div class="field"><label for="u-con">Phone or email</label><input id="u-con" class="inp" value="${esc(u?u.contact:'')}"></div><div class="field"><label for="u-role">Role</label><select id="u-role" class="sel">${ROLES.map(r=>`<option ${u&&u.role===r?'selected':''}>${r}</option>`).join('')}</select></div><div class="field"><label for="u-geo">Geography</label><select id="u-geo" class="sel">${[STATE,...LGAS.map(l=>l+' LGA')].map(g=>`<option ${u&&u.geo.startsWith(g.replace(' LGA',''))?'selected':''}>${g}</option>`).join('')}</select></div><div class="row wrap"><button class="btn" data-a="userSave" data-id="${u?u.id:''}">${u?'Save changes':'Create user'}</button>${u?`<button class="btn sec" data-a="userReset" data-id="${u.id}">Reset access</button><button class="btn ghost" data-a="userToggle" data-id="${u.id}">${u.status==='Active'?'Disable user':'Enable user'}</button>`:''}</div>`}
+ return `<div class="modalbg" data-a="modalx"><div class="modal" data-stop role="dialog" aria-modal="true">${b}<button class="btn sec" data-a="modalx">Close</button></div></div>`;
+}
+/* ============ SHELL, EVENTS, ACTIONS ============ */
+const LOOP=['SIGNAL','ASSESSMENT','ACTION','REFERRAL','FOLLOW-UP','INTELLIGENCE','RESPONSE'];
+function loopIdx(){
+ if(S.mode==='chw')return LOOPSTAGE[S.chw.screen]!=null?LOOPSTAGE[S.chw.screen]:-1;
+ const p=S.prog.page;return p==='referrals'?3:p==='gis'&&(S.prog.selComm||S.prog.selSig)?6:['overview','gis','signals','vuln','trends','reports'].includes(p)?5:-1;
+}
+function topbar(){
+ return `<header class="top"><div class="brand"><div class="logo">${logoSvg(22)}</div><div><b>NTD-WATCH</b><span>Community Health Intelligence</span></div></div><span class="demo-pill">DEMO DATA · MVP v1.0 PROTOTYPE</span><button class="linkbtn" data-a="reset">Reset demo</button><div class="seg" role="group" aria-label="Prototype mode"><button data-a="mode" data-v="chw" aria-pressed="${S.mode==='chw'}">CHW mobile app</button><button data-a="mode" data-v="prog" aria-pressed="${S.mode==='prog'}">Programme dashboard</button></div></header>`;
+}
+function loopHtml(){const a=loopIdx();return `<nav class="loop" aria-label="Core product loop">${LOOP.map((l,i)=>`${i?'<i>→</i>':''}<button data-a="loop" data-i="${i}" ${i===a?'aria-current="true"':''}>${l}</button>`).join('')}</nav>`}
+function render(){
+ const app=$('#app'),pb=$('.pbody'),st=pb?pb.scrollTop:0,ae=document.activeElement&&document.activeElement.id;
+ const key=S.mode+S.chw.screen+S.prog.page;
+ app.innerHTML=topbar()+loopHtml()+(S.mode==='chw'?chwView():progView())+modalHtml();
+ const nb=$('.pbody');if(nb)nb.scrollTop=key===S._key?st:0;
+ S._key=key;
+ if(ae){const e=document.getElementById(ae);if(e&&['SELECT','INPUT'].includes(e.tagName))e.focus({preventScroll:true})}
+}
+function onBind(path){
+ const p=P();
+ if(path==='prog.role'){const al=ROLEDEF[p.role].pages;if(!al.includes(p.page))p.page=al[0];p.filters.lga=p.role==='lga'?'1':'all';p.filters.ward='all';p.filters.comm='all';p.view=p.role==='lga'?lgaView(1):[0,0,800,560];p.selComm=p.selSig=p.selFac=null;p.notif=false}
+ if(path==='prog.filters.lga'){p.filters.ward='all';p.filters.comm='all';p.view=p.filters.lga==='all'?[0,0,800,560]:lgaView(+p.filters.lga)}
+ if(path==='prog.filters.ward')p.filters.comm='all';
+ if(path.startsWith('prog.filters')){const ids=scopeComms().map(c=>c.id);['selComm','selSig'].forEach(k=>{if(p[k]&&!ids.includes(p[k]))p[k]=null})}
+}
+let drag=null;
+document.addEventListener('pointerdown',e=>{const s=e.target.closest&&e.target.closest('#mapsvg');if(!s||e.button>0)return;drag={x:e.clientX,y:e.clientY,v:P().view.slice(),s,moved:false}});
+window.addEventListener('pointermove',e=>{if(!drag)return;const r=drag.s.getBoundingClientRect(),dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>5)drag.moved=true;if(!drag.moved)return;const v=drag.v,nv=[v[0]-dx/r.width*v[2],v[1]-dy/r.height*v[3],v[2],v[3]];P().view=nv;drag.s.setAttribute('viewBox',nv.map(x=>x.toFixed(1)).join(' '))});
+window.addEventListener('pointerup',()=>{if(drag&&drag.moved)P()._moved=Date.now();drag=null});
+document.addEventListener('click',e=>{
+ const t=e.target;if(!t.closest||['SELECT','OPTION'].includes(t.tagName))return;
+ const el=t.closest('[data-a]');if(!el)return;
+ const stop=t.closest('[data-stop]');if(stop&&!stop.contains(el))return;
+ if(t.closest('#mapsvg')&&P()._moved&&Date.now()-P()._moved<300)return;
+ const f=A[el.dataset.a];if(f)f(el,e);
+});
+document.addEventListener('change',e=>{
+ const t=e.target;
+ if(t.dataset&&t.dataset.bind){setPath(S,t.dataset.bind,t.value);onBind(t.dataset.bind);render();return}
+ if(t.dataset&&t.dataset.a&&t.tagName==='SELECT'&&A[t.dataset.a])A[t.dataset.a](t,e);
+});
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset&&t.dataset.in)setPath(S,t.dataset.in,t.value)});
+const U='Amina Yusuf';
+const A={
+ mode(el){S.mode=el.dataset.v;render()},
+ reset(){location.reload()},
+ loop(el){const i=+el.dataset.i;
+  if(i<=4){S.mode='chw';cgo(['person','context','result','referral','followups'][i])}
+  else{S.mode='prog';P().page=i===5?'overview':'gis';if(P().role==='facility'){P().role='state';onBind('prog.role')}}
+  render()},
+ /* ---- CHW ---- */
+ login(){const c=S.chw;if(!c.login.id.trim()||!c.login.pw.trim()){c.err='Enter your phone or email and your password.';return render()}c.err=null;c.user=CHW;audit(CHW.name,'Login',CHW.id,'role: CHW');c.screen='dash';render()},
+ forgot(){toast('Reset instructions sent (simulated)')},
+ help(){S.chw.sheet={t:'help'};render()},
+ go(el){cgo(el.dataset.s);render()},
+ jump(el){const s=el.dataset.s;if(s==='login'){S.chw.screen='login';S.chw.sheet=null}else cgo(s);render()},
+ back(){const c=S.chw;c.screen=BACK[c.screen]||'dash';c.sheet=null;render()},
+ tab(el){const c=S.chw;c.screen=el.dataset.s;c.sheet=null;c.notif=false;render()},
+ new(){const c=S.chw,d=c.draft;if(!(d&&!d.saved&&(d.age||d.symptoms.length)))c.draft=BLANK();c.screen='newtype';c.sheet=null;render()},
+ resume(){S.chw.screen='person';render()},
+ fresh(){S.chw.draft=BLANK();render()},
+ pick(el){const d=D(),f=el.dataset.f,v=el.dataset.v;d[f]=v;
+  if(f==='contact_water'&&v!=='Yes')d.freq=null;if(f==='toilet'&&v==='No toilet / open defecation')d.san_cond=null;if(f==='treated'&&v!=='Yes')d.treat_where=null;if(f==='delay'&&v!=='Yes')d.delay_reason=null;render()},
+ tog(el){const d=D(),f=el.dataset.f,v=el.dataset.v,a=d[f],i=a.indexOf(v);
+  if(f==='symptoms'&&v==='None of these'){d[f]=i>=0?[]:['None of these']}
+  else{if(f==='symptoms')d[f]=a.filter(x=>x!=='None of these');const b=d[f];const j=b.indexOf(v);j>=0?b.splice(j,1):b.push(v)}
+  render()},
+ gps(){const d=D();d.gps=gps(CBY[d.community]);render()},
+ complete(){completeDraft();S.chw.screen='result';render()},
+ saveFollow(){const d=D(),a=d.saved;if(!d.planned){FU.push({id:'FU-'+(FU.length+1),type:a.ref?'referral':'monitor',ref:a.ref,aid:a.id,due:Date.now()+(d.result.level==='MODERATE'?7:3)*DAY,done:false});d.planned=true;audit(CHW.name,'Follow-up created',FU[FU.length-1].id,'planned')}toast('Saved. Follow-up planned.');S.chw.screen='dash';render()},
+ saveClose(){toast('Assessment saved and closed');S.chw.screen='dash';render()},
+ fac(el){D().fac=el.dataset.id;render()},
+ genRef(){const d=D();if(!d.ref)genRef(d.fac);S.chw.screen='refdone';render()},
+ toggleNet(){const c=S.chw;if(c.sync==='syncing')return;c.online=!c.online;if(c.online&&(pendingA().length||pendingR().length))startSync();else render()},
+ sync(){startSync()},
+ simErr(el){S.chw.simErr=el.checked;render()},
+ notif(){S.chw.notif=!S.chw.notif;render()},
+ notifx(){S.chw.notif=false;render()},
+ sheetx(){S.chw.sheet=null;render()},
+ openA(el){S.chw.sheet={t:'A',id:el.dataset.id};render()},
+ openR(el){S.chw.sheet={t:'R',id:el.dataset.id};render()},
+ openFU(el){S.chw.fu={id:el.dataset.id,ans:{}};S.chw.screen='followform';render()},
+ fuAns(el){S.chw.fu.ans[el.dataset.f]=el.dataset.v;render()},
+ submitFU(){const c=S.chw,f=FU.find(x=>x.id===c.fu.id),a=c.fu.ans;f.done=true;f.result={...a};audit(CHW.name,'Follow-up completed',f.id,'outcome: '+a.outcome);
+  const r=f.ref&&R.find(x=>x.id===f.ref);
+  if(r&&a.outcome==='Completed'){if(r.stage<5)setStage(r,5,CHW.name)}else if(r&&a.outcome==='Referred onward'&&r.stage<4)setStage(r,4,CHW.name);
+  if(a.outcome==='Further follow-up'||(a.more==='Yes'&&a.outcome!=='Completed')){FU.push({id:'FU-'+(FU.length+1),type:f.type,ref:f.ref,aid:f.aid,due:Date.now()+7*DAY,done:false});audit(CHW.name,'Follow-up created',FU[FU.length-1].id,'due in 7 days')}
+  toast('Follow-up saved');c.screen='followups';c.fu=null;render()},
+ logout(){S.chw.user=null;S.chw.screen='login';render()},
+ scn(el){const c=S.chw;if(!c.user){c.user=CHW;audit(CHW.name,'Login',CHW.id,'role: CHW')}c.draft=el.dataset.v==='high'?DEMO_HIGH():DEMO_LOW();c.screen='summary';c.sheet=null;render()},
+ /* ---- Programme ---- */
+ page(el){const p=P();p.page=el.dataset.p;p.notif=false;render();window.scrollTo(0,0)},
+ pnotif(){P().notif=!P().notif;render()},
+ openComm(el){const p=P(),c=CBY[el.dataset.id];p.selComm=c.id;p.selSig=null;p.selFac=null;p.vsel=c.id;p.notif=false;
+  if(!scopeComms().includes(c)){p.filters.lga='all';p.filters.ward='all';p.filters.comm='all'}
+  p.view=[c.x-140,c.y-98,280,196];if(p.page!=='gis'){p.page='gis'}render();window.scrollTo(0,0)},
+ selComm(el){const p=P();p.selComm=el.dataset.id;p.selSig=null;p.selFac=null;p.vsel=el.dataset.id;render()},
+ selSig(el){const p=P();p.selSig=el.dataset.id;p.selComm=null;p.selFac=null;render()},
+ selFac(el){const p=P();p.selFac=el.dataset.id;p.selSig=null;p.selComm=null;render()},
+ clearSel(){const p=P();p.selComm=p.selSig=p.selFac=null;render()},
+ layer(el){P().layers[el.dataset.l]=el.checked;render()},
+ zoom(el){const p=P(),v=p.view,k=el.dataset.v;
+  if(k==='reset')p.view=p.filters.lga==='all'&&roleLga()===null?[0,0,800,560]:lgaView(roleLga()!==null?roleLga():+p.filters.lga);
+  else{const f=k==='in'?.7:1/.7,w=Math.min(800,Math.max(200,v[2]*f)),h=w*.7,cx=v[0]+v[2]/2,cy=v[1]+v[3]/2;p.view=[Math.max(-60,Math.min(860-w,cx-w/2)),Math.max(-40,Math.min(600-h,cy-h/2)),w,h]}
+  render()},
+ vsel(el){P().vsel=el.dataset.id;render()},
+ stab(el){P().stab=el.dataset.v;render()},
+ ruleLevel(el){const r=RULES.find(x=>x.id===el.dataset.id);r.level=el.value;audit('Admin Demo','Configuration changed',r.id,'level → '+r.level);toast('Rule '+r.id+' set to '+r.level+' (demo)');render()},
+ ruleOn(el){const r=RULES.find(x=>x.id===el.dataset.id);r.on=el.checked;audit('Admin Demo','Configuration changed',r.id,r.on?'enabled':'disabled');toast('Rule '+r.id+(r.on?' enabled':' disabled'));render()},
+ rsAccept(el){const r=R.find(x=>x.id===el.dataset.id);setStage(r,1,U);toast('Referral accepted');render()},
+ rsArrived(el){const r=R.find(x=>x.id===el.dataset.id);setStage(r,2,U);toast('Patient arrival recorded');render()},
+ rsAssess(el){P().modal={t:'outcome',id:el.dataset.id};render()},
+ rsFu(el){const r=R.find(x=>x.id===el.dataset.id);setStage(r,4,U);toast('Follow-up started');render()},
+ rsClose(el){const r=R.find(x=>x.id===el.dataset.id);setStage(r,5,U);toast('Referral closed');render()},
+ ocSave(el){const r=R.find(x=>x.id===el.dataset.id),o=$('#oc');r.outcome=o?o.value:'';setStage(r,3,U);P().modal=null;toast('Outcome recorded');render()},
+ rptPrev(el){P().modal={t:'rpt',id:el.dataset.id};render()},
+ rptExp(el){P().modal={t:'exp',id:el.dataset.id,fmt:el.dataset.fmt};audit(ROLEDEF[P().role].label,'Report exported',REPORTS.find(r=>r[0]===el.dataset.id)[1],el.dataset.fmt+' · '+scopeLabel());render()},
+ copyCsv(){const b=$('#csvbox');b.select();const ok=()=>toast('CSV copied');const no=()=>{b.select();toast('Press Ctrl+C to copy the selected text')};try{navigator.clipboard.writeText(b.value).then(ok,no)}catch(x){no()}},
+ userNew(){P().modal={t:'user',id:null};render()},
+ userEdit(el){P().modal={t:'user',id:el.dataset.id};render()},
+ userSave(el){const n=$('#u-name').value.trim();if(!n){toast('Enter a name');return}
+  const o={name:n,contact:$('#u-con').value.trim()||'—',role:$('#u-role').value,geo:$('#u-geo').value.replace(' LGA','')};
+  if(el.dataset.id){Object.assign(USERS.find(u=>u.id===el.dataset.id),o);audit('Admin Demo','User edited',el.dataset.id,o.role)}
+  else{const id='u'+(USERS.length+1);USERS.push({id,...o,status:'Active',last:Date.now()});audit('Admin Demo','User created',id,'role: '+o.role)}
+  P().modal=null;toast('User saved');render()},
+ userReset(el){audit('Admin Demo','Access reset',el.dataset.id,'');toast('Reset link sent (simulated)')},
+ userToggle(el){const u=USERS.find(x=>x.id===el.dataset.id);u.status=u.status==='Active'?'Disabled':'Active';audit('Admin Demo',u.status==='Disabled'?'User disabled':'User enabled',u.id,'');P().modal=null;toast('User '+u.status.toLowerCase());render()},
+ modalx(){P().modal=null;render()}
+};
+S.prog.filters.ward='all';S.prog.filters.comm='all';S.prog.retention='36';
+render();
+</script>
