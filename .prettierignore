@@ -4,3 +4,5 @@ prototype
 package-lock.json
 playwright-report
 test-results
+
+ntd-watch-prototype.html

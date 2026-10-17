@@ -14,7 +14,8 @@ export default defineConfig({
     { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'], launchOptions } },
   ],
   webServer: {
-    command: 'npm run build && npm run preview --workspace @ntd-watch/web -- --port 4173 --strictPort',
+    command:
+      'npm run build && npm run preview --workspace @ntd-watch/web -- --port 4173 --strictPort',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
