@@ -8,9 +8,9 @@ export function AccessDeniedPage({ role }: { role: Role }) {
   return (
     <div>
       <h1>{t('access.title')}</h1>
-      <p style={{ margin: '1rem 0' }}>
+      <div style={{ margin: '1rem 0' }}>
         <Notice tone="error">{t('access.body', { role: t(`roles.${role}`) })}</Notice>
-      </p>
+      </div>
       <Link to={homePathFor(role)}>{t('access.back')}</Link>
     </div>
   );
