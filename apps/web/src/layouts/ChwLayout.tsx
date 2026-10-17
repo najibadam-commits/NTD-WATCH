@@ -1,15 +1,19 @@
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { CHW_BOTTOM_NAV } from '../nav/navigation';
+import { ConnectivityBanner } from '../chw/components/Shared';
+import { useSyncEngine } from '../chw/useSyncEngine';
 import styles from './ChwLayout.module.css';
 
 /** Mobile-first shell for the CHW app: narrow column, bottom navigation, one primary action. */
 export function ChwLayout() {
   const { t } = useTranslation();
+  useSyncEngine();
   return (
     <div className={styles.shell}>
       <div className={styles.bar}>{t('app.name')}</div>
       <main id="main-content" tabIndex={-1} className={styles.main}>
+        <ConnectivityBanner />
         <Outlet />
       </main>
       <Link className={styles.fab} to="/chw/assessments/new">

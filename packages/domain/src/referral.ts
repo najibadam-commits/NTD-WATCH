@@ -48,3 +48,18 @@ export function completionRate(stages: readonly ReferralStage[]): number {
   const done = stages.filter((s) => stageIndex(s) >= stageIndex('ASSESSED')).length;
   return Math.round((done / stages.length) * 100);
 }
+
+/**
+ * Deterministic demonstration referral identifier (NTDW-YYYY-NNNNNN) derived from the
+ * assessment's client key, so the device and the mock API always agree on it and a retried
+ * submission can never create a second referral. Collisions are possible in a 6-digit space;
+ * a production system would allocate identifiers on the server.
+ */
+export function referralIdFor(clientKey: string, year: number): string {
+  let h = 2166136261;
+  for (let i = 0; i < clientKey.length; i++) {
+    h ^= clientKey.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return `NTDW-${year}-${String(h % 1_000_000).padStart(6, '0')}`;
+}

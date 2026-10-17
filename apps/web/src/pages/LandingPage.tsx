@@ -23,6 +23,7 @@ export function LandingPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const setRole = useDemoSession((s) => s.setRole);
+  const role = useDemoSession((s) => s.role);
 
   const enter = (role: Role) => {
     setRole(role);
@@ -44,7 +45,9 @@ export function LandingPage() {
           <h2>{t('landing.chwTitle')}</h2>
           <p>{t('landing.chwBody')}</p>
           <div className={styles.actions}>
-            <Button onClick={() => enter('chw')}>{t('landing.chwOpen')}</Button>
+            <Button onClick={() => navigate(role === 'chw' ? '/chw' : '/chw/login')}>
+              {t('landing.chwOpen')}
+            </Button>
           </div>
         </Card>
         <Card>
@@ -81,14 +84,17 @@ export function LandingPage() {
           </thead>
           <tbody>
             <tr>
-              <td>Foundation: design system, navigation, roles</td>
+              <td>Foundation: design system, navigation, simulated roles</td>
               <td>-</td>
               <td>Built (Stage 1)</td>
             </tr>
             <tr>
               <td>CHW app</td>
-              <td>{CHW_SCREENS.length + 1}</td>
-              <td>Placeholders. Built in Stage 2</td>
+              <td>{CHW_SCREENS.length}</td>
+              <td>
+                Built (Stage 2): rules engine, forms, mock API and offline queue are prototype
+                functionality
+              </td>
             </tr>
             <tr>
               <td>Programme dashboard</td>

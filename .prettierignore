@@ -6,3 +6,4 @@ playwright-report
 test-results
 
 ntd-watch-prototype.html
+apps/web/public/mockServiceWorker.js

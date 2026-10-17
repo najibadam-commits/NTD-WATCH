@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { referralIdFor } from './referral';
 import { assessmentSchema, communityAggregateSchema, referralSchema } from './entities';
 
 const validAssessment = {
@@ -13,8 +14,22 @@ const validAssessment = {
   symptoms: ['rash'],
   duration: '1_4_weeks',
   progression: 'unsure',
+  exposure: {
+    waterContact: 'yes',
+    animalContact: 'no',
+    insectBites: 'unknown',
+    householdSimilar: 'no',
+  },
+  wash: {
+    waterSource: 'improved',
+    sanitation: 'improved',
+    handwashing: 'yes',
+    standingWater: 'no',
+  },
   riskLevel: 'MODERATE',
+  riskWhy: ['demo reason'],
   ruleSetId: 'demo-v0',
+  ruleSetVersion: '0.1.0',
 } as const;
 
 describe('person-level assessment schema', () => {
@@ -56,11 +71,24 @@ describe('referral schema', () => {
       demo: true,
       id: 'NTDW-2026-000185',
       assessmentId: 'A-1',
+      assessmentKey: 'key-12345678',
+      chwId: 'CHW-0142',
+      communityId: 'c1',
       facilityId: 'f1',
+      riskLevel: 'HIGH',
       stage: 'GENERATED',
       stageTimestamps: ['2026-10-17T10:00:00Z'],
     };
     expect(referralSchema.safeParse(ref).success).toBe(true);
     expect(referralSchema.safeParse({ ...ref, id: 'ref-1' }).success).toBe(false);
+  });
+});
+
+describe('referral identifier', () => {
+  it('is deterministic for a client key and matches the NTDW format', () => {
+    const a = referralIdFor('key-12345678', 2026);
+    expect(a).toMatch(/^NTDW-2026-\d{6}$/);
+    expect(referralIdFor('key-12345678', 2026)).toBe(a);
+    expect(referralIdFor('key-87654321', 2026)).not.toBe(a);
   });
 });

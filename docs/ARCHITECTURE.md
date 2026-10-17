@@ -10,3 +10,11 @@ npm-workspaces monorepo; packages are consumed as TypeScript source (no per-pack
 - **Design system.** CSS variables (light/dark), CSS Modules. Risk is always symbol + text, never colour alone. Fonts are self-hosted.
 - **i18n.** `react-i18next`, English only, all UI strings in `locales/en.json`.
 - **Routing.** `routes.tsx` exports route objects; the browser router is created in `main.tsx`, a memory router in tests.
+
+## Stage 2 additions
+
+- **Rules engine** (`packages/rules-engine`): rule sets are validated data, evaluated by a pure function. See `docs/RULES.md`.
+- **Offline layer** (`apps/web/src/offline`): IndexedDB store with an outbox, a single-flight sync loop, back-off retries and idempotency keys. See `docs/OFFLINE_AND_MOCK_API.md`.
+- **Mock API** (`apps/web/src/mock`): MSW handlers implementing the contract in `packages/api-contract`, backed by a separate IndexedDB database. It runs in a service worker in the browser and in Node for tests.
+- **CHW app** (`apps/web/src/chw`): the assessment draft lives in a persisted Zustand store; saved records are read live from IndexedDB; referral status is refreshed through TanStack Query.
+- **Design system**: form components (`ChoiceGroup`, `ErrorSummary`, `StepProgress`) and `buttonClass` for link-buttons.

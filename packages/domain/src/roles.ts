@@ -39,10 +39,29 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   facility: ['referral:view_relevant', 'referral:update_status', 'referral:record_outcome'],
   lga: ['programme:view_lga', 'programme:monitor_referrals', 'reports:generate'],
   state: ['programme:view_state', 'programme:monitor_referrals', 'reports:generate'],
-  // OPEN QUESTION (docs/DECISIONS.md): should the Super Administrator also see
-  // programme intelligence? The prototype allows it so the whole product can be demonstrated.
-  admin: ['users:manage', 'config:manage', 'rules:manage', 'programme:view_state'],
+  // DECIDED (docs/DECISIONS.md): the Super Administrator sees programme intelligence
+  // (aggregates only) as well as users, roles and settings. The administrator holds NO
+  // person-level permission: no assessment or referral record is readable by this role.
+  admin: [
+    'users:manage',
+    'config:manage',
+    'rules:manage',
+    'programme:view_state',
+    'programme:monitor_referrals',
+    'reports:generate',
+  ],
 };
+
+/** Permissions that expose PERSON-LEVEL records. Programme roles must never hold these. */
+export const PERSON_LEVEL_PERMISSIONS: readonly Permission[] = [
+  'assessment:create',
+  'assessment:view_own',
+  'referral:initiate',
+  'referral:view_relevant',
+  'referral:update_status',
+  'referral:record_outcome',
+  'followup:perform',
+];
 
 export function can(role: Role, permission: Permission): boolean {
   return ROLE_PERMISSIONS[role].includes(permission);

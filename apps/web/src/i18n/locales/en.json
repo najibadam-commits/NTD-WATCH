@@ -2,7 +2,8 @@
   "app": {
     "name": "NTD-WATCH",
     "subtitle": "Community Health Intelligence",
-    "tagline": "From community signals to timely public-health action."
+    "tagline": "From community signals to timely public-health action.",
+    "signOut": "Exit demo"
   },
   "banner": {
     "demo": "DEMO DATA. Every record is synthetic.",
@@ -72,7 +73,200 @@
       "referralStatus": "Referral status",
       "followUp": "Follow-up",
       "history": "Assessment history",
-      "profile": "Profile"
+      "profile": "Profile",
+      "followUpList": "Follow-ups"
+    },
+    "login": {
+      "title": "Sign in",
+      "intro": "Sign in to the community health worker app.",
+      "who": "You will be signed in as {{label}}.",
+      "pin": "Demo PIN",
+      "pinHint": "Any 4 digits. It is not checked against anything.",
+      "signIn": "Sign in as demo CHW",
+      "back": "Back to the start"
+    },
+    "dashboard": {
+      "greeting": "Hello, {{label}}",
+      "community": "Community: {{name}}",
+      "today": "Assessments today",
+      "total": "All assessments",
+      "urgent": "High or urgent",
+      "pending": "Waiting to sync",
+      "referrals": "Open referrals",
+      "followUps": "Follow-ups due",
+      "recent": "Recent assessments",
+      "none": "No assessments yet.",
+      "startNew": "Start a new assessment",
+      "viewAll": "View all"
+    },
+    "start": {
+      "title": "New assessment",
+      "intro": "This takes about five short steps. You will review everything before saving.",
+      "privacy": "No names, phone numbers or addresses are collected. An assessment code is created so you can find the person in your own records.",
+      "demo": "Use made-up information only while this is a demonstration.",
+      "start": "Start assessment",
+      "draftFound": "You have an assessment in progress (code {{code}}).",
+      "continue": "Continue it",
+      "discard": "Discard it and start again"
+    },
+    "step": {
+      "label": "Step {{current}} of {{total}}",
+      "back": "Back",
+      "continue": "Continue",
+      "review": "Review",
+      "cancel": "Cancel assessment"
+    },
+    "person": {
+      "title": "Person information",
+      "community": "Community",
+      "communityHint": "Where the person lives.",
+      "code": "Assessment code: {{code}}"
+    },
+    "symptoms": {
+      "title": "Symptoms",
+      "legend": "What has the person reported?",
+      "hint": "Choose all that apply. Tell the person this is a check for signs, not a diagnosis.",
+      "duration": "How long have the symptoms been present?",
+      "progression": "Are the symptoms getting worse?",
+      "conflictNone": "“None of these” was cleared because a symptom was chosen."
+    },
+    "context": {
+      "title": "Risk and exposure context",
+      "intro": "Ask about the last few months.",
+      "waterContact": "Has the person had contact with open water (for example swimming, washing or fetching water from a stream or pond)?",
+      "animalContact": "Has the person had close contact with livestock or other animals?",
+      "insectBites": "Has the person had many insect or fly bites?",
+      "householdSimilar": "Do others in the household or neighbourhood have similar signs?"
+    },
+    "wash": {
+      "title": "Water and environment",
+      "intro": "About the person’s household.",
+      "waterSource": "Main source of drinking water",
+      "sanitation": "Sanitation",
+      "handwashing": "Is there a place to wash hands with water and soap at home?",
+      "standingWater": "Is there standing water near the home?"
+    },
+    "summary": {
+      "title": "Review and save",
+      "intro": "Check the information. Use Edit to change anything. Nothing is saved until you press the save button.",
+      "edit": "Edit",
+      "person": "Person",
+      "symptoms": "Symptoms",
+      "context": "Exposure",
+      "wash": "Water and environment",
+      "community": "Community",
+      "ageGroup": "Age group",
+      "sex": "Sex",
+      "symptomList": "Reported",
+      "duration": "Duration",
+      "progression": "Getting worse",
+      "noneReported": "None reported",
+      "notAnswered": "Not answered",
+      "submit": "Save and see demonstration result",
+      "submitting": "Saving…",
+      "problems": "Some information is missing",
+      "fixStep": "Go to {{step}}",
+      "savedLocally": "Saved on this device.",
+      "saveFailed": "The assessment could not be saved on this device.",
+      "retry": "Try again"
+    },
+    "result": {
+      "title": "Demonstration result",
+      "code": "Assessment code {{code}}",
+      "level": "Demonstration risk level",
+      "why": "Why this result",
+      "action": "Suggested next step",
+      "notes": "About this result",
+      "incomplete": "Missing or unknown information: {{items}}",
+      "generate": "Generate referral",
+      "viewReferral": "View referral",
+      "followUp": "Record a follow-up",
+      "newAssessment": "Start another assessment",
+      "dashboard": "Back to dashboard",
+      "noResult": "No result could be shown because symptom information was missing.",
+      "notFound": "That assessment is not on this device.",
+      "savedOn": "Saved on this device. {{sync}}",
+      "ruleSet": "Demonstration rule set {{id}} version {{version}}",
+      "recommendReferral": "This demonstration result suggests a referral.",
+      "referralOptional": "A referral is optional for this demonstration result."
+    },
+    "referral": {
+      "newTitle": "Generate referral",
+      "facility": "Health facility",
+      "facilityHint": "Facilities in this community’s area. These are fictional.",
+      "urgency": "Demonstration urgency",
+      "confirm": "Generate referral",
+      "created": "Referral generated",
+      "statusTitle": "Referral status",
+      "id": "Referral ID {{id}}",
+      "timeline": "Progress",
+      "reached": "Reached",
+      "notReached": "Not reached yet",
+      "refresh": "Refresh status",
+      "refreshing": "Refreshing…",
+      "refreshed": "Status is up to date.",
+      "offline": "You are offline. Showing the status saved on this device.",
+      "refreshFailed": "Could not refresh the status.",
+      "notSyncedYet": "This referral has not reached the server yet, so a facility cannot see it.",
+      "facilityLine": "Facility: {{name}}",
+      "demoPanel": "Demonstration only: act as the facility",
+      "demoPanelBody": "A real facility worker would update this from their own screen. This button imitates that so you can follow the whole journey.",
+      "advance": "Mark as {{stage}}",
+      "closed": "This referral is closed.",
+      "notFound": "That referral is not on this device.",
+      "listTitle": "Referrals",
+      "listEmpty": "No referrals yet.",
+      "followUp": "Record a follow-up",
+      "for": "For assessment {{code}}"
+    },
+    "followup": {
+      "listTitle": "Follow-ups",
+      "intro": "People who were referred, and people advised to be monitored, who have not had a follow-up yet.",
+      "due": "Due",
+      "done": "Recorded",
+      "none": "No follow-ups are due.",
+      "formTitle": "Record follow-up",
+      "personReached": "Was the person reached?",
+      "attendedFacility": "Did the person attend the health facility?",
+      "condition": "How is the person now?",
+      "needsFurtherReferral": "Is a further referral needed?",
+      "submit": "Save follow-up",
+      "saved": "Follow-up saved on this device.",
+      "further": "You said a further referral is needed.",
+      "referNow": "Generate a referral",
+      "backToList": "Back to follow-ups",
+      "notFound": "That assessment is not on this device.",
+      "open": "Record"
+    },
+    "history": {
+      "title": "Assessment history",
+      "filter": "Show",
+      "all": "All risk levels",
+      "highUp": "High and urgent only",
+      "empty": "No assessments saved on this device yet.",
+      "emptyFiltered": "No assessments match this filter.",
+      "open": "Open",
+      "referred": "Referred",
+      "followedUp": "Followed up"
+    },
+    "profile": {
+      "title": "Profile and sync",
+      "who": "Signed in as {{label}} (simulated)",
+      "community": "Community: {{name}}",
+      "syncTitle": "Synchronisation queue",
+      "syncBody": "Changes are saved on this device first, then sent to the mock server when a connection is available.",
+      "syncNow": "Sync now",
+      "retry": "Retry",
+      "queueEmpty": "Nothing is waiting. Every saved change has been sent.",
+      "attempts": "attempts: {{n}}",
+      "simTitle": "Simulation controls",
+      "simBody": "These switches exist so offline and error behaviour can be demonstrated. They are not part of a real product.",
+      "offline": "Simulate being offline",
+      "serverDown": "Simulate server outage",
+      "failOnce": "Fail the next request",
+      "dropOnce": "Lose the next response",
+      "signOut": "Sign out of demo",
+      "notices": "About this prototype"
     }
   },
   "programme": {
@@ -104,5 +298,119 @@
     "title": "Page not found",
     "body": "That address does not match any screen in the prototype.",
     "back": "Back to the start"
+  },
+  "validation": {
+    "summaryTitle": "Please fix these before continuing",
+    "ageGroup": "Choose an age group.",
+    "sex": "Choose a sex.",
+    "community": "Choose a community.",
+    "symptoms": "Choose at least one symptom, or choose “None of these”.",
+    "duration": "Say how long the symptoms have been present.",
+    "progression": "Say whether the symptoms are getting worse.",
+    "waterContact": "Answer whether the person has had contact with open water.",
+    "animalContact": "Answer whether the person has had close contact with animals.",
+    "insectBites": "Answer whether the person has had insect or fly bites.",
+    "householdSimilar": "Answer whether others in the household have similar signs.",
+    "waterSource": "Choose the household drinking-water source.",
+    "sanitation": "Choose the household sanitation.",
+    "handwashing": "Answer whether handwashing facilities are available.",
+    "standingWater": "Answer whether there is standing water near the home.",
+    "facility": "Choose a health facility.",
+    "personReached": "Say whether the person was reached.",
+    "attendedFacility": "Say whether the person attended the facility.",
+    "condition": "Choose how the person is now.",
+    "needsFurtherReferral": "Say whether a further referral is needed.",
+    "pin": "Enter any 4 digits."
+  },
+  "options": {
+    "ageGroup": {
+      "0-4": "0 to 4 years",
+      "5-14": "5 to 14 years",
+      "15-49": "15 to 49 years",
+      "50+": "50 years or older"
+    },
+    "sex": {
+      "female": "Female",
+      "male": "Male"
+    },
+    "symptoms": {
+      "skin_sore_painless": "Skin sore that does not hurt",
+      "limb_swelling": "Swelling of an arm or leg",
+      "numb_skin_patch": "Skin patch with reduced feeling",
+      "itching": "Itching skin or rash",
+      "fever": "Fever",
+      "weight_loss": "Weight loss",
+      "abdominal_swelling": "Swollen belly",
+      "blood_in_urine": "Blood in urine",
+      "eye_pain_vision_loss": "Eye pain or loss of vision",
+      "severe_weakness": "Severe weakness",
+      "unable_to_drink": "Unable to drink",
+      "none": "None of these"
+    },
+    "symptomDanger": "Demonstration warning sign",
+    "duration": {
+      "lt_1_week": "Less than 1 week",
+      "1_4_weeks": "1 to 4 weeks",
+      "1_3_months": "1 to 3 months",
+      "gt_3_months": "More than 3 months"
+    },
+    "progression": {
+      "yes": "Yes, getting worse",
+      "no": "No, not getting worse",
+      "unsure": "Not sure"
+    },
+    "tri": {
+      "yes": "Yes",
+      "no": "No",
+      "unknown": "Unknown"
+    },
+    "waterSource": {
+      "improved": "Protected source (for example a piped supply or protected well)",
+      "unimproved": "Unprotected source (for example a pond, stream or open well)",
+      "unknown": "Unknown"
+    },
+    "sanitation": {
+      "improved": "Latrine or toilet is used",
+      "none": "No latrine or toilet",
+      "unknown": "Unknown"
+    },
+    "condition": {
+      "better": "Better",
+      "same": "About the same",
+      "worse": "Worse",
+      "unknown": "Unknown"
+    },
+    "urgency": {
+      "LOW": "Routine",
+      "MODERATE": "Advised",
+      "HIGH": "Timely",
+      "URGENT": "Immediate"
+    }
+  },
+  "sync": {
+    "pending": "Waiting to sync",
+    "syncing": "Syncing…",
+    "synced": "Synced",
+    "failed": "Sync failed, will retry",
+    "rejected": "Rejected by server",
+    "local": "Saved on this device",
+    "online": "Online",
+    "offline": "Offline",
+    "waiting": "{{count}} waiting to sync",
+    "allSynced": "Everything is synced",
+    "simulated": "(simulated)",
+    "label": "Connection status",
+    "kind": {
+      "assessment": "Assessment",
+      "referral": "Referral",
+      "followUp": "Follow-up"
+    }
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading…",
+    "notFound": "Not found",
+    "back": "Back"
   }
 }

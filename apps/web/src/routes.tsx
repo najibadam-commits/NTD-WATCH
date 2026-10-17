@@ -6,36 +6,48 @@ import { RequireArea, RequirePage, RedirectToHome } from './guards/guards';
 import { LandingPage } from './pages/LandingPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
-import { CHW_LOGIN, CHW_SCREENS, PROGRAMME_SCREENS } from './nav/navigation';
+import { PROGRAMME_SCREENS } from './nav/navigation';
+import { ContextScreen } from './chw/screens/ContextScreen';
+import { DashboardScreen } from './chw/screens/DashboardScreen';
+import { FollowUpFormScreen } from './chw/screens/FollowUpFormScreen';
+import { FollowUpListScreen } from './chw/screens/FollowUpListScreen';
+import { HistoryScreen } from './chw/screens/HistoryScreen';
+import { LoginScreen } from './chw/screens/LoginScreen';
+import { PersonScreen } from './chw/screens/PersonScreen';
+import { ProfileScreen } from './chw/screens/ProfileScreen';
+import { ReferralListScreen } from './chw/screens/ReferralListScreen';
+import { ReferralNewScreen } from './chw/screens/ReferralNewScreen';
+import { ReferralStatusScreen } from './chw/screens/ReferralStatusScreen';
+import { ResultScreen } from './chw/screens/ResultScreen';
+import { StartScreen } from './chw/screens/StartScreen';
+import { SummaryScreen } from './chw/screens/SummaryScreen';
+import { SymptomsScreen } from './chw/screens/SymptomsScreen';
+import { WashScreen } from './chw/screens/WashScreen';
 
-const chwChildren: RouteObject[] = CHW_SCREENS.map((s) => ({
-  path: s.path.replace(/^\/chw\/?/, ''),
-  index: s.path === '/chw',
-  element: <PlaceholderPage titleKey={s.titleKey} stage={s.stage} spec={s.spec} />,
-}));
-
-// The referral status route is a parameter in the real build; the demo id is a fixed example here.
-const referralStatus = chwChildren.findIndex((r) => r.path?.startsWith('referrals/NTDW'));
-if (referralStatus >= 0)
-  chwChildren[referralStatus] = { ...chwChildren[referralStatus], path: 'referrals/:id' };
+const chwChildren: RouteObject[] = [
+  { index: true, element: <DashboardScreen /> },
+  { path: 'assessments', element: <HistoryScreen /> },
+  { path: 'assessments/new', element: <StartScreen /> },
+  { path: 'assessments/new/person', element: <PersonScreen /> },
+  { path: 'assessments/new/symptoms', element: <SymptomsScreen /> },
+  { path: 'assessments/new/context', element: <ContextScreen /> },
+  { path: 'assessments/new/wash', element: <WashScreen /> },
+  { path: 'assessments/new/summary', element: <SummaryScreen /> },
+  { path: 'assessments/:key/result', element: <ResultScreen /> },
+  { path: 'assessments/:key/referral', element: <ReferralNewScreen /> },
+  { path: 'referrals', element: <ReferralListScreen /> },
+  { path: 'referrals/:id', element: <ReferralStatusScreen /> },
+  { path: 'follow-ups', element: <FollowUpListScreen /> },
+  { path: 'follow-ups/:key', element: <FollowUpFormScreen /> },
+  { path: 'profile', element: <ProfileScreen /> },
+];
 
 export const routes: RouteObject[] = [
   {
     element: <RootLayout />,
     children: [
       { path: '/', element: <LandingPage /> },
-      {
-        path: CHW_LOGIN.path,
-        element: (
-          <main id="main-content" tabIndex={-1} style={{ padding: '1rem' }}>
-            <PlaceholderPage
-              titleKey={CHW_LOGIN.titleKey}
-              stage={CHW_LOGIN.stage}
-              spec={CHW_LOGIN.spec}
-            />
-          </main>
-        ),
-      },
+      { path: '/chw/login', element: <LoginScreen /> },
       {
         element: <RequireArea area="chw" />,
         children: [{ path: '/chw', element: <ChwLayout />, children: chwChildren }],

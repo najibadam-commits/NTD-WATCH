@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -30,11 +30,19 @@ describe('landing page', () => {
 });
 
 describe('navigation and simulated roles', () => {
-  it('opens the CHW app from the landing page', async () => {
+  it('opens the CHW app through the simulated sign-in screen', async () => {
     renderAt('/');
     await userEvent.click(screen.getByRole('button', { name: /open the chw app/i }));
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.getAllByText(/simulated/i).length).toBeGreaterThan(0);
+
+    await userEvent.click(screen.getByRole('button', { name: /sign in as demo chw/i }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/enter any 4 digits/i);
+
+    await userEvent.type(screen.getByLabelText(/demo pin/i), '1234');
+    await userEvent.click(screen.getByRole('button', { name: /sign in as demo chw/i }));
     expect(screen.getByRole('navigation', { name: /chw navigation/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /new assessment/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /\+ new assessment/i })).toBeInTheDocument();
   });
 
   it('opens the programme dashboard as the State role without Users or Settings', async () => {
@@ -46,12 +54,32 @@ describe('navigation and simulated roles', () => {
     expect(nav).not.toHaveTextContent(/Settings/);
   });
 
-  it('shows Users and Settings to the administrator', async () => {
+  it('shows the administrator every programme page, including Users and Settings', async () => {
     renderAt('/');
     await userEvent.click(screen.getByRole('button', { name: /open as super administrator/i }));
     const nav = screen.getByRole('navigation', { name: /programme navigation/i });
-    expect(nav).toHaveTextContent(/User management/);
-    expect(nav).toHaveTextContent(/Settings/);
+    for (const name of [
+      'Overview',
+      'GIS map',
+      'Risk signals',
+      'Community vulnerability',
+      'Referral monitoring',
+      'Trends',
+      'Reports',
+      'User management',
+      'Settings',
+    ]) {
+      expect(within(nav).getByRole('link', { name })).toBeInTheDocument();
+    }
+  });
+
+  it('never gives a programme role access to the community health worker app', () => {
+    for (const role of ['facility', 'lga', 'state', 'admin'] as const) {
+      useDemoSession.getState().setRole(role);
+      const { unmount } = renderAt('/chw/assessments');
+      expect(screen.queryByRole('navigation', { name: /chw navigation/i })).not.toBeInTheDocument();
+      unmount();
+    }
   });
 
   it('shows access denied for a page opened by direct URL', () => {

@@ -6,9 +6,14 @@ test('landing shows the demo banner and disclaimer', async ({ page }) => {
   await expect(page.getByText(/does not diagnose disease/i)).toBeVisible();
 });
 
-test('CHW entry opens the mobile app with bottom navigation', async ({ page }) => {
+test('CHW entry opens the simulated sign-in, then the mobile app with bottom navigation', async ({
+  page,
+}) => {
   await page.goto('/');
   await page.getByRole('button', { name: /open the chw app/i }).click();
+  await expect(page).toHaveURL(/\/chw\/login$/);
+  await page.getByLabel(/demo pin/i).fill('1234');
+  await page.getByRole('button', { name: /sign in as demo chw/i }).click();
   await expect(page).toHaveURL(/\/chw$/);
   await page
     .getByRole('navigation', { name: /chw navigation/i })

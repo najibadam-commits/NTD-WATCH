@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   ROLES,
+  PERSON_LEVEL_PERMISSIONS,
+  ROLE_PERMISSIONS,
   can,
   canAccessArea,
   canViewProgrammePage,
@@ -61,5 +63,34 @@ describe('area and page access', () => {
     expect(homePathFor('chw')).toBe('/chw');
     expect(homePathFor('facility')).toBe('/programme/referrals');
     expect(homePathFor('state')).toBe('/programme/overview');
+  });
+});
+
+describe('Super Administrator (decided in Stage 2)', () => {
+  it('sees every programme page, including users and settings', () => {
+    expect(programmePagesFor('admin')).toEqual([
+      'overview',
+      'gis',
+      'signals',
+      'vulnerability',
+      'referrals',
+      'trends',
+      'reports',
+      'users',
+      'settings',
+    ]);
+  });
+
+  it('can monitor referrals and generate reports', () => {
+    expect(can('admin', 'programme:monitor_referrals')).toBe(true);
+    expect(can('admin', 'reports:generate')).toBe(true);
+  });
+});
+
+describe('person-level data separation', () => {
+  it.each(['lga', 'state', 'admin'] as const)('%s holds no person-level permission', (role) => {
+    for (const p of PERSON_LEVEL_PERMISSIONS) {
+      expect(ROLE_PERMISSIONS[role]).not.toContain(p);
+    }
   });
 });

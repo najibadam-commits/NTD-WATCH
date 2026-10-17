@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/node_modules/**',
       'prototype/**',
+      '**/public/mockServiceWorker.js',
       'playwright-report/**',
       'test-results/**',
     ],

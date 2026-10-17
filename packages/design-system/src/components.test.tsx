@@ -4,6 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { RISK_LEVELS } from '@ntd-watch/domain';
 import {
   Button,
+  ChoiceGroup,
+  ErrorSummary,
+  StepProgress,
   DemoBadge,
   EmptyState,
   ErrorState,
@@ -75,5 +78,79 @@ describe('state components', () => {
     expect(screen.getByRole('alert')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('form components', () => {
+  it('a radio group reports the chosen value and shows its error', async () => {
+    const onChange = vi.fn();
+    render(
+      <ChoiceGroup
+        legend="Sex"
+        name="sex"
+        required
+        error="Choose one"
+        value={undefined}
+        onChange={onChange}
+        options={[
+          { value: 'female', label: 'Female' },
+          { value: 'male', label: 'Male' },
+        ]}
+      />,
+    );
+    expect(screen.getByRole('group', { name: /Sex/ })).toHaveAccessibleDescription('Choose one');
+    await userEvent.click(screen.getByRole('radio', { name: 'Male' }));
+    expect(onChange).toHaveBeenCalledWith('male');
+  });
+
+  it('a checkbox group adds and removes values', async () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <ChoiceGroup
+        multiple
+        legend="Symptoms"
+        name="symptoms"
+        value={['a']}
+        onChange={onChange}
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+      />,
+    );
+    await userEvent.click(screen.getByRole('checkbox', { name: 'B' }));
+    expect(onChange).toHaveBeenLastCalledWith(['a', 'b']);
+    rerender(
+      <ChoiceGroup
+        multiple
+        legend="Symptoms"
+        name="symptoms"
+        value={['a']}
+        onChange={onChange}
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+      />,
+    );
+    await userEvent.click(screen.getByRole('checkbox', { name: 'A' }));
+    expect(onChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it('the error summary lists problems, takes focus on a new attempt, and stays silent without errors', () => {
+    const errors = [{ field: 'sex', message: 'Choose one' }];
+    const { rerender, container } = render(
+      <ErrorSummary title="Fix these" errors={[]} attempt={0} />,
+    );
+    expect(container).toBeEmptyDOMElement();
+    rerender(<ErrorSummary title="Fix these" errors={errors} attempt={1} />);
+    expect(screen.getByRole('alert')).toHaveFocus();
+    expect(screen.getByRole('link', { name: 'Choose one' })).toHaveAttribute('href', '#sex');
+  });
+
+  it('step progress shows its label', () => {
+    render(<StepProgress current={2} total={5} label="Step 2 of 5" />);
+    expect(screen.getByText('Step 2 of 5')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: /progress/i })).toHaveAttribute('value', '2');
   });
 });

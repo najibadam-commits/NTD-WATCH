@@ -7,6 +7,19 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   block?: boolean;
 }
 
+export interface ButtonStyle {
+  variant?: 'primary' | 'secondary' | 'ghost';
+  size?: 'md' | 'sm';
+  block?: boolean;
+}
+
+/** Class names for a link that should look like a button (a link navigates, a button acts). */
+export function buttonClass({ variant = 'primary', size = 'md', block = false }: ButtonStyle = {}) {
+  return [styles.button, styles[variant], size === 'sm' ? styles.sm : '', block ? styles.block : '']
+    .filter(Boolean)
+    .join(' ');
+}
+
 export function Button({
   variant = 'primary',
   size = 'md',

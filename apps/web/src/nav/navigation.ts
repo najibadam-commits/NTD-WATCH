@@ -1,9 +1,10 @@
 import type { ProgrammePage } from '@ntd-watch/domain';
 
-export type BuildStage = 'Stage 2' | 'Stage 3' | 'Stage 4';
+export type BuildStage = 'Built' | 'Stage 3' | 'Stage 4';
 
 export interface ScreenDef {
   id: string;
+  /** Route pattern. `:key` is an assessment client key, `:id` a referral id. */
   path: string;
   titleKey: string;
   stage: BuildStage;
@@ -11,114 +12,118 @@ export interface ScreenDef {
   spec: string;
 }
 
-export const CHW_LOGIN: ScreenDef = {
-  id: 'login',
-  path: '/chw/login',
-  titleKey: 'chw.screens.login',
-  stage: 'Stage 2',
-  spec: 'Screen 01, section 6',
-};
-
-/** Stable demonstration identifier used for the referral status route. */
-export const DEMO_REFERRAL_ID = 'NTDW-2026-000185';
-
+/** The 13 CHW screens of the first milestone, plus the referral list and profile used by the bottom navigation. */
 export const CHW_SCREENS: ScreenDef[] = [
+  {
+    id: 'login',
+    path: '/chw/login',
+    titleKey: 'chw.screens.login',
+    stage: 'Built',
+    spec: 'Screen 01, section 6',
+  },
   {
     id: 'dashboard',
     path: '/chw',
     titleKey: 'chw.screens.dashboard',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 02, section 7',
   },
   {
     id: 'new',
     path: '/chw/assessments/new',
     titleKey: 'chw.screens.newAssessment',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 03, section 8',
   },
   {
     id: 'person',
     path: '/chw/assessments/new/person',
     titleKey: 'chw.screens.person',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 04, section 9',
   },
   {
     id: 'symptoms',
     path: '/chw/assessments/new/symptoms',
     titleKey: 'chw.screens.symptoms',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 05, section 10',
   },
   {
     id: 'context',
     path: '/chw/assessments/new/context',
     titleKey: 'chw.screens.context',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 06, section 11',
   },
   {
     id: 'wash',
     path: '/chw/assessments/new/wash',
     titleKey: 'chw.screens.wash',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 07, section 12',
   },
   {
     id: 'summary',
     path: '/chw/assessments/new/summary',
     titleKey: 'chw.screens.summary',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 08, section 13',
   },
   {
     id: 'result',
-    path: '/chw/assessments/new/result',
+    path: '/chw/assessments/:key/result',
     titleKey: 'chw.screens.result',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 09, section 14',
   },
   {
     id: 'referral',
-    path: '/chw/referrals/new',
+    path: '/chw/assessments/:key/referral',
     titleKey: 'chw.screens.referral',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 10, section 16',
   },
   {
-    id: 'referralList',
-    path: '/chw/referrals',
-    titleKey: 'chw.screens.referralList',
-    stage: 'Stage 2',
-    spec: 'Section 17',
-  },
-  {
     id: 'referralStatus',
-    path: `/chw/referrals/${DEMO_REFERRAL_ID}`,
+    path: '/chw/referrals/:id',
     titleKey: 'chw.screens.referralStatus',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Section 17',
   },
   {
     id: 'followUp',
-    path: '/chw/follow-ups',
+    path: '/chw/follow-ups/:key',
     titleKey: 'chw.screens.followUp',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 11, section 18',
   },
   {
     id: 'history',
     path: '/chw/assessments',
     titleKey: 'chw.screens.history',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Screen 12, section 19',
+  },
+  {
+    id: 'referralList',
+    path: '/chw/referrals',
+    titleKey: 'chw.screens.referralList',
+    stage: 'Built',
+    spec: 'Section 17',
+  },
+  {
+    id: 'followUpList',
+    path: '/chw/follow-ups',
+    titleKey: 'chw.screens.followUpList',
+    stage: 'Built',
+    spec: 'Screen 11, section 18',
   },
   {
     id: 'profile',
     path: '/chw/profile',
     titleKey: 'chw.screens.profile',
-    stage: 'Stage 2',
+    stage: 'Built',
     spec: 'Section 30',
   },
 ];
