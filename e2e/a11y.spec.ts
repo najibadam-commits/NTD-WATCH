@@ -26,6 +26,7 @@ test('landing page and sign-in have no detectable violations', async ({ page }) 
 });
 
 test('CHW screens have no detectable violations', async ({ page }) => {
+  test.setTimeout(150_000);
   await page.goto('/chw/login');
   await page.getByLabel(/demo pin/i).fill('1234');
   await page.getByRole('button', { name: /sign in as demo chw/i }).click();

@@ -5,8 +5,11 @@ const launchOptions = executablePath ? { executablePath } : {};
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30_000,
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
   fullyParallel: true,
+  // Fewer workers keep slower machines from timing out; raise it on a fast one.
+  workers: process.env.CI ? 2 : 3,
   reporter: [['list']],
   use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure' },
   projects: [

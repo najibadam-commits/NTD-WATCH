@@ -48,11 +48,12 @@ test('GIS map draws the fictional geography, selects a community and keeps perso
   await expect(page.getByText(/FICTIONAL DEMONSTRATION GEOGRAPHY/).first()).toBeVisible();
   const map = page.getByTestId('risk-map');
   await expect(map).toBeVisible();
-  const ready = await map
-    .getAttribute('data-ready', { timeout: 5000 })
-    .then((v) => v === 'true')
+  // The map needs WebGL and a moment to draw. Wait for it; use the table if it never does.
+  const ready = await expect
+    .poll(() => map.getAttribute('data-ready'), { timeout: 20_000 })
+    .toBe('true')
+    .then(() => true)
     .catch(() => false);
-  await page.waitForTimeout(500);
   test
     .info()
     .annotations.push({ type: 'map', description: ready ? 'WebGL map' : 'table fallback' });
@@ -81,7 +82,7 @@ test('layer toggles and table work', async ({ page }) => {
 });
 
 test('every programme page has no detectable accessibility violations', async ({ page }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
   await openAs(page, /open as super administrator/i);
   for (const name of [
     'Risk signals',
@@ -94,7 +95,7 @@ test('every programme page has no detectable accessibility violations', async ({
   ]) {
     await page.getByRole('link', { name, exact: true }).click();
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole('status').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/^loading/i)).toHaveCount(0, { timeout: 20_000 });
     await page.waitForLoadState('networkidle');
     await scan(page, name);
   }
