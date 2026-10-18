@@ -93,3 +93,14 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Community names drawn on the fictional demonstration map (DOM markers). */
+.ntd-map-label {
+  pointer-events: none;
+  font: 600 11px/1.2 var(--font-body);
+  color: #0c2030;
+  background: rgb(255 255 255 / 82%);
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+}

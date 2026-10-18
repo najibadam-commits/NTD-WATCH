@@ -26,8 +26,7 @@
 - The role is chosen on the landing page or sign-in screen and kept in `sessionStorage`.
 - Page hiding, route guards and the mock API's `X-Demo-Role` check all run in the browser against that
   choice. Anyone can change it. **None of this is a security control.**
-- The Super Administrator's pages for programme intelligence, users and settings are navigable, but their
-  content is built in Stage 3 and still shows as "Not built yet".
+- Each role also has a simulated **data scope** (Facility: its facility; LGA: Demo Central LGA; State: Arewa Demo State; Admin: all). The mock server clamps every programme query to it. Not a security control either.
 
 ### Separation of person-level and aggregate data
 
@@ -36,3 +35,11 @@
 - Programme screens will read only the aggregate schema (`communityAggregateSchema`), which has no person
   fields. The mock API implements no endpoint that returns person-level records to a programme role.
 - CHWs see the records they captured; the assessment code is not an identity.
+
+## Programme views (Stage 3)
+
+- Programme endpoints return aggregates only. A test checks that no response contains a client key, a referral id or age/sex fields.
+- Selecting a community shows its aggregate summary. The CHW role gets 403 on every programme route; a facility role may call only referral monitoring, scoped to referrals sent to its own facility.
+- **No small-cell suppression.** With 15 communities and a synthetic seed, counts can be very small. A real system needs a disclosure-control policy (minimum counts, suppression, rounding) before any aggregate leaves a secure environment.
+- Exports are labelled synthetic in the file name, a header and footer notice, and a `data_status` column on every row. Spreadsheet formula characters are neutralised.
+- User management and the audit log are simulated and live in the mock server's database only.

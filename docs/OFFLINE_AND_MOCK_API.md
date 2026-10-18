@@ -57,3 +57,20 @@ forward-only referral status; and the full journey through the interface in a si
 - Background sync while the app is closed. Sync only runs while the CHW app is open.
 - Encryption of data on the device.
 - Any real network, authentication, rate limiting or server-side validation beyond the schemas.
+
+## Stage 3 endpoints
+
+| Route                                          | Roles that may call it                 | Returns                                            |
+| ---------------------------------------------- | -------------------------------------- | -------------------------------------------------- |
+| `GET /api/v1/intelligence/summary`             | LGA, State, Admin                      | KPIs, risk mix, communities, weekly series, stages |
+| `GET /api/v1/intelligence/communities/:id`     | LGA, State, Admin (community in scope) | One community's aggregates                         |
+| `GET /api/v1/intelligence/referrals`           | Facility, LGA, State, Admin            | Stage counts, ageing, facility and LGA tables      |
+| `POST /api/v1/reports`                         | LGA, State, Admin                      | Audit entry for a generated report                 |
+| `GET /api/v1/users`, `PATCH /api/v1/users/:id` | Admin                                  | Simulated user directory and audit log             |
+| `GET/PATCH /api/v1/config`                     | Admin                                  | Unresolved-days setting, rule-set summary          |
+| `POST /api/v1/demo/reset`                      | Admin                                  | Clears the mock server and regenerates the seed    |
+
+Filters: `from`, `to` (UTC dates, inclusive) and optional `stateId`, `lgaId`, `wardId`, `communityId`.
+Errors: 400 `BAD_FILTER`, 403 `FORBIDDEN` / `SCOPE_NOT_ALLOWED` / `OUT_OF_SCOPE`, 404, 409 `PROTECTED` / `REFERRAL_EXISTS`, 422 invalid body.
+
+Programme views update only after a CHW record has **synced** to the mock server. The server's seed is fixed the first time it is used and stored with the mock database.

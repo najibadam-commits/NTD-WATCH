@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { EmptyState, LoadingState, RiskBadge } from '@ntd-watch/design-system';
 import { facilityName } from '@ntd-watch/demo-data';
-import { REFERRAL_STAGE_LABELS } from '@ntd-watch/domain';
+import { REFERRAL_STAGE_LABELS, shortReferralCode } from '@ntd-watch/domain';
 import { localDb } from '../../offline/localDb';
 import { RecordSync } from '../components/Shared';
 import { useRecords } from '../useRecord';
@@ -22,7 +22,7 @@ export function ReferralListScreen() {
           {list.items.map((r) => (
             <li key={r.id} className={styles.item}>
               <div className={styles.between}>
-                <Link to={`/chw/referrals/${r.id}`}>{r.id}</Link>
+                <Link to={`/chw/referrals/${r.id}`}>{shortReferralCode(r.id)}</Link>
                 <RiskBadge level={r.riskLevel} />
               </div>
               <span>

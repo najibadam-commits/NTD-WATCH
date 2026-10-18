@@ -1,0 +1,16 @@
+{
+  "name": "@ntd-watch/programme",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ntd-watch/demo-data": "*",
+    "@ntd-watch/domain": "*",
+    "@ntd-watch/rules-engine": "*"
+  }
+}

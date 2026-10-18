@@ -30,7 +30,7 @@ Open the app and choose **Open the CHW app** (any 4-digit demo PIN) or one of th
 npm run typecheck    # TypeScript, strict
 npm run lint         # ESLint, including accessibility rules
 npm run format:check # Prettier
-npm test             # Vitest: rules, domain, offline sync, mock API, UI workflow
+npm test             # Vitest: rules, domain, aggregation, offline sync, mock API, UI, map
 npm run build        # production build to apps/web/dist
 npm run check        # all of the above, in order
 
@@ -49,33 +49,41 @@ worker. Set `CHROMIUM_PATH` to use an already-installed Chromium instead of the 
 | `packages/design-system` | Tokens, base CSS, accessible components including form components       |
 | `packages/domain`        | Roles, permissions, risk, referral pathway, zod entity schemas          |
 | `packages/rules-engine`  | Demonstration rule set (data), validator and evaluator                  |
-| `packages/demo-data`     | Fictional LGAs, communities, facilities and the demo CHW                |
+| `packages/demo-data`     | Fictional hierarchy, CHWs, users and GeoJSON                            |
+| `packages/programme`     | Synthetic seed, aggregation, filters and report builders                |
 | `packages/api-contract`  | Mock API routes and the permissions they need                           |
 | `e2e`                    | Playwright tests, including automated accessibility scans               |
 | `prototype`              | Original single-file prototype, unchanged, reference only               |
 | `docs`                   | Architecture, rules, offline and mock API, safety, privacy, decisions   |
 
-## Status after Stage 2
+## Status after Stage 3
 
-| Area                                                                                        | State                                                                   |
-| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Design tokens and components (buttons, badges, notices, states, form fields, error summary) | **Implemented**, unit tested                                            |
-| Routing, layouts, role-based navigation, access-denied page                                 | **Implemented**, unit tested                                            |
-| Domain model: roles, permissions, risk, referral pathway, schemas                           | **Implemented**, unit tested                                            |
-| Demonstration rules engine (data-driven, validated, labelled)                               | **Implemented**, 35 tests incl. boundaries, missing data, conflicts     |
-| CHW app: 13 milestone screens plus referral list, follow-up list and profile                | **Implemented**, tested in jsdom and in a real browser                  |
-| Form validation, draft persistence, review before saving                                    | **Implemented**, tested                                                 |
-| Referral generation, status timeline, follow-up, history with filter                        | **Implemented**, tested                                                 |
-| Mock API (MSW): assessments, referrals, status updates, follow-ups                          | **Simulated**, tested                                                   |
-| IndexedDB store and sync queue: refresh, offline, reconnect, duplicates, failures, retry    | **Prototype**, 26 tests + browser tests                                 |
-| Sign-in, roles, API permission checks                                                       | **Simulated**, not security controls                                    |
-| Super Administrator access rules (programme intelligence, users, settings)                  | **Implemented as rules**, tested; the pages themselves are placeholders |
-| Programme dashboard pages, charts, filters                                                  | **Placeholders**, Stage 3                                               |
-| MapLibre GIS map with fictional geography                                                   | **Not started**, Stage 3                                                |
-| Programme data fed from CHW activity (aggregation)                                          | **Not started**, Stage 3 and 4                                          |
-| Languages other than English                                                                | **Not implemented** (scaffold and English only)                         |
-| Real backend, authentication, DHIS2 or other integrations, deployment                       | **Not implemented, not approved**                                       |
-| Offline in a real field setting (storage limits, multiple devices, background sync)         | **Untested**                                                            |
-| Manual testing with screen readers and on real phones                                       | **Not done**                                                            |
+| Area                                                                                       | State                                                                     |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Design tokens and components, routing, role-based navigation, access-denied page           | **Implemented**, unit tested                                              |
+| Domain model, demonstration rules engine, CHW app (16 screens), offline queue, mock API    | **Implemented / prototype** (Stage 2), regression tested                  |
+| Fictional hierarchy: 2 states, 5 LGAs, 10 wards, 15 communities, 9 facilities, 11 CHWs     | **Implemented**, synthetic, labelled "Demo"                               |
+| Synthetic seed: about 650 assessments, 75 referrals, 42 follow-ups over 12 weeks           | **Implemented**, deterministic, consistency-checked                       |
+| Programme overview, risk signals, vulnerability, referral monitoring, trends, reports      | **Implemented**, computed from the records, filters shared by every page  |
+| MapLibre GIS map on fictional GeoJSON; separate signal and vulnerability layers            | **Implemented**, table fallback when WebGL is missing                     |
+| Community details on select (aggregate only)                                               | **Implemented**                                                           |
+| User management and settings (Super Administrator)                                         | **Simulated**, stored in the mock server only, with a simulated audit log |
+| Exports (CSV and JSON) labelled synthetic in file name, header, footer and every row       | **Implemented**                                                           |
+| Referral ids: UUID-based, legacy format still accepted                                     | **Implemented**; production ids need backend design                       |
+| Sign-in, roles, scope, API permission checks                                               | **Simulated**, not security controls                                      |
+| Small-cell suppression, formal statistical methods, validated risk or vulnerability scores | **Not implemented**                                                       |
+| Languages other than English                                                               | **Not implemented**                                                       |
+| Real backend, authentication, DHIS2 or other integrations, deployment                      | **Not implemented, not approved**                                         |
+| Offline in a real field setting; manual screen-reader and real-phone testing               | **Untested**                                                              |
 
 See `docs/` for details: `RULES.md`, `OFFLINE_AND_MOCK_API.md`, `PRIVACY_AND_ACCESS.md`, `SAFETY_AND_SCOPE.md`, `ARCHITECTURE.md`, `DECISIONS.md`.
+
+## Programme dashboard (Stage 3)
+
+Choose a programme role on the landing page. The Super Administrator sees every page. Programme views
+read **aggregates only** from the mock API. Records you enter in the CHW app appear there after they
+sync (open the programme view in another tab, or press Refresh). **Settings → Reset demonstration data**
+returns everything to the synthetic seed.
+
+Everything is synthetic: the places, people, boundaries and numbers. The map has no base map and does
+not represent any real geography. Risk results are demonstration rules, not clinically validated.

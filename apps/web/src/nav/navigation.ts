@@ -1,6 +1,6 @@
 import type { ProgrammePage } from '@ntd-watch/domain';
 
-export type BuildStage = 'Built' | 'Stage 3' | 'Stage 4';
+export type BuildStage = 'Built' | 'Stage 4';
 
 export interface ScreenDef {
   id: string;
@@ -147,55 +147,55 @@ export const PROGRAMME_SCREENS: ProgrammeScreenDef[] = [
   {
     page: 'overview',
     titleKey: 'programme.nav.overview',
-    stage: 'Stage 3',
+    stage: 'Built',
     spec: 'Screen 13, section 21',
   },
   {
     page: 'gis',
     titleKey: 'programme.nav.gis',
-    stage: 'Stage 3',
+    stage: 'Built',
     spec: 'Screen 14, sections 22, 23 and 36',
   },
   {
     page: 'signals',
     titleKey: 'programme.nav.signals',
-    stage: 'Stage 3',
+    stage: 'Built',
     spec: 'Screen 16, section 25',
   },
   {
     page: 'vulnerability',
     titleKey: 'programme.nav.vulnerability',
-    stage: 'Stage 3',
+    stage: 'Built',
     spec: 'Screen 15, section 24',
   },
   {
     page: 'referrals',
     titleKey: 'programme.nav.referrals',
-    stage: 'Stage 3',
+    stage: 'Built',
     spec: 'Screen 17, section 26',
   },
   {
     page: 'trends',
     titleKey: 'programme.nav.trends',
-    stage: 'Stage 3',
+    stage: 'Built',
     spec: 'Screen 18, section 27',
   },
   {
     page: 'reports',
     titleKey: 'programme.nav.reports',
-    stage: 'Stage 3',
+    stage: 'Built',
     spec: 'Screen 19, section 28',
   },
   {
     page: 'users',
     titleKey: 'programme.nav.users',
-    stage: 'Stage 3',
+    stage: 'Built',
     spec: 'Screen 20, section 29',
   },
   {
     page: 'settings',
     titleKey: 'programme.nav.settings',
-    stage: 'Stage 3',
+    stage: 'Built',
     spec: 'Sections 30 and 38',
   },
 ];

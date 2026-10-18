@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { RISK_LEVELS } from './risk';
-import { REFERRAL_STAGES } from './referral';
+import { REFERRAL_ID_PATTERN, REFERRAL_STAGES } from './referral';
 
 /**
  * PERSON-LEVEL records and AGGREGATED programme records are deliberately
@@ -63,7 +63,7 @@ export type Assessment = z.infer<typeof assessmentSchema>;
 
 export const referralSchema = z.strictObject({
   demo: z.literal(true),
-  id: z.string().regex(/^NTDW-\d{4}-\d{6}$/),
+  id: z.string().regex(REFERRAL_ID_PATTERN),
   assessmentId: z.string().min(1),
   /** The assessment's idempotency key, so a referral can be matched to its assessment. */
   assessmentKey: z.string().min(8),

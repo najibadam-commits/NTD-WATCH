@@ -99,7 +99,10 @@ export function LandingPage() {
             <tr>
               <td>Programme dashboard</td>
               <td>{PROGRAMME_SCREENS.length}</td>
-              <td>Placeholders. Built in Stage 3</td>
+              <td>
+                Built (Stage 3): overview, fictional GIS map, signals, vulnerability, referral
+                monitoring, trends, reports, users and settings, all from synthetic data
+              </td>
             </tr>
           </tbody>
         </table>

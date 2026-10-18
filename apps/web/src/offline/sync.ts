@@ -1,3 +1,4 @@
+import { notifyDataChanged } from '../programme/dataChannel';
 import { isOnline } from './connectivity';
 import { sendItem } from './apiClient';
 import { localDb, type OutboxItem } from './localDb';
@@ -57,6 +58,7 @@ export function syncOutbox(options: SyncOptions = {}): Promise<SyncSummary> {
         rerunForce = false;
         total = merge(total, await run({ ...options, force }));
       }
+      if (total.sent > 0) notifyDataChanged();
       return total;
     } finally {
       // No await between the last check of `rerunRequested` and here, so a caller can never

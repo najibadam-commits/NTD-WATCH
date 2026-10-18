@@ -42,31 +42,51 @@ export const API_ROUTES = {
     anyOf: ['referral:update_status'],
   },
   submitFollowUp: { method: 'POST', path: '/api/v1/follow-ups', anyOf: ['followup:perform'] },
-  stateIntelligence: {
+  /** Aggregated programme intelligence. Never returns a person-level record. */
+  programmeSummary: {
     method: 'GET',
-    path: '/api/v1/intelligence/state',
-    anyOf: ['programme:view_state'],
+    path: '/api/v1/intelligence/summary',
+    anyOf: ['programme:view_lga', 'programme:view_state'],
   },
-  lgaIntelligence: {
+  communityDetail: {
     method: 'GET',
-    path: '/api/v1/intelligence/lga',
-    anyOf: ['programme:view_lga'],
+    path: '/api/v1/intelligence/communities/:id',
+    anyOf: ['programme:view_lga', 'programme:view_state'],
   },
-  generateReport: { method: 'POST', path: '/api/v1/reports', anyOf: ['reports:generate'] },
-  manageUsers: { method: 'GET', path: '/api/v1/users', anyOf: ['users:manage'] },
-  manageRules: { method: 'GET', path: '/api/v1/config/rules', anyOf: ['rules:manage'] },
+  referralMonitor: {
+    method: 'GET',
+    path: '/api/v1/intelligence/referrals',
+    anyOf: ['programme:monitor_referrals', 'referral:view_relevant'],
+  },
+  recordReport: { method: 'POST', path: '/api/v1/reports', anyOf: ['reports:generate'] },
+  listUsers: { method: 'GET', path: '/api/v1/users', anyOf: ['users:manage'] },
+  updateUser: { method: 'PATCH', path: '/api/v1/users/:id', anyOf: ['users:manage'] },
+  getConfig: { method: 'GET', path: '/api/v1/config', anyOf: ['config:manage', 'rules:manage'] },
+  updateConfig: { method: 'PATCH', path: '/api/v1/config', anyOf: ['config:manage'] },
+  resetDemo: { method: 'POST', path: '/api/v1/demo/reset', anyOf: ['config:manage'] },
 } as const satisfies Record<string, RouteSpec>;
 
 export type ApiRouteName = keyof typeof API_ROUTES;
 
-/** Which routes the Stage 2 mock actually implements. The rest are contract only. */
+/** Which routes the mock actually implements (Stages 2 and 3). The rest are contract only. */
 export const IMPLEMENTED_ROUTES: readonly ApiRouteName[] = [
   'submitAssessment',
   'createReferral',
   'getReferral',
   'updateReferral',
   'submitFollowUp',
+  'programmeSummary',
+  'communityDetail',
+  'referralMonitor',
+  'recordReport',
+  'listUsers',
+  'updateUser',
+  'getConfig',
+  'updateConfig',
+  'resetDemo',
 ];
 
 export const DEMO_ROLE_HEADER = 'X-Demo-Role';
+/** SIMULATED data scope of the caller, e.g. `lga:lga-c`. Not a security control. */
+export const DEMO_SCOPE_HEADER = 'X-Demo-Scope';
 export const IDEMPOTENCY_HEADER = 'Idempotency-Key';

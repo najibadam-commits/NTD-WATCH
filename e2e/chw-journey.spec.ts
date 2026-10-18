@@ -66,7 +66,9 @@ test('assessment to referral to follow-up works end to end in a real browser', a
   await page.getByRole('link', { name: /generate referral/i }).click();
   await page.getByRole('radio', { name: /demo north primary health centre/i }).check();
   await page.getByRole('button', { name: /generate referral/i }).click();
-  await expect(page.getByText(/^Referral ID NTDW-\d{4}-\d{6}$/)).toBeVisible();
+  await expect(
+    page.getByText(/^Referral ID NTDW-\d{4}-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/),
+  ).toBeVisible();
   const accept = page.getByRole('button', { name: /mark as accepted/i });
   await expect(accept).toBeEnabled({ timeout: 15_000 });
   await accept.click();

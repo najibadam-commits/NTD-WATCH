@@ -24,9 +24,11 @@ beforeEach(async () => {
 });
 afterEach(() => mockServer.resetHandlers());
 
-function renderAt(path: string) {
+/** Routes load lazily, so wait until the first route is ready before drawing it. */
+async function renderAt(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createMemoryRouter(routes, { initialEntries: [path] });
+  await waitFor(() => expect(router.state.initialized).toBe(true));
   render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
@@ -36,19 +38,25 @@ function renderAt(path: string) {
 }
 
 const user = () => userEvent.setup();
-const group = (name: RegExp | string) => screen.getByRole('group', { name });
+const group = (name: RegExp | string) => screen.findByRole('group', { name });
 const pick = async (u: ReturnType<typeof user>, g: RegExp | string, option: RegExp | string) => {
-  const scope = within(group(g));
+  const scope = within(await group(g));
   return u.click(
     scope.queryByRole('radio', { name: option }) ?? scope.getByRole('checkbox', { name: option }),
   );
 };
-const press = (u: ReturnType<typeof user>, name: RegExp | string) =>
-  u.click(screen.getByRole('button', { name }));
+const press = async (u: ReturnType<typeof user>, name: RegExp | string) =>
+  u.click(await screen.findByRole('button', { name }));
+
+/** Starts a new assessment and waits for the first form screen. */
+async function begin(u: ReturnType<typeof user>) {
+  await u.click(await screen.findByRole('button', { name: /start assessment/i }));
+  await screen.findByRole('heading', { name: 'Person information' });
+}
 
 /** Fills the whole assessment with a pattern that the demonstration rules rate as HIGH. */
 async function fillAssessment(u: ReturnType<typeof user>) {
-  await u.click(screen.getByRole('button', { name: /start assessment/i }));
+  await begin(u);
 
   await pick(u, /age group/i, '5 to 14 years');
   await pick(u, /^sex/i, 'Female');
@@ -75,8 +83,8 @@ async function fillAssessment(u: ReturnType<typeof user>) {
 describe('assessment form: validation and persistence', () => {
   it('blocks each step until required fields are answered, with clear messages', async () => {
     const u = user();
-    renderAt('/chw/assessments/new');
-    await u.click(screen.getByRole('button', { name: /start assessment/i }));
+    await renderAt('/chw/assessments/new');
+    await begin(u);
 
     await press(u, /continue/i);
     const alert = await screen.findByRole('alert');
@@ -102,16 +110,18 @@ describe('assessment form: validation and persistence', () => {
 
   it('keeps answers when going back, forward, or after a page refresh', async () => {
     const u = user();
-    const router = renderAt('/chw/assessments/new');
-    await u.click(screen.getByRole('button', { name: /start assessment/i }));
+    const router = await renderAt('/chw/assessments/new');
+    await begin(u);
     await pick(u, /age group/i, '0 to 4 years');
     await pick(u, /^sex/i, 'Female');
     await press(u, /continue/i);
     await pick(u, /what has the person reported/i, 'Fever');
     await press(u, /^back$/i);
 
-    expect(within(group(/age group/i)).getByRole('radio', { name: '0 to 4 years' })).toBeChecked();
-    expect(within(group(/^sex/i)).getByRole('radio', { name: 'Female' })).toBeChecked();
+    expect(
+      within(await group(/age group/i)).getByRole('radio', { name: '0 to 4 years' }),
+    ).toBeChecked();
+    expect(within(await group(/^sex/i)).getByRole('radio', { name: 'Female' })).toBeChecked();
 
     // A refresh reloads the app: the draft comes back from session storage.
     const saved = JSON.parse(sessionStorage.getItem('ntd-watch-draft') ?? '{}') as {
@@ -124,8 +134,8 @@ describe('assessment form: validation and persistence', () => {
 
   it('"None of these" and real symptoms are never selected together', async () => {
     const u = user();
-    renderAt('/chw/assessments/new');
-    await u.click(screen.getByRole('button', { name: /start assessment/i }));
+    await renderAt('/chw/assessments/new');
+    await begin(u);
     await pick(u, /age group/i, '0 to 4 years');
     await pick(u, /^sex/i, 'Male');
     await press(u, /continue/i);
@@ -142,7 +152,7 @@ describe('assessment form: validation and persistence', () => {
     const u = user();
     useDraft.getState().start();
     useDraft.getState().update({ ageGroup: '0-4', sex: 'male' });
-    renderAt('/chw/assessments/new/summary');
+    await renderAt('/chw/assessments/new/summary');
 
     await press(u, /save and see demonstration result/i);
     const alert = await screen.findByRole('alert');
@@ -160,7 +170,7 @@ describe('assessment form: validation and persistence', () => {
 describe('assessment-to-referral-to-follow-up journey', () => {
   it('works end to end without a dead end', async () => {
     const u = user();
-    renderAt('/chw/login');
+    await renderAt('/chw/login');
 
     // sign in (simulated)
     await u.type(screen.getByLabelText(/demo pin/i), '4321');
@@ -252,7 +262,7 @@ describe('assessment-to-referral-to-follow-up journey', () => {
   it('captures offline, shows it as waiting, and syncs when the connection returns', async () => {
     const u = user();
     useConnectivity.getState().setSimulatedOffline(true);
-    renderAt('/chw/assessments/new');
+    await renderAt('/chw/assessments/new');
     await fillAssessment(u);
     await press(u, /save and see demonstration result/i);
 
@@ -275,7 +285,7 @@ describe('assessment-to-referral-to-follow-up journey', () => {
     const u = user();
     const { useMockControls } = await import('../mock/controls');
     useMockControls.getState().setServerDown(true);
-    renderAt('/chw/assessments/new');
+    await renderAt('/chw/assessments/new');
     await fillAssessment(u);
     await press(u, /save and see demonstration result/i);
 
@@ -295,17 +305,17 @@ describe('assessment-to-referral-to-follow-up journey', () => {
 
 describe('empty and not-found states', () => {
   it('shows an empty history, an empty referral list and a clear message for unknown records', async () => {
-    renderAt('/chw/assessments');
+    await renderAt('/chw/assessments');
     expect(await screen.findByText(/no assessments saved on this device yet/i)).toBeInTheDocument();
   });
 
   it('says so when a result or referral is not on this device', async () => {
-    renderAt('/chw/assessments/nope-00000000/result');
+    await renderAt('/chw/assessments/nope-00000000/result');
     expect(await screen.findByText(/not on this device/i)).toBeInTheDocument();
   });
 
   it('sends someone who opens a form step without a draft back to the start', async () => {
-    renderAt('/chw/assessments/new/symptoms');
+    await renderAt('/chw/assessments/new/symptoms');
     expect(await screen.findByRole('heading', { name: /new assessment/i })).toBeInTheDocument();
   });
 });

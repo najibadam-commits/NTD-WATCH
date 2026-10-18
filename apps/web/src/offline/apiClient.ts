@@ -1,5 +1,6 @@
 import { DEMO_ROLE_HEADER, IDEMPOTENCY_HEADER } from '@ntd-watch/api-contract';
 import type { Referral, Role } from '@ntd-watch/domain';
+import { notifyDataChanged } from '../programme/dataChannel';
 import type { OutboxItem } from './localDb';
 
 export type SendOutcome =
@@ -76,5 +77,6 @@ export async function simulateFacilityUpdate(id: string, stage: string): Promise
     const p = (await response.json().catch(() => ({}))) as { message?: string };
     throw new Error(p.message ?? `HTTP ${response.status}`);
   }
+  notifyDataChanged();
   return ((await response.json()) as { referral: Referral }).referral;
 }

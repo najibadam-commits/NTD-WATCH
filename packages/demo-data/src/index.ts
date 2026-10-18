@@ -1,7 +1,7 @@
 /**
- * STAGE 1 SCAFFOLD: seeded random generator and demo labels.
- * Synthetic geography, facilities, users and records arrive in Stages 2 and 3.
- * All generated data must stay synthetic and carry `demo: true`.
+ * Synthetic data for the NTD-WATCH demonstration: a seeded random generator, a fictional
+ * administrative hierarchy, fictional map geometry and a synthetic user directory.
+ * Everything exported from here is fictional and must stay labelled as demonstration data.
  */
 export const DEMO_STATE_NAME = 'Arewa Demo State';
 export const DEMO_LABEL = 'DEMO DATA';
@@ -18,3 +18,6 @@ export function createRng(seed: number): () => number {
 }
 
 export * from './reference';
+export * from './profiles';
+export * from './users';
+export * from './geography';

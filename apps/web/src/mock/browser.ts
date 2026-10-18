@@ -1,11 +1,14 @@
-import { handlers } from './handlers';
-
 /**
  * Starts the MOCK API in the browser using a service worker. The whole "backend" is this
  * in-browser simulation. There is no production backend.
  */
 export async function startMockApi(): Promise<void> {
-  const { setupWorker } = await import('msw/browser');
+  // Loaded together and on demand: the mock server (and the synthetic data generator it uses) is
+  // its own chunk, not part of the first-paint code.
+  const [{ setupWorker }, { handlers }] = await Promise.all([
+    import('msw/browser'),
+    import('./handlers'),
+  ]);
   const worker = setupWorker(...handlers);
   await worker.start({
     onUnhandledFrame: 'bypass',
