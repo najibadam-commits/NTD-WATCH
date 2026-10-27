@@ -72,7 +72,7 @@ test('GIS map draws the fictional geography, selects a community and keeps perso
 test('layer toggles and table work', async ({ page }) => {
   await openAs(page, /open as super administrator/i);
   await page.getByRole('link', { name: 'GIS map' }).click();
-  const toggle = page.getByLabel('Demonstration risk signals');
+  const toggle = page.getByRole('checkbox', { name: 'Demonstration risk signals' });
   await expect(toggle).toBeChecked();
   await toggle.uncheck();
   await expect(
@@ -162,4 +162,24 @@ test('a CHW assessment appears in the programme view after it syncs', async ({ b
 
   await expect.poll(() => kpi(chw, 'Assessments'), { timeout: 15_000 }).toBe(before + 1);
   await context.close();
+});
+
+test('programme priority shows demonstration labelling, data confidence and no person-level data', async ({
+  page,
+}) => {
+  await openAs(page, /open as super administrator/i);
+  await page.goto('/programme/priority');
+  const section = page.getByTestId('intelligence');
+  await expect(section).toBeVisible();
+  await expect(section.getByText('DEMONSTRATION DATA').first()).toBeVisible();
+  await expect(section.getByText(/not a validated epidemiological model/i).first()).toBeVisible();
+  await expect(section.getByText('Data confidence').first()).toBeVisible();
+  const text = await section.innerText();
+  expect(text).not.toMatch(/PC-[0-9A-F]{4}-[0-9A-F]{4}|seed-fgs|CHW-\d{4}/);
+  expect(text).not.toMatch(/has FGS|prevalence is high|high risk of FGS/i);
+
+  await page.goto('/programme/gis');
+  await page.getByRole('radio', { name: 'Programme priority' }).check();
+  await expect(page.getByTestId('priority-legend')).toContainText(/Fainter colour/);
+  await expect(page.getByText('DEMONSTRATION DATA').first()).toBeVisible();
 });

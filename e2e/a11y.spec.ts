@@ -109,3 +109,23 @@ test('Stage 7 programme pages have no detectable violations', async ({ page }) =
   await expect(page.getByRole('heading', { name: /referral detail/i })).toBeVisible();
   await scan(page, 'facility inbox with detail');
 });
+
+test('P2 community programme priority views have no detectable violations', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/');
+  await page.getByRole('button', { name: /open as super administrator/i }).click();
+  await page.goto('/programme/priority');
+  await expect(page.getByTestId('intelligence')).toBeVisible();
+  await expect(page.getByText('DEMONSTRATION DATA').first()).toBeVisible();
+  await scan(page, 'community programme priority');
+  await page
+    .getByRole('button', { name: /^Why this priority/ })
+    .first()
+    .click();
+  await scan(page, 'community programme priority with explanation');
+  await page.goto('/programme/gis');
+  await expect(page.getByTestId('risk-map')).toBeVisible();
+  await page.getByRole('radio', { name: 'Programme priority' }).check();
+  await expect(page.getByTestId('priority-legend')).toBeVisible();
+  await scan(page, 'GIS programme priority view');
+});

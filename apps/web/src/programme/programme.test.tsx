@@ -50,6 +50,10 @@ const fake = vi.hoisted(() => {
     setLayoutProperty(id: string, _p: string, v: string) {
       this.visibility[id] = v;
     }
+    paint: Record<string, unknown> = {};
+    setPaintProperty(id: string, prop: string, v: unknown) {
+      this.paint[`${id}:${prop}`] = v;
+    }
     setFilter(id: string, f: unknown) {
       this.filters[id] = f;
     }
@@ -421,5 +425,71 @@ describe('users and settings (administrator)', () => {
     expect(await screen.findByText(/deletes records entered/i)).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: /yes, reset/i }));
     expect(await screen.findByText(/demonstration data reset/i)).toBeInTheDocument();
+  });
+});
+
+describe('community programme priority (P2)', () => {
+  it('shows the priority section on the priority page with the demonstration notice and confidence', async () => {
+    await open('/programme/priority');
+    const section = await screen.findByTestId('intelligence');
+    expect(within(section).getAllByText('DEMONSTRATION DATA').length).toBeGreaterThan(0);
+    expect(within(section).getByText(/not a validated epidemiological model/i)).toBeInTheDocument();
+    expect(within(section).getByText(/Counts below 5 are not shown/i)).toBeInTheDocument();
+    const table = within(section).getByRole('list', { name: /Community signals/ });
+    expect(
+      within(table).getAllByText(/High priority for programme attention/).length,
+    ).toBeGreaterThan(0);
+    expect(within(table).getAllByText('Insufficient').length).toBeGreaterThan(0);
+    expect(within(table).getAllByText('Fewer than 5').length).toBeGreaterThan(0);
+  });
+
+  it('explains a priority in words on request, with no figures and no claim about disease', async () => {
+    const u = userEvent.setup();
+    await open('/programme/priority');
+    const section = await screen.findByTestId('intelligence');
+    const [first] = within(section).getAllByRole('button', {
+      name: /^Why this priority/,
+    });
+    await u.click(first!);
+    const region = within(section).getByRole('region', { name: /has this programme priority/ });
+    expect(region.textContent).toMatch(/data confidence/);
+    expect(region.textContent).not.toMatch(/\d/);
+    expect(region.textContent).not.toMatch(/has FGS|prevalence is|high risk/i);
+  });
+
+  it('shows no case code, participant key or worker id on the page', async () => {
+    await open('/programme/priority');
+    const section = await screen.findByTestId('intelligence');
+    expect(section.textContent).not.toMatch(/PC-[0-9A-F]{4}-[0-9A-F]{4}|seed-fgs|CHW-\d{4}/);
+  });
+
+  it('offers a programme-priority map colouring with a legend that explains faded colour', async () => {
+    const u = userEvent.setup();
+    await open('/programme/gis');
+    await waitFor(() =>
+      expect(screen.getByTestId('risk-map')).toHaveAttribute('data-ready', 'true'),
+    );
+    expect(screen.getAllByText('DEMONSTRATION DATA').length).toBeGreaterThan(0);
+    await u.click(screen.getByRole('radio', { name: 'Programme priority' }));
+    const legend = await screen.findByTestId('priority-legend');
+    expect(legend.textContent).toMatch(/Fainter colour means lower data confidence/);
+    expect(legend.textContent).toMatch(/does not show disease or prevalence/);
+    const map = fake.state.maps[0] as InstanceType<typeof fake.FakeMap>;
+    await waitFor(() => expect(map.paint['community-fill:fill-opacity']).toBeDefined());
+    expect(JSON.stringify(map.paint['community-fill:fill-opacity'])).toContain('confidenceRank');
+    // The table alternative carries the same priority and confidence.
+    const table = screen.getByRole('table');
+    expect(
+      within(table).getAllByText(/Priority for review|High priority for programme attention/)
+        .length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('is not offered to the facility role', async () => {
+    await open('/programme/priority', 'facility');
+    expect(
+      await screen.findByText(/This page is hidden for the Health Facility Worker role/),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('intelligence')).not.toBeInTheDocument();
   });
 });
