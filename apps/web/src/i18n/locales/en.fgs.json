@@ -76,8 +76,7 @@
     "signalsStep": {
       "title": "How she has been feeling",
       "intro": "Ask gently. She does not have to answer every question.",
-      "legend": "Has she noticed any of these recently?",
-      "pending": "These questions are demonstration placeholders. They have not been clinically reviewed."
+      "legend": "Has she noticed any of these recently?"
     },
     "contextStep": {
       "title": "Support and access",
@@ -140,6 +139,7 @@
         "examination": "examination",
         "referralCapacity": "referral capacity"
       }
-    }
+    },
+    "clinicalContentNotice": "FGS clinical content: demonstration placeholder — source review and clinical validation pending."
   }
 }

@@ -63,6 +63,7 @@ export function FgsStartScreen() {
       <p>{t('fgs.start.intro')}</p>
       <Notice tone="info">{t('fgs.start.privacy')}</Notice>
       <Notice tone="demo">{t('fgs.start.demo')}</Notice>
+      <Notice tone="demo">{t('fgs.clinicalContentNotice')}</Notice>
       <p className={styles.muted}>{t('fgs.start.forWorker')}</p>
       {draft ? (
         <>
@@ -270,6 +271,7 @@ function ExposureFields() {
   return (
     <>
       <p className={styles.muted}>{t('fgs.exposureStep.intro')}</p>
+      <Notice tone="demo">{t('fgs.clinicalContentNotice')}</Notice>
       <ChoiceGroup
         multiple
         legend={t('fgs.exposureStep.legend')}
@@ -315,7 +317,7 @@ function SignalFields() {
         error={error}
         onChange={(next) => update({ signals: nextMulti(draft.signals, next) })}
       />
-      <Notice tone="demo">{t('fgs.signalsStep.pending')}</Notice>
+      <Notice tone="demo">{t('fgs.clinicalContentNotice')}</Notice>
     </>
   );
 }
@@ -341,6 +343,7 @@ function ContextFields() {
   const safeError = useFgsFieldError('safeContact');
   return (
     <>
+      <Notice tone="demo">{t('fgs.clinicalContentNotice')}</Notice>
       <ChoiceGroup
         multiple
         legend={t('fgs.contextStep.legend')}

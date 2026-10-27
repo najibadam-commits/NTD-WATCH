@@ -104,6 +104,7 @@ export function FgsResult({
         </Notice>
       ) : null}
 
+      <Notice tone="demo">{t('fgs.clinicalContentNotice')}</Notice>
       <Notice tone="info">{SIGNAL_NOTICE}</Notice>
       <p className={styles.muted}>{DISCLAIMER}</p>
       <p className={styles.muted}>
