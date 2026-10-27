@@ -7,6 +7,7 @@ import { inputFromAssessment } from '../buildAssessment';
 import { localDb } from '../../offline/localDb';
 import { LinkButton } from '../../components/LinkButton';
 import { DemoLabel, RecordSync } from '../components/Shared';
+import { FgsResult } from '../fgs/FgsResult';
 import { useRecord } from '../useRecord';
 import styles from '../chw.module.css';
 
@@ -28,6 +29,10 @@ export function ResultScreen() {
         action={<Link to="/chw/assessments">{t('chw.history.title')}</Link>}
       />
     );
+  }
+
+  if (a.module === 'FGS') {
+    return <FgsResult a={a} hasReferral={!!referral.value} referralId={referral.value?.id} />;
   }
 
   const level = a.riskLevel;

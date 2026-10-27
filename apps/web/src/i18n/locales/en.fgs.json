@@ -23,6 +23,111 @@
       "CLINICAL_ASSESSMENT": "Clinical assessment recommended",
       "URGENT_CLINICAL_REVIEW": "Urgent clinical review recommended"
     },
-    "categoryNote": "This is a programme and referral category. It is not a diagnosis and not a clinical severity."
+    "categoryNote": "This is a programme and referral category. It is not a diagnosis and not a clinical severity.",
+    "noneOfThese": "None of these",
+    "preferNotToSay": "Prefer not to say",
+    "start": {
+      "title": "Women and girls: community assessment",
+      "intro": "A short, private set of questions to help decide whether she should be offered a visit to a health facility.",
+      "privacy": "No name, phone number, address or exact age is collected. A case code is created instead.",
+      "demo": "Demonstration only. Use made-up information. The questions and categories are placeholders pending clinical review.",
+      "forWorker": "Ask in a private place, and only when she is comfortable. She can stop at any time.",
+      "draftFound": "An assessment is already in progress (case {{code}}).",
+      "begin": "Start"
+    },
+    "consent": {
+      "title": "Her permission",
+      "readAloud": "Please read this to her in your own words.",
+      "points": {
+        "what": "We will ask a few private questions about water contact and how she has been feeling.",
+        "private": "Her answers are kept under a case code, not her name.",
+        "choice": "She can say no, and nothing will be recorded.",
+        "withdraw": "She can change her mind later, and ask for her record to be deleted."
+      },
+      "question": "Does she agree to the questions?",
+      "yes": "Yes, she agrees",
+      "no": "No, she does not agree",
+      "demo": "Demonstration wording ({{version}}). Not legally reviewed."
+    },
+    "declined": {
+      "title": "Thank you",
+      "body": "That is completely fine. She does not have to answer.",
+      "nothingRecorded": "No answers or details about her were saved."
+    },
+    "participant": {
+      "title": "About her",
+      "noExactAge": "Only an age range is needed. Do not ask for a date of birth.",
+      "ageBand": "Age range",
+      "minorTitle": "Girl under 18",
+      "minorNotice": "Take extra care with privacy and involve a trusted adult as local safeguarding guidance requires. Age-specific wording is a placeholder pending safeguarding review."
+    },
+    "ageBand": {
+      "under_10": "Under 10",
+      "10_14": "10 to 14",
+      "15_17": "15 to 17",
+      "18_49": "18 to 49",
+      "50_plus": "50 or older"
+    },
+    "exposureStep": {
+      "title": "Water contact",
+      "intro": "Ask about the past few months.",
+      "legend": "Which of these apply to her?"
+    },
+    "signalsStep": {
+      "title": "How she has been feeling",
+      "intro": "Ask gently. She does not have to answer every question.",
+      "legend": "Has she noticed any of these recently?",
+      "pending": "These questions are demonstration placeholders. They have not been clinically reviewed."
+    },
+    "contextStep": {
+      "title": "Support and access",
+      "legend": "Anything that makes a visit harder?",
+      "hint": "Choose any that apply.",
+      "distress": "Does she seem very worried or upset about how she is feeling?",
+      "distressHint": "If yes, a supportive counselling option is offered. This is not an assessment of her mental health.",
+      "safeContact": "Is it safe to follow up with her?",
+      "safeContactHint": "For example, can we visit again without causing her any difficulty?"
+    },
+    "steps": {
+      "consent": "Permission",
+      "participant": "About her",
+      "exposure": "Water contact",
+      "signals": "How she has been feeling",
+      "context": "Support and access"
+    },
+    "summary": {
+      "intro": "Check the answers with her. Nothing is saved until you confirm.",
+      "caseId": "Case code",
+      "noneReported": "None reported",
+      "submit": "Save and see guidance"
+    },
+    "validation": {
+      "consent": "Choose whether she agrees.",
+      "ageBand": "Choose an age range.",
+      "community": "Choose a community.",
+      "exposure": "Choose at least one option, or None of these.",
+      "signals": "Choose at least one option, or None of these.",
+      "distress": "Choose an answer.",
+      "safeContact": "Choose an answer."
+    },
+    "result": {
+      "title": "Guidance for this case",
+      "category": "Signal category",
+      "ruleStatus": "Rule status: DEMO. Clinical validation pending.",
+      "why": "Signals noted",
+      "noSignals": "No signals were reported.",
+      "next": "What to do next",
+      "supportTitle": "Supportive counselling",
+      "support": "She seemed worried or upset. Offer a supportive conversation and let the facility know she would welcome counselling support.",
+      "privacyTitle": "Her choices",
+      "withdraw": "She no longer agrees",
+      "withdrawConfirm": "Stop using this record? No new referral or follow-up can be added.",
+      "withdrawn": "Consent withdrawn. This record is no longer used.",
+      "delete": "Delete this record",
+      "deleteConfirm": "Delete everything held about this case? This cannot be undone.",
+      "deleted": "Deletion requested.",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    }
   }
 }

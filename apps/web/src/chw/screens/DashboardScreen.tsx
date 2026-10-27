@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Notice, RiskBadge } from '@ntd-watch/design-system';
+import { Notice } from '@ntd-watch/design-system';
 import { DEMO_CHW, communityName } from '@ntd-watch/demo-data';
 import { DEMO_DATA_NOTICE, isHigherRisk, stageIndex } from '@ntd-watch/domain';
 import { localDb } from '../../offline/localDb';
 import { LinkButton } from '../../components/LinkButton';
 import { useRecord } from '../useRecord';
+import { AssessmentBadge } from '../fgs/category';
 import styles from '../chw.module.css';
 
 export function DashboardScreen() {
@@ -54,6 +55,9 @@ export function DashboardScreen() {
       <LinkButton block to="/chw/assessments/new">
         {t('chw.dashboard.startNew')}
       </LinkButton>
+      <LinkButton block variant="secondary" to="/chw/fgs">
+        {t('fgs.start.title')}
+      </LinkButton>
       <div className={styles.grid}>
         {tiles.map(([label, value]) => (
           <div key={label} className={styles.stat}>
@@ -73,7 +77,7 @@ export function DashboardScreen() {
               <li key={a.clientKey} className={styles.item}>
                 <div className={styles.between}>
                   <Link to={`/chw/assessments/${a.clientKey}/result`}>{a.id}</Link>
-                  {a.riskLevel ? <RiskBadge level={a.riskLevel} /> : null}
+                  <AssessmentBadge a={a} />
                 </div>
               </li>
             ))}

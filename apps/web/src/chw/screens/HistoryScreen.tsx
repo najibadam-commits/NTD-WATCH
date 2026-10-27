@@ -1,13 +1,14 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { EmptyState, LoadingState, RiskBadge } from '@ntd-watch/design-system';
+import { EmptyState, LoadingState } from '@ntd-watch/design-system';
 import { communityName } from '@ntd-watch/demo-data';
 import { isHigherRisk } from '@ntd-watch/domain';
 import { localDb } from '../../offline/localDb';
 import { LinkButton } from '../../components/LinkButton';
 import { RecordSync } from '../components/Shared';
 import { useRecords } from '../useRecord';
+import { AssessmentBadge } from '../fgs/category';
 import styles from '../chw.module.css';
 
 export function HistoryScreen() {
@@ -68,7 +69,7 @@ export function HistoryScreen() {
                 <Link to={`/chw/assessments/${a.clientKey}/result`}>
                   {a.id} · {new Date(a.capturedAt).toLocaleDateString()}
                 </Link>
-                {a.riskLevel ? <RiskBadge level={a.riskLevel} /> : null}
+                <AssessmentBadge a={a} />
               </div>
               <span className={styles.muted}>
                 {communityName(a.communityId)}

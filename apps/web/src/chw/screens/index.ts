@@ -15,3 +15,13 @@ export { StartScreen } from './StartScreen';
 export { SummaryScreen } from './SummaryScreen';
 export { SymptomsScreen } from './SymptomsScreen';
 export { WashScreen } from './WashScreen';
+export {
+  FgsConsentScreen,
+  FgsContextScreen,
+  FgsDeclinedScreen,
+  FgsExposureScreen,
+  FgsParticipantScreen,
+  FgsSignalsScreen,
+  FgsStartScreen,
+  FgsSummaryScreen,
+} from '../fgs/screens';
