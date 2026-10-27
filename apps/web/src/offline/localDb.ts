@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie';
-import type { Assessment, FollowUp, Referral } from '@ntd-watch/domain';
+import type { Assessment, ConsentEvent, FollowUp, Referral } from '@ntd-watch/domain';
 
-export type OutboxKind = 'assessment' | 'referral' | 'followUp';
+export type OutboxKind = 'assessment' | 'referral' | 'followUp' | 'consentEvent';
 export type OutboxStatus = 'pending' | 'syncing' | 'failed' | 'rejected' | 'synced';
 
 export interface OutboxItem {
@@ -11,7 +11,7 @@ export interface OutboxItem {
   clientKey: string;
   /** Outbox key of an item that must reach the server first. */
   dependsOn: string | null;
-  payload: Assessment | Referral | FollowUp;
+  payload: Assessment | Referral | FollowUp | ConsentEvent;
   status: OutboxStatus;
   attempts: number;
   lastError: string | null;

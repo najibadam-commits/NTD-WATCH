@@ -49,10 +49,22 @@ export async function loadRecords(): Promise<ProgrammeRecords> {
   // seeded original (or as a new live referral). The stored copy wins, so one referral is never
   // counted twice.
   const stored = new Map(referrals.map((r) => [r.id, r]));
+  // Consent withdrawn: the record stays on the mock server but leaves every programme view.
+  const withdrawn = new Set(
+    assessments.filter((a) => a.consent?.state === 'WITHDRAWN').map((a) => a.clientKey),
+  );
+  const active = assessments.filter((a) => !withdrawn.has(a.clientKey));
+  const activeReferrals = referrals.filter((r) => !withdrawn.has(r.assessmentKey));
   return {
-    assessments: [...seedCache.records.assessments, ...assessments],
-    referrals: [...seedCache.records.referrals.filter((r) => !stored.has(r.id)), ...referrals],
-    followUps: [...seedCache.records.followUps, ...followUps],
+    assessments: [...seedCache.records.assessments, ...active],
+    referrals: [
+      ...seedCache.records.referrals.filter((r) => !stored.has(r.id)),
+      ...activeReferrals,
+    ],
+    followUps: [
+      ...seedCache.records.followUps,
+      ...followUps.filter((f) => !withdrawn.has(f.assessmentKey)),
+    ],
   };
 }
 

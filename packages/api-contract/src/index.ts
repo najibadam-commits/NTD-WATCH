@@ -43,6 +43,12 @@ export const API_ROUTES = {
     anyOf: ['referral:update_status'],
   },
   submitFollowUp: { method: 'POST', path: '/api/v1/follow-ups', anyOf: ['followup:perform'] },
+  /** FemTech: consent withdrawal and deletion requests for a person-level record. */
+  submitConsentEvent: {
+    method: 'POST',
+    path: '/api/v1/consent-events',
+    anyOf: ['assessment:create'],
+  },
   /** Aggregated programme intelligence. Never returns a person-level record. */
   programmeSummary: {
     method: 'GET',
@@ -77,6 +83,7 @@ export const IMPLEMENTED_ROUTES: readonly ApiRouteName[] = [
   'referralInbox',
   'updateReferral',
   'submitFollowUp',
+  'submitConsentEvent',
   'programmeSummary',
   'communityDetail',
   'referralMonitor',

@@ -70,3 +70,41 @@ export function makeFollowUp(key = 'key-follow-0001', assessmentKey = 'key-asses
     needsFurtherReferral: false,
   };
 }
+
+/** A synthetic FemTech (FGS module) assessment with consent given. Ids are catalogue placeholders. */
+export function makeFgsAssessment(
+  key = 'key-fgs-0001',
+  patch: Partial<Assessment> = {},
+): Assessment {
+  return makeAssessment(key, {
+    id: 'A-FGS01',
+    ageGroup: '18_49',
+    sex: 'female',
+    symptoms: ['fgs_sig_demo_a'],
+    duration: null,
+    progression: null,
+    riskLevel: 'MODERATE',
+    riskWhy: ['An indicator was reported together with a relevant exposure.'],
+    ruleSetId: 'demo-fgs',
+    ruleSetVersion: '0.1.0',
+    ruleSetStatus: 'DEMO',
+    module: 'FGS',
+    caseId: 'PC-3F9A-07C2',
+    consent: {
+      state: 'GIVEN',
+      version: 'demo-consent-0.1',
+      recordedAt: '2026-10-17T09:58:00.000Z',
+      scope: 'ASSESSMENT_AND_REFERRAL',
+    },
+    fgs: {
+      contentVersion: '0.1.0',
+      exposure: ['fgs_exp_demo_a'],
+      signals: ['fgs_sig_demo_a'],
+      context: [],
+      distress: 'no',
+      supportOffered: false,
+      safeContact: 'yes',
+    },
+    ...patch,
+  });
+}

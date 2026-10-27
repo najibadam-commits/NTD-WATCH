@@ -37,6 +37,7 @@ const PATHS = {
   assessment: '/api/v1/assessments',
   referral: '/api/v1/referrals',
   followUp: '/api/v1/follow-ups',
+  consentEvent: '/api/v1/consent-events',
 } as const;
 
 /** Sends one outbox item to the MOCK API. The Idempotency-Key makes retries safe. */

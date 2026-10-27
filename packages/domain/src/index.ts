@@ -5,3 +5,4 @@ export * from './referral';
 export * from './entities';
 export * from './scope';
 export * from './capabilities';
+export * from './femtech';
