@@ -9,6 +9,8 @@ import {
 } from '@ntd-watch/demo-data';
 import {
   REFERRAL_STAGES,
+  SIGNAL_CATEGORIES,
+  SIGNAL_CATEGORY_BY_LEVEL,
   completionRate,
   isHigherRisk,
   isUnresolved,
@@ -23,6 +25,7 @@ import {
   type CommunityDetail,
   type CommunityStat,
   type FacilityStat,
+  type FgsAggregate,
   type Kpis,
   type ProgrammeFilters,
   type ProgrammeRecords,
@@ -256,24 +259,98 @@ function stageCounts(referrals: readonly Referral[]): StageCounts {
 }
 
 /**
- * Counts below this are not published for the women-and-girls (FGS) module, because a count of
- * one or two can point at a single person. This is the small-cell suppression PATTERN for the
- * prototype. It is applied to FGS signal counts only; the general counts are synthetic and are not
- * suppressed. A real deployment needs a reviewed rule that also covers combinations of filters.
+ * SMALL-CELL SUPPRESSION PATTERN (prototype). FGS counts below this are not published. The value 5
+ * is a placeholder for demonstration. It is NOT a validated disclosure-control threshold, not a
+ * regulatory requirement and not claimed to be appropriate everywhere; it needs privacy and
+ * data-protection review before any real deployment.
  */
 export const SMALL_CELL_THRESHOLD = 5;
 
 function symptomCounts(assessments: readonly Assessment[]): Record<string, number> {
   const counts: Record<string, number> = {};
-  const fgsCounts: Record<string, number> = {};
-  for (const a of assessments) {
-    const target = a.module === 'FGS' ? fgsCounts : counts;
-    for (const s of a.symptoms) target[s] = (target[s] ?? 0) + 1;
-  }
-  for (const [id, n] of Object.entries(fgsCounts)) {
-    if (n >= SMALL_CELL_THRESHOLD) counts[id] = (counts[id] ?? 0) + n;
-  }
+  for (const a of assessments) for (const s of a.symptoms) counts[s] = (counts[s] ?? 0) + 1;
   return counts;
+}
+
+const isFgs = (a: Assessment) => a.module === 'FGS';
+
+/**
+ * The records every GENERAL programme view is built from: women-and-girls (FGS) assessments, and
+ * the referrals and follow-ups that belong to them, are removed. FGS reaches programme output only
+ * through `fgsAggregate`, which suppresses small cells. Every public aggregate function starts
+ * here, so an FGS record cannot leak through risk counts, weekly series, stage counts, facility
+ * tables or any other general aggregate.
+ */
+export function generalView(records: ProgrammeRecords): ProgrammeRecords {
+  const fgsKeys = new Set(records.assessments.filter(isFgs).map((a) => a.clientKey));
+  if (fgsKeys.size === 0) return records;
+  return {
+    assessments: records.assessments.filter((a) => !fgsKeys.has(a.clientKey)),
+    referrals: records.referrals.filter((r) => !fgsKeys.has(r.assessmentKey)),
+    followUps: records.followUps.filter((f) => !fgsKeys.has(f.assessmentKey)),
+  };
+}
+
+function fgsOnly(records: ProgrammeRecords): ProgrammeRecords {
+  const fgsKeys = new Set(records.assessments.filter(isFgs).map((a) => a.clientKey));
+  return {
+    assessments: records.assessments.filter(isFgs),
+    referrals: records.referrals.filter((r) => fgsKeys.has(r.assessmentKey)),
+    followUps: records.followUps.filter((f) => fgsKeys.has(f.assessmentKey)),
+  };
+}
+
+export const FGS_SUPPRESSION_NOTE = `Counts below ${SMALL_CELL_THRESHOLD} are not shown. Prototype suppression pattern only; requires privacy and data-protection review before real use.`;
+
+const published = (n: number): number | null => (n >= SMALL_CELL_THRESHOLD ? n : null);
+
+/**
+ * Women-and-girls aggregate with small-cell suppression applied where the data leaves the
+ * programme layer. No community breakdown is offered. If exactly one category cell is hidden, the
+ * smallest visible non-zero cell is hidden too so the hidden value cannot be recovered from the
+ * total. This does not defend against differencing across overlapping filters or time ranges.
+ */
+export function fgsAggregate(
+  records: ProgrammeRecords,
+  communityIds: ReadonlySet<string>,
+  fromMs: number,
+  toMs: number,
+): FgsAggregate {
+  const s = slice(fgsOnly(records), communityIds, fromMs, toMs);
+  const total = s.assessments.length;
+  const raw = Object.fromEntries(SIGNAL_CATEGORIES.map((c) => [c, 0])) as Record<
+    (typeof SIGNAL_CATEGORIES)[number],
+    number
+  >;
+  for (const a of s.assessments) if (a.riskLevel) raw[SIGNAL_CATEGORY_BY_LEVEL[a.riskLevel]]++;
+
+  const totalShown = published(total);
+  const cells = Object.fromEntries(
+    SIGNAL_CATEGORIES.map((c) => [
+      c,
+      totalShown === null ? null : raw[c] === 0 ? 0 : published(raw[c]),
+    ]),
+  ) as FgsAggregate['byCategory'];
+  const hidden = SIGNAL_CATEGORIES.filter((c) => cells[c] === null);
+  if (totalShown !== null && hidden.length === 1) {
+    const visible = SIGNAL_CATEGORIES.filter((c) => typeof cells[c] === 'number' && cells[c]! > 0);
+    const smallest = visible.sort((a, b) => cells[a]! - cells[b]!)[0];
+    if (smallest) cells[smallest] = null;
+  }
+
+  const signalCounts: Record<string, number> = {};
+  for (const [id, n] of Object.entries(symptomCounts(s.assessments))) {
+    const shown = published(n);
+    if (shown !== null) signalCounts[id] = shown;
+  }
+  return {
+    threshold: SMALL_CELL_THRESHOLD,
+    note: FGS_SUPPRESSION_NOTE,
+    assessments: totalShown,
+    referrals: published(s.referrals.length),
+    byCategory: cells,
+    signalCounts: totalShown === null ? {} : signalCounts,
+  };
 }
 
 function unresolvedCount(referrals: readonly Referral[], ctx: QueryContext): number {
@@ -400,6 +477,8 @@ export function summarise(
   ctx: QueryContext,
 ): ProgrammeSummary {
   checkDates(requested);
+  const all = records;
+  records = generalView(records);
   const { filters, clamped } = effectiveFilters(requested, scope);
   const communities = communitiesFor(filters, scope);
   const ids = new Set(communities.map((c) => c.id));
@@ -432,6 +511,7 @@ export function summarise(
     weekly: weeklySeries(s, fromMs, toMs),
     symptomCounts: symptomCounts(s.assessments),
     referralStages: stageCounts(s.referrals),
+    fgs: fgsAggregate(all, ids, fromMs, toMs),
     dataSources: {
       seeded: s.assessments.filter((a) => isSeedKey(a.clientKey)).length,
       live: s.assessments.filter((a) => !isSeedKey(a.clientKey)).length,
@@ -448,6 +528,8 @@ export function communityDetail(
   ctx: QueryContext,
 ): CommunityDetail | null {
   checkDates(requested);
+  const all = records;
+  records = generalView(records);
   const community = communityById(communityId);
   if (!community || !inScope(community, scope)) return null;
   const filters: ProgrammeFilters = {
@@ -470,6 +552,7 @@ export function communityDetail(
     weekly: weeklySeries(s, fromMs, toMs),
     symptomCounts: symptomCounts(s.assessments),
     referralStages: stageCounts(s.referrals),
+    fgs: fgsAggregate(all, new Set([communityId]), fromMs, toMs),
     facilities: [...perFacility.entries()]
       .map(([facilityId, referrals]) => ({ facilityId, name: facilityName(facilityId), referrals }))
       .sort((a, b) => b.referrals - a.referrals),
@@ -521,6 +604,7 @@ export function monitorReferrals(
   ctx: QueryContext,
 ): ReferralMonitor {
   checkDates(requested);
+  records = generalView(records);
   const { filters, clamped } = effectiveFilters(requested, scope);
   const fromMs = dayStartMs(filters.from);
   const toMs = dayEndMs(filters.to);

@@ -121,6 +121,24 @@ export interface DataSources {
   live: number;
 }
 
+/**
+ * Women-and-girls (FGS) aggregate. Small cells are suppressed (`null`) at the point the data
+ * leaves the programme layer. Prototype pattern; see `SMALL_CELL_THRESHOLD`.
+ */
+export interface FgsAggregate {
+  threshold: number;
+  note: string;
+  /** Null when below the threshold. */
+  assessments: number | null;
+  referrals: number | null;
+  byCategory: Record<
+    'NO_PRIORITY_SIGNAL' | 'FURTHER_ASSESSMENT' | 'CLINICAL_ASSESSMENT' | 'URGENT_CLINICAL_REVIEW',
+    number | null
+  >;
+  /** Only signals whose count reaches the threshold appear. */
+  signalCounts: Record<string, number>;
+}
+
 export interface ProgrammeSummary {
   demo: true;
   notice: string;
@@ -136,6 +154,7 @@ export interface ProgrammeSummary {
   weekly: WeeklyPoint[];
   symptomCounts: Record<string, number>;
   referralStages: StageCounts;
+  fgs: FgsAggregate;
   dataSources: DataSources;
 }
 
@@ -148,6 +167,7 @@ export interface CommunityDetail {
   weekly: WeeklyPoint[];
   symptomCounts: Record<string, number>;
   referralStages: StageCounts;
+  fgs: FgsAggregate;
   facilities: { facilityId: string; name: string; referrals: number }[];
 }
 
