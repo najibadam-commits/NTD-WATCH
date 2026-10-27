@@ -5,6 +5,7 @@ import {
   SYNTHETIC_NOTICE,
   REPORT_KINDS,
   ROW_STATUS,
+  SMALL_CELL_THRESHOLD,
   buildReport,
   checkConsistency,
   communityDetail,
@@ -253,5 +254,33 @@ describe('reports', () => {
     );
     const names = DEMO_COMMUNITIES.filter((c) => c.lgaId !== 'lga-c').map((c) => c.name);
     for (const name of names) expect(r.csv).not.toContain(name);
+  });
+});
+
+describe('small-cell suppression for the women-and-girls module', () => {
+  const base = records.assessments.find((a) => a.capturedAt >= '2026-08-01')!;
+  const fgs = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      ...base,
+      id: `A-FGS${i}`,
+      clientKey: `fgs-small-cell-${i}`,
+      module: 'FGS' as const,
+      symptoms: ['fgs_sig_pelvic_pain'],
+    }));
+  const countFor = (n: number) =>
+    summarise(
+      { ...records, assessments: [...records.assessments, ...fgs(n)] },
+      range,
+      ALL_SCOPE,
+      ctx,
+    ).symptomCounts['fgs_sig_pelvic_pain'];
+
+  it('does not publish an FGS signal count below the threshold', () => {
+    expect(countFor(1)).toBeUndefined();
+    expect(countFor(SMALL_CELL_THRESHOLD - 1)).toBeUndefined();
+  });
+
+  it('publishes it once the count reaches the threshold', () => {
+    expect(countFor(SMALL_CELL_THRESHOLD)).toBe(SMALL_CELL_THRESHOLD);
   });
 });

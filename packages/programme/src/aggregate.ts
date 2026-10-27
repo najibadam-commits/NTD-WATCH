@@ -255,9 +255,24 @@ function stageCounts(referrals: readonly Referral[]): StageCounts {
   return c;
 }
 
+/**
+ * Counts below this are not published for the women-and-girls (FGS) module, because a count of
+ * one or two can point at a single person. This is the small-cell suppression PATTERN for the
+ * prototype. It is applied to FGS signal counts only; the general counts are synthetic and are not
+ * suppressed. A real deployment needs a reviewed rule that also covers combinations of filters.
+ */
+export const SMALL_CELL_THRESHOLD = 5;
+
 function symptomCounts(assessments: readonly Assessment[]): Record<string, number> {
   const counts: Record<string, number> = {};
-  for (const a of assessments) for (const s of a.symptoms) counts[s] = (counts[s] ?? 0) + 1;
+  const fgsCounts: Record<string, number> = {};
+  for (const a of assessments) {
+    const target = a.module === 'FGS' ? fgsCounts : counts;
+    for (const s of a.symptoms) target[s] = (target[s] ?? 0) + 1;
+  }
+  for (const [id, n] of Object.entries(fgsCounts)) {
+    if (n >= SMALL_CELL_THRESHOLD) counts[id] = (counts[id] ?? 0) + n;
+  }
   return counts;
 }
 
