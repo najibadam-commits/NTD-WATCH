@@ -42,6 +42,12 @@ status above DEMO without the matching evidence fields, and the evaluator return
 every result. The FGS rule set is `demo-fgs` version `0.1.0`, status `DEMO`, validation
 `NOT_VALIDATED`.
 
+Audit at the P1 gate: 11 content items (all DEMO, none DRAFT, none clinically reviewed, none
+validated) and 4 rules (all DEMO, validation status NOT_VALIDATED). Regression tests fail if any of
+those counts changes without review evidence in the repository. The CHW screens show the line "FGS
+clinical content: demonstration placeholder — source review and clinical validation pending." on the
+start, water-contact, signals, support-and-access and result screens.
+
 The health-signal questions are **placeholders**. Their wording was written for the demonstration
 and was not taken from, or checked against, WHO or national guidance. Nothing here is WHO-validated.
 
@@ -53,8 +59,12 @@ Three separate things are recorded and never merged:
    version shown (`demo-consent-0.1`).
 2. **Withdrawal**: stops further use. No new referral or follow-up can be added; the record
    leaves programme views once the (mock) server has been told. It is not deletion.
-3. **Deletion**: removes everything held for the case on the device straight away, and queues an
-   event so the mock server removes its copy too.
+3. **Deletion**: on the device, the assessment, referral, follow-ups and every queue entry for the
+   case (including ones already sent) are removed straight away. If the record had been sent, an
+   event is queued and the **mock** server removes its copy, keeps only a marker so a late queued copy
+   cannot reappear, and writes an audit row. This is a **simulation** in browser storage. It is not a
+   production deletion process: it does not cover backups, logs, replicas, exports or any other
+   system, and until the event is delivered (for example while offline) the mock server copy remains.
 
 No consent means no person-level record: declining discards the draft and saves nothing. Consent,
 withdrawal and deletion are audited on the mock server using the pseudonymous case code. The
@@ -87,14 +97,33 @@ Facility choice for FGS referrals uses **synthetic** capability fields: relevant
 worker, female clinician, examination, referral capacity (`packages/demo-data/src/facilityCapabilities.ts`).
 Facilities are ranked, never hidden. A facility that cannot take referrals ranks last and is
 flagged. If she asked to be seen by a woman, that raises facilities with a female clinician. The
-screen states that the capabilities are invented.
+screen states that the capabilities are invented. No real facility is described as having an
+FGS-trained worker, a female clinician, examination capability or referral capacity.
 
 ## Privacy controls in the prototype
 
-- Programme views read aggregates only. They carry no case code, no household coordinates and no
-  person-level fields (tested).
-- FGS signal counts below 5 are not published (`SMALL_CELL_THRESHOLD`). This is a **pattern**, not
-  a reviewed disclosure control, and it covers FGS signal counts only.
+- **Separation:** women-and-girls (FGS) records are removed at the start of every general
+  programme aggregate (summary, community detail, referral monitor, and so reports and exports).
+  FGS reaches programme output only through one block, `fgs`, on the summary and community-detail
+  responses. A test checks that general aggregates are byte-identical with and without FGS records.
+- **Small-cell suppression (prototype pattern):** in the `fgs` block, counts below
+  `SMALL_CELL_THRESHOLD` (5) are returned as `null`, or omitted for per-signal counts. If exactly
+  one category cell is hidden, a second is hidden so it cannot be derived from the total. The
+  suppression is applied in the programme layer, where the API response is built, not in the UI.
+  The value 5 is a **placeholder for demonstration**. It is not a validated disclosure-control
+  threshold, not a regulatory requirement and not claimed to be appropriate for any real setting.
+  It requires privacy and data-protection review before any real deployment.
+- **Known gaps in the pattern:** it does not defend against differencing across overlapping
+  filters or time ranges, repeated queries, or combination with other data. There is no community
+  breakdown of FGS data. There is no pagination, and sorting happens on the client over
+  already-suppressed data.
+- **No person-level or location data in aggregates:** programme responses carry no case code, no
+  household coordinates and no individual map points (tested at the API boundary).
+- **Facility inbox:** a facility sees the referrals sent to it, including age band, signals and
+  case-level detail. That is by design for care, and is a simulated role scope, not a security
+  control.
+- **Device and cache:** the in-progress FGS draft is held in session storage and cleared when the
+  record is saved or consent is declined. Deletion removes the local copy of the case.
 - Roles are simulated and are not security controls.
 
 ## Localisation
@@ -116,7 +145,10 @@ the problems; manual testing with assistive technology has not been done.
 
 - No clinical review of any question, rule or wording.
 - No real facility data; capabilities are synthetic.
-- Small-cell suppression covers FGS signal counts only; no formal statistical disclosure control.
+- Small-cell suppression is a prototype pattern covering the FGS aggregate block only; it is not a formal statistical disclosure control and needs privacy review (see Privacy controls).
+- The facility-side workflow was not redesigned for FGS; it still shows the general referral screens and the synthetic-capability ranking is only on the CHW referral screen.
+- Deletion is simulated against a mock server in browser storage (see Consent architecture).
+- No DHIS2 or other integration exists. This is a prototype, not a deployed or field-tested system and not production-ready.
 - Consent wording and the privacy design have had no legal or security review.
 - Only English; no field testing; offline behaviour is tested against a mock server.
 - Facility-side screens still show general referral fields; they are not yet tailored to FGS.
