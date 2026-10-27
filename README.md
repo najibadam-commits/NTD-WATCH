@@ -58,25 +58,25 @@ worker. Set `CHROMIUM_PATH` to use an already-installed Chromium instead of the 
 
 ## Status after Stage 3
 
-| Area                                                                                       | State                                                                     |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| Design tokens and components, routing, role-based navigation, access-denied page           | **Implemented**, unit tested                                              |
-| Domain model, demonstration rules engine, CHW app (16 screens), offline queue, mock API    | **Implemented / prototype** (Stage 2), regression tested                  |
-| Fictional hierarchy: 2 states, 5 LGAs, 10 wards, 15 communities, 9 facilities, 11 CHWs     | **Implemented**, synthetic, labelled "Demo"                               |
-| Synthetic seed: about 650 assessments, 75 referrals, 42 follow-ups over 12 weeks           | **Implemented**, deterministic, consistency-checked                       |
-| Programme overview, risk signals, vulnerability, referral monitoring, trends, reports      | **Implemented**, computed from the records, filters shared by every page  |
-| MapLibre GIS map on fictional GeoJSON; separate signal and vulnerability layers            | **Implemented**, table fallback when WebGL is missing                     |
-| Community details on select (aggregate only)                                               | **Implemented**                                                           |
-| User management and settings (Super Administrator)                                         | **Simulated**, stored in the mock server only, with a simulated audit log |
-| Exports (CSV and JSON) labelled synthetic in file name, header, footer and every row       | **Implemented**                                                           |
-| Referral ids: UUID-based, legacy format still accepted                                     | **Implemented**; production ids need backend design                       |
-| Sign-in, roles, scope, API permission checks                                               | **Simulated**, not security controls                                      |
-| Small-cell suppression, formal statistical methods, validated risk or vulnerability scores | **Not implemented**                                                       |
-| Languages other than English                                                               | **Not implemented**                                                       |
-| Real backend, authentication, DHIS2 or other integrations, deployment                      | **Not implemented, not approved**                                         |
-| Offline in a real field setting; manual screen-reader and real-phone testing               | **Untested**                                                              |
+| Area                                                                                       | State                                                                                       |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Design tokens and components, routing, role-based navigation, access-denied page           | **Implemented**, unit tested                                                                |
+| Domain model, demonstration rules engine, CHW app (16 screens), offline queue, mock API    | **Implemented / prototype** (Stage 2), regression tested                                    |
+| Fictional hierarchy: 2 states, 5 LGAs, 10 wards, 15 communities, 9 facilities, 11 CHWs     | **Implemented**, synthetic, labelled "Demo"                                                 |
+| Synthetic seed: about 650 assessments, 75 referrals, 42 follow-ups over 12 weeks           | **Implemented**, deterministic, consistency-checked                                         |
+| Programme overview, risk signals, vulnerability, referral monitoring, trends, reports      | **Implemented**, computed from the records, filters shared by every page                    |
+| MapLibre GIS map on fictional GeoJSON; separate signal and vulnerability layers            | **Implemented**, table fallback when WebGL is missing                                       |
+| Community details on select (aggregate only)                                               | **Implemented**                                                                             |
+| User management and settings (Super Administrator)                                         | **Simulated**, stored in the mock server only, with a simulated audit log                   |
+| Exports (CSV and JSON) labelled synthetic in file name, header, footer and every row       | **Implemented**                                                                             |
+| Referral ids: UUID-based, legacy format still accepted                                     | **Implemented**; production ids need backend design                                         |
+| Sign-in, roles, scope, API permission checks                                               | **Simulated**, not security controls                                                        |
+| Small-cell suppression, formal statistical methods, validated risk or vulnerability scores | **Pattern only** for FGS signal counts; formal methods and validated scores not implemented |
+| Languages other than English                                                               | **Not implemented**                                                                         |
+| Real backend, authentication, DHIS2 or other integrations, deployment                      | **Not implemented, not approved**                                                           |
+| Offline in a real field setting; manual screen-reader and real-phone testing               | **Untested**                                                                                |
 
-See `docs/` for details: `RULES.md`, `OFFLINE_AND_MOCK_API.md`, `PRIVACY_AND_ACCESS.md`, `SAFETY_AND_SCOPE.md`, `ARCHITECTURE.md`, `DECISIONS.md`.
+See `docs/` for details: `FGS_PROTOTYPE.md` (women-and-girls module), `RULES.md`, `OFFLINE_AND_MOCK_API.md`, `PRIVACY_AND_ACCESS.md`, `SAFETY_AND_SCOPE.md`, `ARCHITECTURE.md`, `DECISIONS.md`.
 
 ## Programme dashboard (Stage 3)
 
