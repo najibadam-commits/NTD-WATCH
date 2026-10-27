@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Map as MapLibreMap, Marker, NavigationControl, Popup } from 'maplibre-gl';
+import { Map as MapLibreMap, Marker, NavigationControl, Popup, setWorkerUrl } from 'maplibre-gl';
+// The map's worker script is a separate file that the bundler does not copy next to this chunk,
+// so it is emitted as its own asset and its address is given to MapLibre explicitly. Without this
+// the production build fails to start the worker and the polygon (vulnerability) layer stays blank.
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { DEMO_GEOGRAPHY, GEOGRAPHY_LABEL } from '@ntd-watch/demo-data';
 import type { CommunityStat } from '@ntd-watch/programme';
@@ -26,6 +30,8 @@ export interface RiskMapProps {
   /** Called when the browser cannot draw the map (for example no WebGL). */
   onUnavailable?: (reason: string) => void;
 }
+
+setWorkerUrl(new URL(workerUrl, window.location.href).href);
 
 const NO_DATA = '#d4dde3';
 export const VULNERABILITY_COLORS = {

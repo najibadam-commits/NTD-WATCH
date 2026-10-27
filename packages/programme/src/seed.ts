@@ -255,12 +255,21 @@ function makeFollowUp(rng: Rng, r: Referral, n: number): FollowUp | null {
   };
 }
 
+/** Small stable string hash (FNV-1a) used only to derive per-CHW seeds. */
+function hashText(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
 export function generateSeed({
   anchor,
   seed = 20261018,
   weeks = 12,
 }: SeedOptions): ProgrammeRecords {
-  const rng = createRng(seed);
   const end = anchor.getTime();
   const start = end - weeks * WEEK;
   const assessments: Assessment[] = [];
@@ -270,6 +279,9 @@ export function generateSeed({
   for (const chw of DEMO_CHWS) {
     if (chw.id === DEMO_CHW.id) continue; // the live account has no seeded history
     const profile = COMMUNITY_PROFILES[chw.communityId]!;
+    // One random stream per CHW (Stage 7): changing one community's profile never reshuffles
+    // another's records, so the demo scenarios stay stable.
+    const rng = createRng((seed ^ hashText(chw.id)) >>> 0);
     let n = 0;
     let f = 0;
     for (let w = 0; w < weeks; w++) {

@@ -1,0 +1,41 @@
+sequenceDiagram
+  autonumber
+  participant D as Device (PWA)
+  participant L as Local encrypted store
+  participant Q as Sync queue (outbox)
+  participant API as API gateway
+  participant S as Sync service
+  participant DB as Server database
+
+  D->>L: save record (client UUID, device id, client time)
+  L->>Q: enqueue change (idempotency key, base version)
+  Note over Q: survives restart and reboot
+  Q->>API: POST change (token, key, device id)
+  alt network drops before response
+    API--xQ: no response
+    Q->>Q: backoff with jitter, retry later
+    Q->>API: same request, same key
+    API->>S: duplicate key
+    S-->>Q: original result (no second record)
+  else server unavailable (5xx / 429)
+    API-->>Q: error
+    Q->>Q: backoff with jitter, stay queued
+  else validation or permission rejected (4xx)
+    API-->>Q: rejected with reason
+    Q->>L: mark rejected, keep copy, show to user
+  else accepted
+    API->>S: apply change
+    S->>DB: insert / update with server time, new version
+    alt base version matches
+      DB-->>S: committed
+      S-->>API: ack (server id, server time, version)
+      API-->>Q: ack
+      Q->>L: update local copy, mark synced
+    else base version is stale (another device changed it)
+      S->>S: conflict rules by field type
+      S-->>API: conflict + server copy
+      API-->>Q: conflict
+      Q->>L: keep both, show resolution if manual
+    end
+  end
+  Note over D,API: device revoked or token expired: queue pauses, data stays encrypted, re-authenticate

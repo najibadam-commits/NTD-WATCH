@@ -1,0 +1,38 @@
+flowchart TB
+  classDef person fill:#fde8e8,stroke:#9b1c1c,color:#1a1a1a
+  classDef agg fill:#e1effe,stroke:#1c64f2,color:#1a1a1a
+  classDef gate fill:#fef3c7,stroke:#b45309,color:#1a1a1a
+
+  subgraph P["PERSON-LEVEL (ops schema) - CHW, facility worker only"]
+    direction TB
+    C["Community<br/>(ref.community)"] --> A["Assessment<br/>symptoms, context, WASH"]:::person
+    A --> R["Risk assessment<br/>approved rule set version + fired rules"]:::person
+    R --> RF["Referral<br/>stage history, actor, facility"]:::person
+    RF --> FU["Follow-up"]:::person
+  end
+
+  GATE{{"Aggregation boundary<br/>separate DB role, no SELECT on ops<br/>small-cell suppression<br/>no person identifiers cross"}}:::gate
+  A --> GATE
+  R --> GATE
+  RF --> GATE
+  FU --> GATE
+
+  subgraph G["AGGREGATE (prog schema) - programme roles"]
+    direction TB
+    CS["Community signal aggregates"]:::agg
+    VI["Vulnerability indicators"]:::agg
+    RP["Referral performance"]:::agg
+    TR["Trends (weekly)"]:::agg
+    GS["Geographic summaries"]:::agg
+  end
+  GATE --> CS
+  GATE --> VI
+  GATE --> RP
+  GATE --> TR
+  GATE --> GS
+  CS --> PI["Programme intelligence<br/>dashboard, map, reports"]:::agg
+  VI --> PI
+  RP --> PI
+  TR --> PI
+  GS --> PI
+  PI --> ACT["Programme action<br/>(supervision, outreach, WASH response)"]

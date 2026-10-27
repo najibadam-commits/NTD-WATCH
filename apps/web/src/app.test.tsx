@@ -49,7 +49,7 @@ describe('landing page', () => {
 
   it('shows the demo banner on every route', async () => {
     await renderAt('/does-not-exist');
-    expect(screen.getByText(/Every record is synthetic/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Every record is synthetic/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Not security controls/i)).toBeInTheDocument();
   });
 });

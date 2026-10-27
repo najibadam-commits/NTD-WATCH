@@ -100,6 +100,10 @@ vi.mock('maplibre-gl', () => ({
   Marker: fake.FakeMarker,
   Popup: fake.FakePopup,
   NavigationControl: fake.FakeNav,
+  setWorkerUrl: vi.fn(),
+}));
+vi.mock('maplibre-gl/dist/maplibre-gl-worker.mjs?url', () => ({
+  default: '/maplibre-gl-worker.mjs',
 }));
 vi.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}));
 

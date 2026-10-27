@@ -145,6 +145,12 @@ export interface ProgrammeScreenDef {
 
 export const PROGRAMME_SCREENS: ProgrammeScreenDef[] = [
   {
+    page: 'inbox',
+    titleKey: 'programme.nav.inbox',
+    stage: 'Built',
+    spec: 'Stage 7, facility experience',
+  },
+  {
     page: 'overview',
     titleKey: 'programme.nav.overview',
     stage: 'Built',
@@ -167,6 +173,12 @@ export const PROGRAMME_SCREENS: ProgrammeScreenDef[] = [
     titleKey: 'programme.nav.vulnerability',
     stage: 'Built',
     spec: 'Screen 15, section 24',
+  },
+  {
+    page: 'priority',
+    titleKey: 'programme.nav.priority',
+    stage: 'Built',
+    spec: 'Stage 7, priority communities',
   },
   {
     page: 'referrals',

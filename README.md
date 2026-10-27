@@ -87,3 +87,40 @@ returns everything to the synthetic seed.
 
 Everything is synthetic: the places, people, boundaries and numbers. The map has no base map and does
 not represent any real geography. Risk results are demonstration rules, not clinically validated.
+
+## Pilot readiness and production architecture (Stage 4)
+
+Stage 4 is documentation only. No application code changed, no real data or live system is used, and
+nothing in it is approved or validated. Start with `docs/STAGE4_REPORT.md`, then:
+`STAGE4_CURRENT_STATE.md`, `PRODUCTION_ARCHITECTURE.md`, `DATA_ARCHITECTURE.md`, `PRODUCTION_RBAC.md`,
+`PRIVACY_SECURITY_ARCHITECTURE.md`, `OFFLINE_SYNC_ARCHITECTURE.md`, `RULE_GOVERNANCE.md`,
+`INTEROPERABILITY.md`, `GIS_PRODUCTION_ARCHITECTURE.md`, `PILOT_READINESS.md`, `TESTING_ROADMAP.md`
+and the decision register `STAGE4_DECISIONS.md` (25 open decisions). Diagrams are in `docs/diagrams/`.
+
+## Decision, validation and pilot preparation (Stage 5)
+
+Stage 5 is also documentation only: nothing is implemented, deployed or approved. Start with
+`docs/STAGE5_REPORT.md`, then `STAGE5_DECISION_REGISTER.md`, `TECHNICAL_RECOMMENDATIONS.md`,
+`CLINICAL_VALIDATION_PLAN.md`, `STAGE5_PRIVACY_READINESS.md`, `PILOT_BLUEPRINT.md`, `PILOT_GATES.md`,
+`STAKEHOLDER_REVIEW.md` and `INNOVATION_ASSESSMENT.md`.
+
+## Demo-ready MVP (Stage 7)
+
+Stage 7 joins the earlier work into one demonstrable story: CHW assessment, explainable signal,
+referral, facility inbox and outcome, CHW follow-up, then programme priority communities. It adds
+a facility experience, a signal-by-vulnerability priority view, a one-click **Reset demo**, a rule
+governance table and a REAL / SIMULATED / FUTURE register. Still a prototype with synthetic data
+and simulated roles. Start with `docs/stage7/DEMO_SETUP_GUIDE.md`, then `DEMO_SCRIPT.md`.
+Run it with `npm install` then `npm run dev` (or `npm run demo`).
+
+## Validation and stakeholder review (Stage 6)
+
+Stage 6 is a validation-planning stage, updated with a Nigeria-first evidence-integration pass. It
+collects no stakeholder evidence yet, changes no application code, and makes no claim of validity,
+impact, compliance or uniqueness. NTD-WATCH is tested only as a possible interoperable
+community-to-action layer that complements existing systems (CIMS-NTDs, WHO tools, DHIS2, DHIS2
+Community Health, WASHIMS), not as a standalone surveillance or diagnostic platform. The possible
+outcomes are PROCEED, MODIFY, INTEGRATE, STOP or INCONCLUSIVE; the criteria are locked and the outcome is open.
+Start with `docs/stage6/STAGE6_VALIDATION_PLAN.md`; the other plans, the stakeholder session pack, the
+evidence and decision registers, the ecosystem capability matrix and the report are in the same folder. No interview or session may be
+held until the ethics determination is recorded.

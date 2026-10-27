@@ -4,3 +4,4 @@ export * from './risk';
 export * from './referral';
 export * from './entities';
 export * from './scope';
+export * from './capabilities';

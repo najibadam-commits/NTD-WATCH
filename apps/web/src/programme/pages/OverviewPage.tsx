@@ -89,6 +89,11 @@ export function OverviewPage() {
                   hint={t('programme.overview.followUpsWorse', { count: k.followUpsWorse })}
                 />
                 <Kpi
+                  label={t('programme.overview.followUpsDue')}
+                  value={formatNumber(k.followUpsDue)}
+                  hint={t('programme.overview.followUpsDueHint')}
+                />
+                <Kpi
                   label={t('programme.overview.chws')}
                   value={formatNumber(k.activeChws)}
                   hint={t('programme.overview.coverage', {

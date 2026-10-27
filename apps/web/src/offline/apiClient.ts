@@ -12,6 +12,27 @@ export function apiUrl(path: string): string {
   return new URL(path, window.location.origin).toString();
 }
 
+/**
+ * fetch() for the MOCK API, with a safety net for demos. The mock normally answers through a
+ * browser service worker. If that worker is not answering (a blocked or stale worker on the
+ * presenting machine), the page server replies with its HTML page instead of JSON, and every
+ * view fails with "is not valid JSON". In that case, and only that case, the same mock handlers
+ * answer in-page. A real network failure is NOT covered: it still throws, so offline and retry
+ * behaviour is unchanged.
+ */
+export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+  const request = new Request(url, init);
+  const response = await fetch(request.clone());
+  const type = response.headers.get('content-type') ?? '';
+  if (!type.includes('text/html')) return response;
+  const [{ getResponse }, { handlers }] = await Promise.all([
+    import('msw'),
+    import('../mock/handlers'),
+  ]);
+  const mocked = await getResponse(handlers, request);
+  return mocked ?? response;
+}
+
 const PATHS = {
   assessment: '/api/v1/assessments',
   referral: '/api/v1/referrals',
@@ -22,7 +43,7 @@ const PATHS = {
 export async function sendItem(item: OutboxItem, role: Role = 'chw'): Promise<SendOutcome> {
   let response: Response;
   try {
-    response = await fetch(apiUrl(PATHS[item.kind]), {
+    response = await apiFetch(apiUrl(PATHS[item.kind]), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -58,7 +79,7 @@ export async function sendItem(item: OutboxItem, role: Role = 'chw'): Promise<Se
 
 /** Reads a referral from the MOCK API (needs a connection). Returns null when it is not there. */
 export async function fetchReferral(id: string, role: Role = 'chw'): Promise<Referral | null> {
-  const response = await fetch(apiUrl(`/api/v1/referrals/${encodeURIComponent(id)}`), {
+  const response = await apiFetch(apiUrl(`/api/v1/referrals/${encodeURIComponent(id)}`), {
     headers: { [DEMO_ROLE_HEADER]: role },
   });
   if (response.status === 404) return null;
@@ -68,10 +89,11 @@ export async function fetchReferral(id: string, role: Role = 'chw'): Promise<Ref
 
 /** DEMO ONLY: acts as a facility worker to move a referral to its next stage. */
 export async function simulateFacilityUpdate(id: string, stage: string): Promise<Referral> {
-  const response = await fetch(apiUrl(`/api/v1/referrals/${encodeURIComponent(id)}`), {
+  const response = await apiFetch(apiUrl(`/api/v1/referrals/${encodeURIComponent(id)}`), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', [DEMO_ROLE_HEADER]: 'facility' },
-    body: JSON.stringify({ stage }),
+    // an assessed referral carries a synthetic outcome; the demo facility worker picks a default
+    body: JSON.stringify(stage === 'ASSESSED' ? { stage, outcome: 'FOLLOW_UP_NEEDED' } : { stage }),
   });
   if (!response.ok) {
     const p = (await response.json().catch(() => ({}))) as { message?: string };

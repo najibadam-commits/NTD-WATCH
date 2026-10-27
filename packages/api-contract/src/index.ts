@@ -31,6 +31,7 @@ export const API_ROUTES = {
     path: '/api/v1/referrals/:id',
     anyOf: ['referral:initiate', 'referral:view_relevant'],
   },
+  /** Stage 7: referrals sent to the caller's (simulated) facility scope, with an assessment summary. */
   referralInbox: {
     method: 'GET',
     path: '/api/v1/referrals/inbox',
@@ -73,6 +74,7 @@ export const IMPLEMENTED_ROUTES: readonly ApiRouteName[] = [
   'submitAssessment',
   'createReferral',
   'getReferral',
+  'referralInbox',
   'updateReferral',
   'submitFollowUp',
   'programmeSummary',

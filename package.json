@@ -15,6 +15,7 @@
     "dev": "npm run dev --workspace @ntd-watch/web",
     "build": "npm run build --workspace @ntd-watch/web",
     "preview": "npm run preview --workspace @ntd-watch/web",
+    "demo": "npm run build && npm run preview --workspace @ntd-watch/web -- --host",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "format": "prettier --write .",

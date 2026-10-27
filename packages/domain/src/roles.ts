@@ -79,10 +79,12 @@ export function canAccessArea(role: Role, area: Area): boolean {
 }
 
 export const PROGRAMME_PAGES = [
+  'inbox',
   'overview',
   'gis',
   'signals',
   'vulnerability',
+  'priority',
   'referrals',
   'trends',
   'reports',
@@ -94,10 +96,13 @@ export type ProgrammePage = (typeof PROGRAMME_PAGES)[number];
 const ANALYTICS: readonly Role[] = ['lga', 'state', 'admin'];
 
 export const PROGRAMME_PAGE_ROLES: Record<ProgrammePage, readonly Role[]> = {
+  /** Person-level referral work for the facility's own referrals only (Stage 7). */
+  inbox: ['facility'],
   overview: ANALYTICS,
   gis: ANALYTICS,
   signals: ANALYTICS,
   vulnerability: ANALYTICS,
+  priority: ANALYTICS,
   referrals: ['facility', 'lga', 'state', 'admin'],
   trends: ANALYTICS,
   reports: ANALYTICS,

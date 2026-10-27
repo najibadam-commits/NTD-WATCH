@@ -86,3 +86,26 @@ test('programme shell has no detectable violations', async ({ page }) => {
   await page.getByRole('button', { name: /open as super administrator/i }).click();
   await scan(page, 'programme overview');
 });
+
+test('Stage 7 programme pages have no detectable violations', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/');
+  await page.getByRole('button', { name: /open as super administrator/i }).click();
+  await page.goto('/programme/priority');
+  await expect(
+    page.getByRole('heading', { name: /priority communities/i, level: 1 }),
+  ).toBeVisible();
+  await expect(page.getByRole('table')).toBeVisible();
+  await scan(page, 'priority communities');
+  await page.goto('/programme/settings');
+  await expect(page.getByRole('heading', { name: /rule governance register/i })).toBeVisible();
+  await scan(page, 'settings with rule governance');
+  await page.getByLabel(/demo role/i).selectOption({ label: 'Health Facility Worker' });
+  await expect(page.getByRole('heading', { name: /facility referral inbox/i })).toBeVisible();
+  await page
+    .getByRole('button', { name: /^open referral from/i })
+    .first()
+    .click();
+  await expect(page.getByRole('heading', { name: /referral detail/i })).toBeVisible();
+  await scan(page, 'facility inbox with detail');
+});

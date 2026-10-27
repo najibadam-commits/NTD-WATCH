@@ -4,7 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { Button, EmptyState, LoadingState, Notice, RiskBadge } from '@ntd-watch/design-system';
 import { facilityName } from '@ntd-watch/demo-data';
-import { REFERRAL_STAGES, REFERRAL_STAGE_LABELS, nextStage } from '@ntd-watch/domain';
+import {
+  REFERRAL_OUTCOME_LABELS,
+  REFERRAL_STAGES,
+  REFERRAL_STAGE_LABELS,
+  nextStage,
+} from '@ntd-watch/domain';
 import { simulateFacilityUpdate } from '../../offline/apiClient';
 import { isOnline, useConnectivity } from '../../offline/connectivity';
 import { localDb } from '../../offline/localDb';
@@ -80,6 +85,11 @@ export function ReferralStatusScreen() {
       <p className={styles.muted}>{t('chw.referral.for', { code: r.assessmentId })}</p>
 
       {!synced ? <Notice tone="info">{t('chw.referral.notSyncedYet')}</Notice> : null}
+      {r.outcome ? (
+        <Notice tone={r.outcome === 'FOLLOW_UP_NEEDED' ? 'info' : 'success'}>
+          {t('chw.referral.outcome', { outcome: REFERRAL_OUTCOME_LABELS[r.outcome] })}
+        </Notice>
+      ) : null}
       {r.stage === 'CLOSED' ? <Notice tone="success">{t('chw.referral.closed')}</Notice> : null}
 
       <section className={styles.resultBox} aria-labelledby="timeline-h">

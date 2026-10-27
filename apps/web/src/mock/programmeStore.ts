@@ -45,11 +45,21 @@ export async function loadRecords(): Promise<ProgrammeRecords> {
     serverDb.referrals.toArray(),
     serverDb.followUps.toArray(),
   ]);
+  // A referral the facility has updated is stored on the mock server under the same id as its
+  // seeded original (or as a new live referral). The stored copy wins, so one referral is never
+  // counted twice.
+  const stored = new Map(referrals.map((r) => [r.id, r]));
   return {
     assessments: [...seedCache.records.assessments, ...assessments],
-    referrals: [...seedCache.records.referrals, ...referrals],
+    referrals: [...seedCache.records.referrals.filter((r) => !stored.has(r.id)), ...referrals],
     followUps: [...seedCache.records.followUps, ...followUps],
   };
+}
+
+/** Seeded referrals by id, for the facility inbox (which may update a seeded referral). */
+export async function seededReferral(id: string) {
+  await loadRecords(); // makes sure the seed is generated
+  return seedCache?.records.referrals.find((r) => r.id === id);
 }
 
 export async function maxUnresolvedDays(): Promise<number> {

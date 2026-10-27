@@ -48,8 +48,8 @@ describe('area and page access', () => {
     expect(canAccessArea('state', 'programme')).toBe(true);
   });
 
-  it('shows a facility worker only the referral inbox', () => {
-    expect(programmePagesFor('facility')).toEqual(['referrals']);
+  it('shows a facility worker only the inbox and referral monitoring', () => {
+    expect(programmePagesFor('facility')).toEqual(['inbox', 'referrals']);
   });
 
   it('hides user management and settings from non-administrators', () => {
@@ -61,7 +61,7 @@ describe('area and page access', () => {
 
   it('chooses a sensible landing path for every role', () => {
     expect(homePathFor('chw')).toBe('/chw');
-    expect(homePathFor('facility')).toBe('/programme/referrals');
+    expect(homePathFor('facility')).toBe('/programme/inbox');
     expect(homePathFor('state')).toBe('/programme/overview');
   });
 });
@@ -73,6 +73,7 @@ describe('Super Administrator (decided in Stage 2)', () => {
       'gis',
       'signals',
       'vulnerability',
+      'priority',
       'referrals',
       'trends',
       'reports',

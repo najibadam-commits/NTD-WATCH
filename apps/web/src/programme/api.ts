@@ -1,13 +1,15 @@
 import { DEMO_ROLE_HEADER, DEMO_SCOPE_HEADER } from '@ntd-watch/api-contract';
 import { DEMO_SCOPE_FOR_ROLE } from '@ntd-watch/demo-data';
 import { ALL_SCOPE, encodeScope, type DataScope, type Role } from '@ntd-watch/domain';
+import type { Referral, ReferralOutcome, ReferralStage } from '@ntd-watch/domain';
 import type {
   CommunityDetail,
+  FacilityInbox,
   ProgrammeFilters,
   ProgrammeSummary,
   ReferralMonitor,
 } from '@ntd-watch/programme';
-import { apiUrl } from '../offline/apiClient';
+import { apiFetch, apiUrl } from '../offline/apiClient';
 
 /** The data scope the SIMULATED session gives a role. Not a security control. */
 export function scopeForRole(role: Role): DataScope {
@@ -40,7 +42,7 @@ function headers(role: Role, json = false): HeadersInit {
 async function call<T>(role: Role, path: string, init: RequestInit = {}): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(apiUrl(path), {
+    response = await apiFetch(apiUrl(path), {
       ...init,
       headers: { ...headers(role, init.body !== undefined), ...init.headers },
     });
@@ -73,6 +75,20 @@ export const fetchCommunity = (role: Role, id: string, f: ProgrammeFilters) =>
 
 export const fetchReferralMonitor = (role: Role, f: ProgrammeFilters) =>
   call<ReferralMonitor>(role, `/api/v1/intelligence/referrals?${filterQuery(f)}`);
+
+export const fetchInbox = (role: Role) => call<FacilityInbox>(role, '/api/v1/referrals/inbox');
+
+/** Facility action: move a referral one stage forward (an outcome goes with ASSESSED). */
+export const patchReferralStage = (
+  role: Role,
+  id: string,
+  stage: ReferralStage,
+  outcome?: ReferralOutcome,
+) =>
+  call<{ referral: Referral }>(role, `/api/v1/referrals/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(outcome ? { stage, outcome } : { stage }),
+  });
 
 export interface UserRow {
   id: string;

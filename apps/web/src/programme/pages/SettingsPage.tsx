@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button, Notice } from '@ntd-watch/design-system';
 import {
+  CAPABILITIES,
   PROGRAMME_PAGES,
   PROGRAMME_PAGE_ROLES,
   ROLES,
@@ -10,13 +11,12 @@ import {
   PROTOTYPE_OFFLINE_NOTICE,
   SIMULATED_AUTH_NOTICE,
 } from '@ntd-watch/domain';
-import { DEMO_LABEL_TEXT } from '@ntd-watch/rules-engine';
-import { patchConfig, postReset } from '../api';
+import { DEMO_LABEL_TEXT, DEMO_RULE_SET } from '@ntd-watch/rules-engine';
+import { patchConfig } from '../api';
+import { resetDemoEnvironment } from '../../demo/resetDemo';
 import { PageHeader, QueryBoundary } from '../components/Common';
 import { formatDateTime } from '../format';
 import { useMockControls } from '../../mock/controls';
-import { resetLocalDb } from '../../offline/localDb';
-import { notifyDataChanged } from '../dataChannel';
 import { useConfig, useRole } from '../useProgrammeData';
 import styles from '../programme.module.css';
 import { TableScroll } from '../components/TableScroll';
@@ -43,12 +43,10 @@ export function SettingsPage() {
 
   const reset = async () => {
     try {
-      await postReset(role);
-      await resetLocalDb();
+      await resetDemoEnvironment(client);
       setConfirmReset(false);
       setNotice({ tone: 'success', text: t('programme.settings.resetDone') });
       await client.invalidateQueries({ queryKey: ['programme'] });
-      notifyDataChanged();
     } catch (e) {
       setNotice({ tone: 'error', text: e instanceof Error ? e.message : t('programme.errorBody') });
     }
@@ -80,6 +78,70 @@ export function SettingsPage() {
                 </dl>
                 <p className={styles.muted}>{c.ruleSet.description}</p>
                 <p className={styles.muted}>{t('programme.settings.rulesReadOnly')}</p>
+                <h3>{t('programme.settings.governanceTitle')}</h3>
+                <p className={styles.muted}>{t('programme.settings.governanceNote')}</p>
+                <TableScroll>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th scope="col">{t('programme.settings.gov.id')}</th>
+                        <th scope="col">{t('programme.settings.gov.description')}</th>
+                        <th scope="col">{t('programme.settings.gov.level')}</th>
+                        <th scope="col">{t('programme.settings.gov.version')}</th>
+                        <th scope="col">{t('programme.settings.gov.status')}</th>
+                        <th scope="col">{t('programme.settings.gov.source')}</th>
+                        <th scope="col">{t('programme.settings.gov.owner')}</th>
+                        <th scope="col">{t('programme.settings.gov.validation')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DEMO_RULE_SET.rules.map((r) => (
+                        <tr key={r.id}>
+                          <th scope="row">{r.id}</th>
+                          <td>{r.explanation}</td>
+                          <td>{r.level}</td>
+                          <td>{DEMO_RULE_SET.version}</td>
+                          <td>
+                            {r.enabled
+                              ? t('programme.settings.gov.active')
+                              : t('programme.settings.gov.disabled')}{' '}
+                            ({DEMO_RULE_SET.status})
+                          </td>
+                          <td>{t('programme.settings.gov.noSource')}</td>
+                          <td>{t('programme.settings.gov.noOwner')}</td>
+                          <td>{t('programme.settings.gov.notValidated')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableScroll>
+              </section>
+
+              <section className={styles.panel} aria-labelledby="set-cap">
+                <h2 id="set-cap">{t('programme.settings.capabilityTitle')}</h2>
+                <p className={styles.muted}>{t('programme.settings.capabilityNote')}</p>
+                <TableScroll>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th scope="col">{t('programme.settings.capability')}</th>
+                        <th scope="col">{t('programme.settings.status')}</th>
+                        <th scope="col">{t('programme.settings.capNote')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {CAPABILITIES.map((c) => (
+                        <tr key={c.id}>
+                          <th scope="row">{c.name}</th>
+                          <td>
+                            <strong>{c.state}</strong>
+                          </td>
+                          <td>{c.note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableScroll>
               </section>
 
               <section className={styles.panel} aria-labelledby="set-sla">

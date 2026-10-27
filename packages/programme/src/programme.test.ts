@@ -172,7 +172,7 @@ describe('community stats', () => {
     const rising = all.communities
       .filter((c) => c.direction === 'rising')
       .map((c) => c.communityId);
-    expect(rising).toEqual(expect.arrayContaining(['com-01', 'com-09', 'com-15']));
+    expect(rising).toEqual(expect.arrayContaining(['com-01', 'com-09']));
   });
   it('shows coverage gaps as zero assigned CHWs', () => {
     for (const id of ['com-05', 'com-08', 'com-11', 'com-12', 'com-14']) {

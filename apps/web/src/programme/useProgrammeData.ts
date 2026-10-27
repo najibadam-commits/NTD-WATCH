@@ -5,6 +5,7 @@ import { useDemoSession } from '../session/demoSession';
 import {
   fetchCommunity,
   fetchConfig,
+  fetchInbox,
   fetchReferralMonitor,
   fetchSummary,
   fetchUsers,
@@ -62,6 +63,15 @@ export function useCommunityDetail(id: string | undefined) {
     queryKey: ['programme', 'community', role, id, filters.from, filters.to],
     queryFn: () => fetchCommunity(role, id!, filters),
     enabled: Boolean(id),
+    ...live,
+  });
+}
+
+export function useInbox() {
+  const role = useRole();
+  return useQuery({
+    queryKey: ['programme', 'inbox', role, encodeScope(scopeForRole(role))],
+    queryFn: () => fetchInbox(role),
     ...live,
   });
 }

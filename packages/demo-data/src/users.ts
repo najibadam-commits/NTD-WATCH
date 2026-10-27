@@ -87,7 +87,8 @@ export const DEMO_USERS: readonly DemoUser[] = [
 /** The scope the simulated session gets for each role. */
 export const DEMO_SCOPE_FOR_ROLE: Record<Role, string> = {
   chw: 'com-01',
-  facility: 'fac-c1',
+  // Stage 7: the Facility Demo user is the North PHC, the facility the demo CHW's community refers to.
+  facility: 'fac-n1',
   lga: 'lga-c',
   state: 'st-arewa',
   admin: 'all',

@@ -18,8 +18,10 @@ export interface CommunityProfile {
 
 export const COMMUNITY_PROFILES: Record<string, CommunityProfile> = {
   'com-01': { wash: 0.55, signal: 0.55, throughput: 6, trend: 'rising' },
-  'com-02': { wash: 0.3, signal: 0.25, throughput: 5, trend: 'flat' },
-  'com-03': { wash: 0.2, signal: 0.15, throughput: 7, trend: 'flat' },
+  // Stage 7 scenario C (low signal, high vulnerability): prevention or active surveillance.
+  'com-02': { wash: 0.7, signal: 0.15, throughput: 5, trend: 'flat' },
+  // Stage 7 scenario B (high signal, lower vulnerability): see docs/stage7/DEMO_SCENARIOS.md
+  'com-03': { wash: 0.15, signal: 0.85, throughput: 7, trend: 'rising' },
   'com-04': { wash: 0.4, signal: 0.4, throughput: 6, trend: 'flat' },
   'com-05': { wash: 0.35, signal: 0.3, throughput: 5, trend: 'flat' },
   'com-06': { wash: 0.25, signal: 0.2, throughput: 5, trend: 'falling' },

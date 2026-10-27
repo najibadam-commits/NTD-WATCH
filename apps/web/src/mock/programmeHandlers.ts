@@ -1,5 +1,11 @@
 import { DEMO_SCOPE_HEADER } from '@ntd-watch/api-contract';
-import { DEMO_COMMUNITIES, DEMO_FACILITIES, DEMO_SCOPE_FOR_ROLE } from '@ntd-watch/demo-data';
+import {
+  DEMO_COMMUNITIES,
+  DEMO_FACILITIES,
+  DEMO_SCOPE_FOR_ROLE,
+  communityName,
+  facilityName,
+} from '@ntd-watch/demo-data';
 import { ALL_SCOPE, ROLES, parseScope, type DataScope, type Role } from '@ntd-watch/domain';
 import {
   communityDetail,
@@ -7,6 +13,10 @@ import {
   monitorReferrals,
   summarise,
   REPORT_KINDS,
+  SYNTHETIC_NOTICE,
+  isSeedKey,
+  type FacilityInbox,
+  type InboxItem,
   type ProgrammeFilters,
 } from '@ntd-watch/programme';
 import { DEMO_RULE_SET, isDemoOnly } from '@ntd-watch/rules-engine';
@@ -88,6 +98,57 @@ async function withQuery(
   if (filters instanceof Response) return filters;
   return run(filters, scope);
 }
+
+/**
+ * Facility inbox: referrals sent to the caller's SIMULATED facility. Registered before the
+ * generic referral lookup, because `/referrals/inbox` would otherwise match `/referrals/:id`.
+ * The facility check is a simulated scope, not a security control.
+ */
+export const inboxHandler = route('referralInbox', async ({ request }, role) => {
+  const scope = scopeOf(request, role);
+  if (scope instanceof Response) return scope;
+  if (scope.kind !== 'facility' || !scope.id) {
+    return problem(400, 'BAD_SCOPE', 'The inbox needs a facility scope.');
+  }
+  const records = await loadRecords();
+  const byKey = new Map(records.assessments.map((a) => [a.clientKey, a]));
+  const items: InboxItem[] = records.referrals
+    .filter((r) => r.facilityId === scope.id)
+    .map((referral) => {
+      const a = byKey.get(referral.assessmentKey);
+      return {
+        referral,
+        source: isSeedKey(referral.assessmentKey) ? ('seed' as const) : ('live' as const),
+        assessment: a
+          ? {
+              assessmentId: a.id,
+              capturedAt: a.capturedAt,
+              communityId: a.communityId,
+              communityName: communityName(a.communityId),
+              ageGroup: a.ageGroup,
+              sex: a.sex,
+              symptoms: a.symptoms,
+              duration: a.duration,
+              progression: a.progression,
+              riskLevel: a.riskLevel,
+              riskWhy: a.riskWhy,
+              ruleSetId: a.ruleSetId,
+              ruleSetVersion: a.ruleSetVersion,
+            }
+          : null,
+      };
+    })
+    .sort((x, y) => y.referral.stageTimestamps[0]!.localeCompare(x.referral.stageTimestamps[0]!));
+  const body: FacilityInbox = {
+    demo: true,
+    notice: SYNTHETIC_NOTICE,
+    generatedAt: mockNow().toISOString(),
+    facilityId: scope.id,
+    facilityName: facilityName(scope.id),
+    items,
+  };
+  return json(body);
+});
 
 export const programmeHandlers = [
   route('programmeSummary', (ctx, role) =>

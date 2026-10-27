@@ -1,0 +1,18 @@
+stateDiagram-v2
+  [*] --> Proposed: change proposal with evidence
+  Proposed --> ClinicalReview: accepted for review
+  ClinicalReview --> TechnicalValidation: clinical sign-off
+  ClinicalReview --> Proposed: changes requested
+  TechnicalValidation --> SecondReview: tests pass on fixed case set
+  TechnicalValidation --> Proposed: defects found
+  SecondReview --> Approved: independent reviewer agrees
+  SecondReview --> Proposed: changes requested
+  Approved --> Released: version tagged, effective date set
+  Released --> Monitoring: live
+  Monitoring --> PeriodicReview: scheduled date reached
+  Monitoring --> RolledBack: safety signal or defect
+  PeriodicReview --> Proposed: change needed
+  PeriodicReview --> Monitoring: re-affirmed
+  RolledBack --> Monitoring: previous approved version restored
+  Released --> Retired: superseded or expired
+  Retired --> [*]

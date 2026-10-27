@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { RISK_LEVELS } from './risk';
-import { REFERRAL_ID_PATTERN, REFERRAL_STAGES } from './referral';
+import { REFERRAL_ID_PATTERN, REFERRAL_OUTCOMES, REFERRAL_STAGES } from './referral';
 
 /**
  * PERSON-LEVEL records and AGGREGATED programme records are deliberately
@@ -18,6 +18,7 @@ export const progressionSchema = z.enum(['yes', 'no', 'unsure']);
 export const triStateSchema = z.enum(['yes', 'no', 'unknown']);
 export const riskLevelSchema = z.enum(RISK_LEVELS);
 export const referralStageSchema = z.enum(REFERRAL_STAGES);
+export const referralOutcomeSchema = z.enum(REFERRAL_OUTCOMES);
 
 export const exposureSchema = z.strictObject({
   waterContact: triStateSchema,
@@ -74,6 +75,8 @@ export const referralSchema = z.strictObject({
   stage: referralStageSchema,
   /** One ISO timestamp per stage reached, in order. */
   stageTimestamps: z.array(z.iso.datetime()).min(1),
+  /** Synthetic facility outcome category, set when the facility records the assessment (Stage 7). */
+  outcome: referralOutcomeSchema.optional(),
 });
 export type Referral = z.infer<typeof referralSchema>;
 

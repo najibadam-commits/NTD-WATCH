@@ -1,0 +1,37 @@
+flowchart LR
+  classDef keep fill:#dcfce7,stroke:#166534,color:#1a1a1a
+  classDef strengthen fill:#fef9c3,stroke:#a16207,color:#1a1a1a
+  classDef replace fill:#fee2e2,stroke:#991b1b,color:#1a1a1a
+
+  subgraph NOW["Prototype (Stages 1-3)"]
+    N1["packages/domain<br/>schemas, referral pathway"]:::keep
+    N2["packages/rules-engine<br/>evaluate, schema"]:::keep
+    N3["packages/programme<br/>aggregate, seed, reports"]:::strengthen
+    N4["packages/api-contract"]:::strengthen
+    N5["packages/design-system, i18n"]:::keep
+    N6["apps/web CHW + programme UI"]:::strengthen
+    N7["offline/ Dexie outbox"]:::strengthen
+    N8["mock/ MSW + IndexedDB server"]:::replace
+    N9["session/ demo role"]:::replace
+    N10["demo-data geography + users"]:::replace
+  end
+  subgraph NEXT["Production target"]
+    P1["Shared validation library"]
+    P2["Rules service + governance"]
+    P3["Aggregation jobs + prog schema"]
+    P4["OpenAPI contract + generated clients"]
+    P5["PWA with encrypted store + sync client"]
+    P6["API + Postgres/PostGIS"]
+    P7["OIDC identity + server RBAC"]
+    P8["Verified reference data"]
+  end
+  N1 --> P1
+  N2 --> P2
+  N3 --> P3
+  N4 --> P4
+  N5 --> N6
+  N6 --> P5
+  N7 --> P5
+  N8 --> P6
+  N9 --> P7
+  N10 --> P8

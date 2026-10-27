@@ -8,13 +8,16 @@ import {
   nextStage,
   referralIdFor,
   referralSchema,
+  referralOutcomeSchema,
   referralStageSchema,
 } from '@ntd-watch/domain';
-import { programmeHandlers } from './programmeHandlers';
+import { inboxHandler, programmeHandlers } from './programmeHandlers';
+import { seededReferral } from './programmeStore';
 import { json, problem, readJson, route, validationProblem } from './routing';
 import { serverDb } from './serverDb';
 
 export const handlers = [
+  inboxHandler,
   route('submitAssessment', async ({ request }) => {
     const parsed = assessmentSchema.safeParse(await readJson(request));
     if (!parsed.success) return validationProblem(parsed.error);
@@ -61,15 +64,32 @@ export const handlers = [
   }),
 
   route('getReferral', async ({ params }) => {
-    const referral = await serverDb.referrals.get(String(params.id));
+    const referral =
+      (await serverDb.referrals.get(String(params.id))) ??
+      (await seededReferral(String(params.id)));
     return referral ? json({ referral }) : problem(404, 'NOT_FOUND', 'No such referral.');
   }),
 
   route('updateReferral', async ({ request, params }) => {
-    const body = (await readJson(request)) as { stage?: unknown } | undefined;
+    const body = (await readJson(request)) as { stage?: unknown; outcome?: unknown } | undefined;
     const stage = referralStageSchema.safeParse(body?.stage);
     if (!stage.success) return problem(422, 'VALIDATION', 'A valid stage is required.');
-    const referral = await serverDb.referrals.get(String(params.id));
+    // Stage 7: a facility may record a SYNTHETIC outcome category, only when the referral
+    // is being marked as assessed.
+    const outcome =
+      body?.outcome === undefined ? undefined : referralOutcomeSchema.safeParse(body.outcome);
+    if (outcome && !outcome.success) return problem(422, 'VALIDATION', 'Unknown outcome category.');
+    if (outcome && stage.data !== 'ASSESSED') {
+      return problem(
+        422,
+        'VALIDATION',
+        'An outcome can only be recorded when the referral is assessed.',
+      );
+    }
+    // A seeded referral is copied into the mock server's own store the first time it changes.
+    const referral =
+      (await serverDb.referrals.get(String(params.id))) ??
+      (await seededReferral(String(params.id)));
     if (!referral) return problem(404, 'NOT_FOUND', 'No such referral.');
     if (!isValidTransition(referral.stage, stage.data)) {
       return problem(409, 'INVALID_TRANSITION', 'Referral status can only move forward.');
@@ -81,6 +101,7 @@ export const handlers = [
       ...referral,
       stage: stage.data,
       stageTimestamps: [...referral.stageTimestamps, new Date().toISOString()],
+      ...(outcome?.success ? { outcome: outcome.data } : {}),
     };
     await serverDb.referrals.put(updated);
     return json({ referral: updated });

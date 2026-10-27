@@ -65,6 +65,10 @@ export interface CommunityStat {
   referrals: number;
   referralsCompleted: number;
   unresolved: number;
+  /** Follow-up records for this community's assessments and referrals in the period. */
+  followUps: number;
+  /** Referrals assessed at the facility (or beyond) that have no CHW follow-up record yet. */
+  followUpsDue: number;
   wash: WashRates;
   /** 0 to 100, or null when there are too few assessments. */
   vulnerabilityIndex: number | null;
@@ -93,6 +97,8 @@ export interface Kpis {
   referralCompletion: number;
   unresolved: number;
   followUps: number;
+  /** Sum of the community figures: assessed referrals still waiting for a CHW follow-up. */
+  followUpsDue: number;
   followUpsWorse: number;
   activeChws: number;
   communitiesReporting: number;
@@ -181,4 +187,42 @@ export interface ReferralMonitor {
   }[];
   medianHoursToAccept: number | null;
   medianDaysToAssessed: number | null;
+}
+
+/**
+ * Stage 7 facility inbox. This is PERSON-LEVEL (it is what a facility worker needs to act on a
+ * referral sent to their own facility), so it is returned only to the facility role and only for
+ * that facility. It carries no name, phone number or address, and nothing here is a clinical
+ * record. Every item is synthetic.
+ */
+export interface InboxAssessmentSummary {
+  assessmentId: string;
+  capturedAt: string;
+  communityId: string;
+  communityName: string;
+  ageGroup: string;
+  sex: string;
+  symptoms: string[];
+  duration: string | null;
+  progression: string | null;
+  riskLevel: RiskLevel | null;
+  riskWhy: string[];
+  ruleSetId: string | null;
+  ruleSetVersion: string | null;
+}
+
+export interface InboxItem {
+  referral: Referral;
+  /** 'seed' items are synthetic background examples; 'live' items came from the CHW app. */
+  source: 'seed' | 'live';
+  assessment: InboxAssessmentSummary | null;
+}
+
+export interface FacilityInbox {
+  demo: true;
+  notice: string;
+  generatedAt: string;
+  facilityId: string;
+  facilityName: string;
+  items: InboxItem[];
 }

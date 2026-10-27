@@ -119,6 +119,8 @@
 /* -------------------------------------------------------------- tables */
 .tableWrap {
   overflow-x: auto;
+  /* contains visually-hidden header text so it cannot widen the page on small screens */
+  position: relative;
 }
 
 .table {
@@ -471,4 +473,56 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.matrix {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  gap: var(--space-2, 0.5rem);
+  align-items: stretch;
+}
+.matrixAxis {
+  font-weight: 600;
+  align-self: center;
+  font-size: 0.875rem;
+}
+.matrixCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: left;
+  padding: 0.75rem;
+  border: 2px solid currentColor;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  min-height: 6rem;
+}
+.matrixCell[aria-pressed='true'] {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+  background: rgba(127, 127, 127, 0.15);
+}
+.matrixCell[data-category='PRIORITY_INTERVENTION'] {
+  border-style: solid;
+}
+.matrixCell[data-category='INVESTIGATE_SIGNAL'] {
+  border-style: dashed;
+}
+.matrixCell[data-category='PREVENTION_SURVEILLANCE'] {
+  border-style: dotted;
+}
+.matrixCell[data-category='LOWER_PRIORITY'] {
+  border-style: solid;
+  border-width: 1px;
+}
+.matrixCount {
+  font-size: 0.875rem;
+}
+@media (max-width: 40rem) {
+  .matrix {
+    grid-template-columns: 1fr;
+  }
 }

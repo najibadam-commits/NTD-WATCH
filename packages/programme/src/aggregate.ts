@@ -289,6 +289,12 @@ function communityStat(
   const recent = sig(recentFrom, toMs);
   const previous = sig(previousFrom, recentFrom);
   const index = vulnerabilityIndex(a);
+  const keys = new Set([...a.map((x) => x.clientKey), ...r.map((x) => x.assessmentKey)]);
+  const fu = s.followUps.filter((f) => keys.has(f.assessmentKey));
+  const followed = new Set(fu.map((f) => f.assessmentKey));
+  const followUpsDue = r.filter(
+    (x) => stageIndex(x.stage) >= stageIndex('ASSESSED') && !followed.has(x.assessmentKey),
+  ).length;
   const assigned = DEMO_CHWS.filter((c) => c.communityId === community.id);
   return {
     communityId: community.id,
@@ -306,6 +312,8 @@ function communityStat(
     referrals: r.length,
     referralsCompleted: r.filter((x) => stageIndex(x.stage) >= stageIndex('ASSESSED')).length,
     unresolved: unresolvedCount(r, ctx),
+    followUps: fu.length,
+    followUpsDue,
     wash: washRates(a),
     vulnerabilityIndex: index,
     vulnerabilityBand: vulnerabilityBand(index),
@@ -351,6 +359,7 @@ function kpisFor(s: Slice, communities: CommunityStat[], ctx: QueryContext): Kpi
     referralCompletion: completionRate(s.referrals.map((r) => r.stage)),
     unresolved: unresolvedCount(s.referrals, ctx),
     followUps: s.followUps.length,
+    followUpsDue: communities.reduce((n, c) => n + c.followUpsDue, 0),
     followUpsWorse: s.followUps.filter((f) => f.condition === 'worse').length,
     activeChws: new Set(s.assessments.map((a) => a.chwId)).size,
     communitiesReporting: communities.filter((c) => c.assessments > 0).length,

@@ -18,6 +18,26 @@ export const REFERRAL_STAGE_LABELS: Record<ReferralStage, string> = {
   CLOSED: 'Closed',
 };
 
+/**
+ * Synthetic facility outcome categories recorded when a referral reaches ASSESSED (Stage 7).
+ * They are demonstration categories for the closed loop, NOT clinical codes, and a recorded
+ * outcome is not a clinical record. Wording must never name a disease or a treatment.
+ */
+export const REFERRAL_OUTCOMES = [
+  'NO_FURTHER_ACTION',
+  'CARE_PROVIDED',
+  'REFERRED_ONWARD',
+  'FOLLOW_UP_NEEDED',
+] as const;
+export type ReferralOutcome = (typeof REFERRAL_OUTCOMES)[number];
+
+export const REFERRAL_OUTCOME_LABELS: Record<ReferralOutcome, string> = {
+  NO_FURTHER_ACTION: 'No further action needed',
+  CARE_PROVIDED: 'Facility care provided',
+  REFERRED_ONWARD: 'Referred to a higher level',
+  FOLLOW_UP_NEEDED: 'Follow-up in the community needed',
+};
+
 export function stageIndex(stage: ReferralStage): number {
   return REFERRAL_STAGES.indexOf(stage);
 }

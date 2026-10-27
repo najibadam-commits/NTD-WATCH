@@ -1,0 +1,60 @@
+flowchart TB
+  classDef person fill:#fde8e8,stroke:#9b1c1c,color:#1a1a1a
+  classDef agg fill:#e1effe,stroke:#1c64f2,color:#1a1a1a
+  classDef ext fill:#f3f4f6,stroke:#6b7280,stroke-dasharray: 4 3,color:#1a1a1a
+  classDef gov fill:#fef3c7,stroke:#b45309,color:#1a1a1a
+
+  CHW["CHW<br/>(phone)"] --> PWA["CHW PWA<br/>encrypted local store<br/>+ sync queue"]
+  FAC["Facility worker"] --> WEB["Programme web app<br/>(dashboard, map, reports)"]
+  PROG["LGA / State / Admin"] --> WEB
+
+  PWA -->|HTTPS + device-bound token| GW
+  WEB -->|HTTPS + session| GW
+  IDP["Identity provider<br/>(OIDC, MFA)"] -.->|tokens| GW
+  GW["API gateway<br/>authn, authz, rate limit,<br/>validation, audit hook"]
+
+  subgraph SVC["Application services (modular, one deployable to start)"]
+    direction TB
+    ASM["Assessment & referral service<br/>(person-level)"]:::person
+    SYNC["Sync service<br/>idempotency, conflicts"]:::person
+    RULES["Rules service<br/>approved rule sets only"]:::gov
+    PRG["Programme service<br/>(aggregates only)"]:::agg
+    RPT["Report / export service"]:::agg
+    NTF["Notification service"]
+  end
+  GW --> ASM
+  GW --> SYNC
+  GW --> PRG
+  GW --> RPT
+  SYNC --> ASM
+  ASM --> RULES
+
+  subgraph DB["PostgreSQL + PostGIS"]
+    direction TB
+    OPS[("ops schema<br/>person-level")]:::person
+    PROGDB[("prog schema<br/>aggregates, small-cell rules")]:::agg
+    REF[("ref schema<br/>admin units, facilities<br/>versioned geometry")]
+    AUD[("audit schema<br/>append-only")]
+    RULEDB[("rules schema<br/>versions, approvals")]:::gov
+  end
+  ASM --> OPS
+  SYNC --> OPS
+  RULES --> RULEDB
+  OPS -->|aggregation job| JOB["Background jobs<br/>aggregation, reports,<br/>retention, reminders"]
+  JOB --> PROGDB
+  PRG --> PROGDB
+  PRG --> REF
+  RPT --> PROGDB
+  ASM --> REF
+  GW -.-> AUD
+  ASM -.-> AUD
+  PRG -.-> AUD
+
+  PROGDB --> GIS["GIS intelligence<br/>vector tiles / GeoJSON<br/>layers"]:::agg
+  REF --> GIS
+  GIS --> WEB
+  NTF -.-> PWA
+
+  DHIS2["DHIS2 / NTD systems<br/>facility registry, boundaries"]:::ext -.->|future, approved only| REF
+  PROGDB -.->|future, aggregate only| DHIS2
+  OBS["Monitoring & logging<br/>metrics, alerts, no PHI"] -.-> SVC

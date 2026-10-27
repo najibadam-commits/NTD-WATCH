@@ -37,7 +37,7 @@ export function UsersPage() {
   });
 
   const scopeFor = (r: Role): string =>
-    ({ chw: 'com-01', facility: 'fac-c1', lga: 'lga-c', state: 'st-arewa', admin: 'all' })[r];
+    ({ chw: 'com-01', facility: 'fac-n1', lga: 'lga-c', state: 'st-arewa', admin: 'all' })[r];
 
   return (
     <div className={styles.page}>
