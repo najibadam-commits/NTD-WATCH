@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { REFERRAL_OUTCOME_LABELS } from '@ntd-watch/domain';
 import { PRIORITY_LABELS } from '@ntd-watch/programme';
 import { DEMO_RULE_SET } from '@ntd-watch/rules-engine';
-import en from './i18n/locales/en.json';
+import enBase from './i18n/locales/en.json';
+import enFgs from './i18n/locales/en.fgs.json';
+
+// the FGS wording file is held to exactly the same safety rules as the main locale
+const en = { ...enBase, ...enFgs };
 
 /**
  * Stage 7 safety: the prototype must never diagnose, prescribe, declare an outbreak or claim

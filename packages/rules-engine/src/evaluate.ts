@@ -1,5 +1,5 @@
 import { compareRisk, type RiskLevel } from '@ntd-watch/domain';
-import { DEMO_LABEL_TEXT } from './types';
+import { DEMO_LABEL_TEXT, STATUS_LABELS, normaliseStatus } from './types';
 import type {
   AssessmentInput,
   AssessmentResult,
@@ -36,7 +36,16 @@ export function deriveFacts(input: AssessmentInput): Derived {
     conflicts.push('DURATION_WITHOUT_SYMPTOMS');
   }
 
+  const fgs = input.module === 'FGS';
   const facts: Facts = { symptoms, symptomCount: symptoms.length };
+  if (input.exposureSignals !== undefined) {
+    const ids = [...new Set(input.exposureSignals)];
+    facts.exposureSignals = ids;
+    facts.exposureSignalCount = ids.length;
+  }
+  if (input.contextSignals !== undefined) {
+    facts.contextSignalCount = new Set(input.contextSignals).size;
+  }
   if (input.duration) facts.durationRank = DURATION_RANK[input.duration];
   if (input.progression) facts.progression = input.progression;
 
@@ -57,6 +66,11 @@ export function deriveFacts(input: AssessmentInput): Derived {
 
   const incompleteInputs: string[] = [];
   const unknown = (v: unknown) => v === undefined || v === 'unknown';
+  if (fgs) {
+    // FGS module: only its own answers count as missing (no skin/limb duration, no WASH block)
+    if (input.exposureSignals === undefined) incompleteInputs.push('exposureSignals');
+    return { facts, symptomsKnown, conflicts, incompleteInputs };
+  }
   if (symptoms.length > 0) {
     if (!input.duration) incompleteInputs.push('duration');
     if (!input.progression || input.progression === 'unsure') incompleteInputs.push('progression');
@@ -107,11 +121,14 @@ function ruleFires(rule: DecisionRule, facts: Facts): boolean {
 export function evaluate(input: AssessmentInput, ruleSet: RuleSet): AssessmentResult {
   const demoOnly = ruleSet.status !== 'VALIDATED';
   const label = demoOnly ? DEMO_LABEL_TEXT : null;
+  const ruleStatus = normaliseStatus(ruleSet.status);
   const base = {
     ruleSetId: ruleSet.id,
     ruleSetVersion: ruleSet.version,
     demoOnly,
     label,
+    ruleStatus,
+    ruleStatusLabel: STATUS_LABELS[ruleStatus],
   } as const;
 
   const { facts, symptomsKnown, conflicts, incompleteInputs } = deriveFacts(input);

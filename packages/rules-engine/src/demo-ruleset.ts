@@ -15,6 +15,11 @@ export const DEMO_RULE_SET = parseRuleSet({
   id: 'demo-placeholder',
   version: '0.1.0',
   status: 'DEMO_PLACEHOLDER',
+  source: 'No external source. Project placeholder logic for the general NTD module.',
+  validationStatus: 'NOT_VALIDATED',
+  lastModified: '2026-10-17',
+  notes:
+    'Skin, limb and general indicators. Arbitrary thresholds, to be replaced after expert review.',
   description:
     'Placeholder rules for demonstrating the assessment workflow. Not reviewed by clinical or public-health experts.',
   actions: {

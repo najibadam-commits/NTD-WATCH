@@ -1,0 +1,28 @@
+{
+  "fgs": {
+    "exposure": {
+      "freshwater": "Does she have contact with open fresh water, such as a river, stream or pond?",
+      "livelihood": "Does her daily work or housework use water from open sources?"
+    },
+    "signal": {
+      "pelvicPain": "Pain in the lower belly (pelvis)",
+      "urineBlood": "Blood in the urine",
+      "urinePain": "Pain or burning when passing urine",
+      "discharge": "Vaginal discharge that is unusual for her",
+      "itching": "Itching or burning in the genital area",
+      "unusualBleeding": "Vaginal bleeding that is unusual for her",
+      "warning": "A warning sign (demonstration placeholder: severe pain or heavy bleeding)"
+    },
+    "context": {
+      "far": "A visit to a health facility is hard for her (distance or cost)",
+      "prefersFemale": "She would prefer to be seen by a woman"
+    },
+    "category": {
+      "NO_PRIORITY_SIGNAL": "No priority signal identified",
+      "FURTHER_ASSESSMENT": "Further assessment recommended",
+      "CLINICAL_ASSESSMENT": "Clinical assessment recommended",
+      "URGENT_CLINICAL_REVIEW": "Urgent clinical review recommended"
+    },
+    "categoryNote": "This is a programme and referral category. It is not a diagnosis and not a clinical severity."
+  }
+}

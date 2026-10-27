@@ -2,7 +2,10 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { REFERRAL_STAGES, ROLES } from '@ntd-watch/domain';
-import en from './locales/en.json';
+import enBase from './locales/en.json';
+import enFgs from './locales/en.fgs.json';
+
+const en = { ...enBase, ...enFgs };
 import {
   AGE_GROUPS,
   CONDITIONS,

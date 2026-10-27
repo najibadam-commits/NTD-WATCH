@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { RiskLevel } from './risk';
 
 /**
  * FemTech (women-and-girls) module: consent, participant model and pseudonymous case ids.
@@ -122,3 +123,23 @@ export function caseIdFor(clientKey: string): string {
 }
 
 export const CASE_ID_PATTERN = /^PC-[0-9A-F]{4}-[0-9A-F]{4}$/;
+
+/**
+ * Non-diagnostic programme and referral categories shown to the CHW instead of a result label.
+ * They map the four existing product levels (Low, Moderate, High, Urgent). They are NOT clinical
+ * severity classes and never name a condition. Wording lives in the locale file.
+ */
+export const SIGNAL_CATEGORIES = [
+  'NO_PRIORITY_SIGNAL',
+  'FURTHER_ASSESSMENT',
+  'CLINICAL_ASSESSMENT',
+  'URGENT_CLINICAL_REVIEW',
+] as const;
+export type SignalCategory = (typeof SIGNAL_CATEGORIES)[number];
+
+export const SIGNAL_CATEGORY_BY_LEVEL: Record<RiskLevel, SignalCategory> = {
+  LOW: 'NO_PRIORITY_SIGNAL',
+  MODERATE: 'FURTHER_ASSESSMENT',
+  HIGH: 'CLINICAL_ASSESSMENT',
+  URGENT: 'URGENT_CLINICAL_REVIEW',
+};

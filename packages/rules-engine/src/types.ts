@@ -11,7 +11,41 @@ import type { Exposure, RiskLevel, Wash } from '@ntd-watch/domain';
  */
 export const DEMO_LABEL_TEXT = 'DEMONSTRATION ONLY — NOT CLINICALLY VALIDATED';
 
-export type RuleSetStatus = 'DEMO_PLACEHOLDER' | 'VALIDATED';
+/**
+ * Lifecycle of a rule set or content item: DEMO, DRAFT, CLINICALLY_REVIEWED, VALIDATED.
+ * `DEMO_PLACEHOLDER` is the original name of DEMO, kept so existing rule data stays valid; it is
+ * treated as DEMO everywhere. Anything above DEMO needs recorded review evidence (see schema.ts).
+ */
+export type RuleSetStatus =
+  'DEMO' | 'DEMO_PLACEHOLDER' | 'DRAFT' | 'CLINICALLY_REVIEWED' | 'VALIDATED';
+
+export type NormalisedStatus = 'DEMO' | 'DRAFT' | 'CLINICALLY_REVIEWED' | 'VALIDATED';
+
+export function normaliseStatus(status: RuleSetStatus): NormalisedStatus {
+  return status === 'DEMO_PLACEHOLDER' ? 'DEMO' : status;
+}
+
+const STATUS_RANK: Record<NormalisedStatus, number> = {
+  DEMO: 0,
+  DRAFT: 1,
+  CLINICALLY_REVIEWED: 2,
+  VALIDATED: 3,
+};
+export function statusRank(status: RuleSetStatus): number {
+  return STATUS_RANK[normaliseStatus(status)];
+}
+
+/** Text shown next to a result so the status of the logic behind it is never hidden. */
+export const STATUS_LABELS: Record<NormalisedStatus, string> = {
+  DEMO: 'DEMO — clinical validation pending',
+  DRAFT: 'DRAFT — clinical review pending',
+  CLINICALLY_REVIEWED: 'CLINICALLY REVIEWED — validation pending',
+  VALIDATED: 'VALIDATED',
+};
+
+/** Where a rule set stands in validation, separately from its lifecycle status. */
+export const VALIDATION_STATUSES = ['NOT_VALIDATED', 'IN_REVIEW', 'REVIEWED', 'VALIDATED'] as const;
+export type ValidationStatus = (typeof VALIDATION_STATUSES)[number];
 
 export const FACT_NAMES = [
   'symptoms',
@@ -21,6 +55,9 @@ export const FACT_NAMES = [
   'exposureCount',
   'householdSimilar',
   'washRiskCount',
+  'exposureSignals',
+  'exposureSignalCount',
+  'contextSignalCount',
 ] as const;
 export type FactName = (typeof FACT_NAMES)[number];
 
@@ -43,6 +80,14 @@ export interface DecisionRule {
   explanation: string;
   /** All conditions must hold. A condition on a missing fact does not hold. */
   when: readonly RuleCondition[];
+  /** Governance metadata (optional per rule; defaults come from the rule set). */
+  name?: string;
+  source?: string;
+  version?: string;
+  status?: RuleSetStatus;
+  validationStatus?: ValidationStatus;
+  lastModified?: string;
+  notes?: string;
 }
 
 export interface RuleSetReview {
@@ -59,10 +104,35 @@ export interface RuleSet {
   actions: Record<RiskLevel, string>;
   rules: readonly DecisionRule[];
   review?: RuleSetReview;
+  /** Where the logic comes from (guidance reference, or an honest statement that there is none). */
+  source?: string;
+  validationStatus?: ValidationStatus;
+  /** ISO date of the last change to the rule data. */
+  lastModified?: string;
+  notes?: string;
+}
+
+/** The governance record of one rule: what the rules register shows. */
+export interface RuleMetadata {
+  id: string;
+  name: string;
+  inputs: readonly FactName[];
+  output: RiskLevel;
+  source: string;
+  version: string;
+  status: NormalisedStatus;
+  validationStatus: ValidationStatus;
+  lastModified: string;
+  notes: string;
 }
 
 /** Inputs as captured by the CHW form. Everything may be missing. */
 export interface AssessmentInput {
+  /** Which module's inputs these are. Decides which answers count as missing. Default GENERAL. */
+  module?: 'GENERAL' | 'FGS';
+  /** FGS module: exposure and context signal ids answered "yes". Undefined means not asked. */
+  exposureSignals?: readonly string[];
+  contextSignals?: readonly string[];
   symptoms?: readonly string[];
   noSymptomsReported?: boolean;
   duration?: 'lt_1_week' | '1_4_weeks' | '1_3_months' | 'gt_3_months' | null;
@@ -91,6 +161,9 @@ export interface AssessmentResult {
   ruleSetVersion: string;
   /** True whenever the rule set is not validated. */
   demoOnly: boolean;
+  /** Lifecycle status of the rule set that produced this result. Always shown with the result. */
+  ruleStatus: NormalisedStatus;
+  ruleStatusLabel: string;
   /** Present on every result from a non-validated rule set. The UI must display it with the result, the reasons and the action. */
   label: typeof DEMO_LABEL_TEXT | null;
 }

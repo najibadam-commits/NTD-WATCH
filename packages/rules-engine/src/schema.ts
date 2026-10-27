@@ -1,6 +1,21 @@
 import { z } from 'zod';
 import { RISK_LEVELS } from '@ntd-watch/domain';
-import { FACT_NAMES, OPERATORS, type RuleSet } from './types';
+import {
+  FACT_NAMES,
+  OPERATORS,
+  VALIDATION_STATUSES,
+  statusRank,
+  type RuleSet,
+  type RuleSetStatus,
+} from './types';
+
+const statusSchema = z.enum([
+  'DEMO',
+  'DEMO_PLACEHOLDER',
+  'DRAFT',
+  'CLINICALLY_REVIEWED',
+  'VALIDATED',
+]);
 
 /**
  * Words that must never appear in rule text (explanations or actions): the prototype does not
@@ -27,13 +42,23 @@ const ruleSchema = z.strictObject({
       'Rule text must not diagnose, prescribe or name treatments',
     ),
   when: z.array(conditionSchema).min(1),
+  name: z.string().min(3).optional(),
+  source: z.string().min(3).optional(),
+  version: z
+    .string()
+    .regex(/^\d+\.\d+\.\d+$/)
+    .optional(),
+  status: statusSchema.optional(),
+  validationStatus: z.enum(VALIDATION_STATUSES).optional(),
+  lastModified: z.iso.date().optional(),
+  notes: z.string().min(3).optional(),
 });
 
 export const ruleSetSchema = z
   .strictObject({
     id: z.string().min(1),
     version: z.string().regex(/^\d+\.\d+\.\d+$/),
-    status: z.enum(['DEMO_PLACEHOLDER', 'VALIDATED']),
+    status: statusSchema,
     description: z.string().min(10),
     actions: z.strictObject({
       LOW: z.string().min(5),
@@ -48,6 +73,10 @@ export const ruleSetSchema = z
         approvedOn: z.iso.date(),
       })
       .optional(),
+    source: z.string().min(3).optional(),
+    validationStatus: z.enum(VALIDATION_STATUSES).optional(),
+    lastModified: z.iso.date().optional(),
+    notes: z.string().min(3).optional(),
   })
   .superRefine((rs, ctx) => {
     const ids = new Set<string>();
@@ -55,17 +84,34 @@ export const ruleSetSchema = z
       if (ids.has(r.id)) ctx.addIssue({ code: 'custom', message: `Duplicate rule id ${r.id}` });
       ids.add(r.id);
     }
-    if (rs.status === 'DEMO_PLACEHOLDER' && !rs.id.startsWith('demo-')) {
+    if ((rs.status === 'DEMO_PLACEHOLDER' || rs.status === 'DEMO') && !rs.id.startsWith('demo-')) {
       ctx.addIssue({
         code: 'custom',
         message: 'A demonstration rule set id must start with "demo-"',
       });
     }
-    if (rs.status === 'VALIDATED' && !rs.review) {
+    if ((rs.status === 'CLINICALLY_REVIEWED' || rs.status === 'VALIDATED') && !rs.review) {
       ctx.addIssue({
         code: 'custom',
-        message: 'A VALIDATED rule set must record at least two reviewers and an approval date',
+        message: `A ${rs.status} rule set must record at least two reviewers and an approval date`,
       });
+    }
+    // Nothing may claim a higher status, or a validation, than the evidence behind its rule set.
+    if (rs.status === 'DEMO' || rs.status === 'DEMO_PLACEHOLDER' || rs.status === 'DRAFT') {
+      if (rs.validationStatus === 'VALIDATED' || rs.validationStatus === 'REVIEWED') {
+        ctx.addIssue({
+          code: 'custom',
+          message: `A ${rs.status} rule set cannot claim validation status ${rs.validationStatus}`,
+        });
+      }
+    }
+    for (const r of rs.rules) {
+      if (r.status && statusRank(r.status as RuleSetStatus) > statusRank(rs.status)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Rule ${r.id} claims status ${r.status}, higher than its rule set (${rs.status})`,
+        });
+      }
     }
     for (const level of RISK_LEVELS) {
       if (FORBIDDEN_RULE_TEXT.test(rs.actions[level])) {

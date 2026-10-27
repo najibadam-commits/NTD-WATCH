@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
+import enFgs from './locales/en.fgs.json';
 
 /**
  * Internationalisation scaffold. English only for the first milestone.
@@ -9,7 +10,8 @@ import en from './locales/en.json';
 void i18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
-  resources: { en: { translation: en } },
+  // FGS wording is data kept in its own file so it can be reviewed and translated separately.
+  resources: { en: { translation: { ...en, ...enFgs } } },
   interpolation: { escapeValue: false },
   initAsync: false,
 });
