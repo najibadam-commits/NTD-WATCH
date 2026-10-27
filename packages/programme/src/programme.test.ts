@@ -257,30 +257,102 @@ describe('reports', () => {
   });
 });
 
-describe('small-cell suppression for the women-and-girls module', () => {
+describe('women-and-girls (FGS) records at the programme boundary', () => {
   const base = records.assessments.find((a) => a.capturedAt >= '2026-08-01')!;
-  const fgs = (n: number) =>
-    Array.from({ length: n }, (_, i) => ({
-      ...base,
-      id: `A-FGS${i}`,
-      clientKey: `fgs-small-cell-${i}`,
-      module: 'FGS' as const,
-      symptoms: ['fgs_sig_pelvic_pain'],
-    }));
-  const countFor = (n: number) =>
-    summarise(
-      { ...records, assessments: [...records.assessments, ...fgs(n)] },
-      range,
-      ALL_SCOPE,
-      ctx,
-    ).symptomCounts['fgs_sig_pelvic_pain'];
+  const fgsAssessment = (i: number, patch: Record<string, unknown> = {}) => ({
+    ...base,
+    id: `A-FGS${i}`,
+    clientKey: `fgs-small-cell-${i}`,
+    module: 'FGS' as const,
+    symptoms: ['fgs_sig_pelvic_pain'],
+    riskLevel: 'MODERATE' as const,
+    ...patch,
+  });
+  const fgsReferral = (i: number) => {
+    const r = records.referrals.find((x) => x.communityId === base.communityId)!;
+    return { ...r, id: `NTDW-2026-F${i}`, assessmentKey: `fgs-small-cell-${i}` };
+  };
+  const withFgs = (n: number, patch: Record<string, unknown> = {}): typeof records => ({
+    assessments: [
+      ...records.assessments,
+      ...Array.from({ length: n }, (_, i) => fgsAssessment(i, patch)),
+    ],
+    referrals: [...records.referrals, ...Array.from({ length: n }, (_, i) => fgsReferral(i))],
+    followUps: records.followUps,
+  });
+  const at = (r: typeof records, f: ProgrammeFilters = range, scope: DataScope = ALL_SCOPE) =>
+    summarise(r, f, scope, ctx);
 
-  it('does not publish an FGS signal count below the threshold', () => {
-    expect(countFor(1)).toBeUndefined();
-    expect(countFor(SMALL_CELL_THRESHOLD - 1)).toBeUndefined();
+  const general = (r: typeof records) => {
+    const drop = (o: object) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'fgs'));
+    const summary = drop(at(r));
+    const detail = drop(communityDetail(r, base.communityId, range, ALL_SCOPE, ctx)!);
+    return JSON.stringify([summary, detail, monitorReferrals(r, range, ALL_SCOPE, ctx)]);
+  };
+
+  it('general aggregates are identical with and without FGS records (no leak through any general view)', () => {
+    const plain = general(records);
+    for (const n of [1, 3, 5, 12]) expect(general(withFgs(n)), `n=${n}`).toBe(plain);
   });
 
-  it('publishes it once the count reaches the threshold', () => {
-    expect(countFor(SMALL_CELL_THRESHOLD)).toBe(SMALL_CELL_THRESHOLD);
+  it('does not publish an FGS count below the threshold in any field', () => {
+    for (const n of [1, SMALL_CELL_THRESHOLD - 1]) {
+      const fgs = at(withFgs(n), range).fgs;
+      expect(fgs.assessments).toBeNull();
+      expect(fgs.referrals).toBeNull();
+      expect(Object.values(fgs.byCategory).every((v) => v === null)).toBe(true);
+      expect(fgs.signalCounts).toEqual({});
+    }
+  });
+
+  it('publishes totals once the count reaches the threshold', () => {
+    const fgs = at(withFgs(SMALL_CELL_THRESHOLD), range).fgs;
+    expect(fgs.assessments).toBe(SMALL_CELL_THRESHOLD);
+    expect(fgs.byCategory.FURTHER_ASSESSMENT).toBe(SMALL_CELL_THRESHOLD);
+    expect(fgs.signalCounts['fgs_sig_pelvic_pain']).toBe(SMALL_CELL_THRESHOLD);
+  });
+
+  it('hides a second cell when exactly one cell is hidden, so it cannot be derived from the total', () => {
+    const r = withFgs(6);
+    r.assessments[r.assessments.length - 1] = fgsAssessment(5, { riskLevel: 'URGENT' }) as never;
+    const fgs = at(r, range).fgs;
+    expect(fgs.assessments).toBe(6);
+    expect(fgs.byCategory.URGENT_CLINICAL_REVIEW).toBeNull(); // 1 person
+    // the only visible non-zero cell (5) is hidden too, so 6 - hidden cannot reveal the 1
+    expect(fgs.byCategory.FURTHER_ASSESSMENT).toBeNull();
+  });
+
+  it('suppression holds through filters, scope, drill-down and the narrower community view', () => {
+    const r = withFgs(SMALL_CELL_THRESHOLD - 1);
+    const community = base.communityId;
+    const lga = DEMO_COMMUNITIES.find((c) => c.id === community)!.lgaId;
+    const views = [
+      at(r, { ...range, communityId: community }).fgs,
+      at(r, { ...range, lgaId: lga }).fgs,
+      at(r, range, lga ? { kind: 'lga', id: lga } : ALL_SCOPE).fgs,
+      communityDetail(r, community, range, ALL_SCOPE, ctx)!.fgs,
+      // a narrow date window around the records
+      at(r, { from: base.capturedAt.slice(0, 10), to: base.capturedAt.slice(0, 10) }).fgs,
+    ];
+    for (const fgs of views) {
+      expect(fgs.assessments).toBeNull();
+      expect(fgs.signalCounts).toEqual({});
+    }
+  });
+
+  it('exports and reports contain no FGS signal ids or case-level fields', () => {
+    const r = withFgs(3);
+    const summary = at(r);
+    const monitor = monitorReferrals(r, range, ALL_SCOPE, ctx);
+    for (const kind of REPORT_KINDS) {
+      const report = buildReport(kind, summary, monitor, {
+        generatedAt: ANCHOR.toISOString(),
+        roleLabel: 'Test',
+        scopeLabel: 'All',
+      });
+      expect(report.csv).not.toContain('fgs_sig_');
+      expect(report.json).not.toContain('fgs_sig_');
+      expect(report.json).not.toContain('fgs-small-cell');
+    }
   });
 });

@@ -96,7 +96,7 @@ describe('FGS privacy at the programme level', () => {
     expect(bodies).not.toContain(caseId);
     expect(bodies).not.toContain(KEY);
     expect(bodies).not.toMatch(/"(latitude|longitude|lat|lng|household|householdCoordinates)"/i);
-    expect(bodies).not.toMatch(/"(consent|fgs|caseId|distress|safeContact)"/);
+    expect(bodies).not.toMatch(/"(consent|caseId|distress|safeContact)"/);
   });
 
   it('a case id is derived from the random key and carries no identifying content', () => {

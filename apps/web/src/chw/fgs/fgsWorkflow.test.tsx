@@ -58,6 +58,7 @@ describe('FGS community assessment', () => {
     expect(await localDb.assessments.count()).toBe(0);
     expect(await localDb.outbox.count()).toBe(0);
     expect(useFgsDraft.getState().draft).toBeFalsy();
+    expect(sessionStorage.getItem('ntd-watch-fgs-draft') ?? '').not.toContain('PC-');
   });
 
   it('blocks the first step until a choice is made and shows a readable error', async () => {
@@ -100,6 +101,14 @@ describe('FGS community assessment', () => {
     expect(screen.getByText(/rule status: demo/i)).toBeInTheDocument();
     expect(screen.getByText(/not a diagnosis/i)).toBeInTheDocument();
     expect(screen.getByText('Supportive counselling')).toBeInTheDocument();
+    expect(
+      screen.getAllByText(
+        /demonstration placeholder — source review and clinical validation pending/i,
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(document.body.textContent ?? '').not.toMatch(
+      /rule status:? *(validated|clinically reviewed)/i,
+    );
     expect(document.body.textContent ?? '').not.toMatch(
       /fgs confirmed|tested positive|\bhas fgs\b/i,
     );
@@ -111,6 +120,8 @@ describe('FGS community assessment', () => {
     expect(saved[0]?.ruleSetStatus).toBe('DEMO');
     expect(saved[0]?.fgs?.supportOffered).toBe(true);
     expect(saved[0]?.caseId).toMatch(/^PC-[0-9A-F]{4}-[0-9A-F]{4}$/);
+    // the in-progress draft (kept in session storage) holds no answers once saved
+    expect(sessionStorage.getItem('ntd-watch-fgs-draft') ?? '').not.toMatch(/fgs_sig_|PC-/);
     expect(useFgsDraft.getState().draft).toBeFalsy();
   });
 
@@ -139,8 +150,14 @@ describe('FGS community assessment', () => {
       expect(a?.consent?.state).toBe('WITHDRAWN');
     });
 
+    const code = (await localDb.assessments.toArray())[0]!.caseId!;
     await press(u, /delete this record/i);
     await press(u, /^confirm$/i);
     await waitFor(async () => expect(await localDb.assessments.count()).toBe(0));
+    // back on the dashboard, the deleted case is not listed anywhere on screen
+    await screen
+      .findByRole('heading', { name: /dashboard|hello|community/i })
+      .catch(() => undefined);
+    expect(document.body.textContent ?? '').not.toContain(code);
   });
 });
