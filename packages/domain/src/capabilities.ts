@@ -73,6 +73,30 @@ export const CAPABILITIES: readonly Capability[] = [
     note: 'Synthetic and generated from a fixed seed. Nothing describes a real person or place.',
   },
   {
+    id: 'fgs-assessment',
+    name: 'FGS community assessment and non-diagnostic referral guidance',
+    state: 'REAL',
+    note: 'Consent, age band, short signal catalogue and a signal category work in the browser on synthetic data. All FGS content and rules are DEMO placeholders with no clinical review.',
+  },
+  {
+    id: 'fgs-consent',
+    name: 'Consent, withdrawal and deletion (prototype)',
+    state: 'REAL',
+    note: 'Consent, withdrawal and deletion are recorded and enforced in the demonstration, with audit events. Not reviewed against any data-protection law.',
+  },
+  {
+    id: 'facility-capability',
+    name: 'Facility capability filtering for women and girls',
+    state: 'SIMULATED',
+    note: 'The ranking logic works, but every capability value is synthetic and describes no real facility, clinician or service.',
+  },
+  {
+    id: 'fgs-clinical-validation',
+    name: 'Clinical review and validation of FGS content and rules',
+    state: 'FUTURE',
+    note: 'Not performed. All FGS content stays DEMO until clinical and safeguarding review is documented.',
+  },
+  {
     id: 'dhis2',
     name: 'DHIS2 exchange',
     state: 'FUTURE',

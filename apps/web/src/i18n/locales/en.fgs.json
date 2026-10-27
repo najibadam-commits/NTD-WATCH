@@ -128,6 +128,18 @@
       "deleted": "Deletion requested.",
       "confirm": "Confirm",
       "cancel": "Cancel"
+    },
+    "facility": {
+      "syntheticNotice": "Facility capabilities shown here are invented for the demonstration. They do not describe any real facility, worker or service.",
+      "fits": "Fits her needs (synthetic)",
+      "gaps": "Not shown as available: {{list}}",
+      "gap": {
+        "relevantService": "service",
+        "trainedWorker": "trained worker",
+        "femaleClinician": "female clinician",
+        "examination": "examination",
+        "referralCapacity": "referral capacity"
+      }
     }
   }
 }

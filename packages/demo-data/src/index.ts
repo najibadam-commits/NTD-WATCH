@@ -21,3 +21,4 @@ export * from './reference';
 export * from './profiles';
 export * from './users';
 export * from './geography';
+export * from './facilityCapabilities';

@@ -9,7 +9,13 @@ import {
   LoadingState,
   Notice,
 } from '@ntd-watch/design-system';
-import { DEMO_CHW, communityName, facilitiesForCommunity } from '@ntd-watch/demo-data';
+import {
+  DEMO_CHW,
+  communityName,
+  facilitiesForCommunity,
+  matchesNeeds,
+  rankFacilities,
+} from '@ntd-watch/demo-data';
 import { DEMO_RULES_NOTICE, referralIdFor, type Referral } from '@ntd-watch/domain';
 import { localDb } from '../../offline/localDb';
 import { saveReferral } from '../../offline/repository';
@@ -45,7 +51,23 @@ export function ReferralNewScreen() {
   // One referral per assessment: asking again goes to the one that exists.
   if (existing.value) return <Navigate to={`/chw/referrals/${existing.value.id}`} replace />;
 
-  const facilities = facilitiesForCommunity(a.communityId);
+  const isFgs = a.module === 'FGS';
+  const needs = { femaleClinician: a.fgs?.context.includes('fgs_ctx_prefers_female') ?? false };
+  const ranked = rankFacilities(facilitiesForCommunity(a.communityId), needs);
+  const gapText = (g: string) => t(`fgs.facility.gap.${g}`);
+  const facilityOptions = ranked.map((r) => ({
+    value: r.facility.id,
+    label: r.facility.name,
+    hint:
+      isFgs && r.capability
+        ? [
+            r.facility.kind,
+            matchesNeeds(r, needs)
+              ? t('fgs.facility.fits')
+              : t('fgs.facility.gaps', { list: r.gaps.map(gapText).join(', ') }),
+          ].join(' · ')
+        : r.facility.kind,
+  }));
 
   const confirm = async () => {
     if (saving) return;
@@ -87,12 +109,13 @@ export function ReferralNewScreen() {
         errors={error ? [{ field: 'facility', message: error }] : []}
         attempt={attempt}
       />
+      {isFgs ? <Notice tone="demo">{t('fgs.facility.syntheticNotice')}</Notice> : null}
       <ChoiceGroup
         legend={t('chw.referral.facility')}
         hint={t('chw.referral.facilityHint')}
         name="facility"
         required
-        options={facilities.map((f) => ({ value: f.id, label: f.name, hint: f.kind }))}
+        options={facilityOptions}
         value={facilityId}
         error={error}
         onChange={(v) => {
