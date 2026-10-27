@@ -1,6 +1,7 @@
 import { DEMO_USERS, type DemoUser } from '@ntd-watch/demo-data';
 import {
   DEFAULT_MAX_UNRESOLVED_DAYS,
+  generateFgsSeed,
   generateSeed,
   type ProgrammeRecords,
   type QueryContext,
@@ -32,12 +33,32 @@ export async function seedAnchor(): Promise<Date> {
   return anchor;
 }
 
+/** Adds the SYNTHETIC women-and-girls records. Programme views reach them only through suppressed aggregates. */
+let fgsSeedEnabled = true;
+
+/**
+ * Test hook: turns the synthetic women-and-girls seed off so a test can start from a store that
+ * holds only the records it adds itself. The seed is on by default.
+ */
+export function setFgsSeedEnabled(on: boolean): void {
+  fgsSeedEnabled = on;
+  seedCache = null;
+}
+
+function withFgsSeed(records: ProgrammeRecords, anchor: Date): ProgrammeRecords {
+  if (!fgsSeedEnabled) return records;
+  return {
+    ...records,
+    assessments: [...records.assessments, ...generateFgsSeed({ anchor, weeks: SEED_WEEKS })],
+  };
+}
+
 export async function loadRecords(): Promise<ProgrammeRecords> {
   const anchor = await seedAnchor();
   if (!seedCache || seedCache.anchorMs !== anchor.getTime()) {
     seedCache = {
       anchorMs: anchor.getTime(),
-      records: generateSeed({ anchor, weeks: SEED_WEEKS }),
+      records: withFgsSeed(generateSeed({ anchor, weeks: SEED_WEEKS }), anchor),
     };
   }
   const [assessments, referrals, followUps] = await Promise.all([

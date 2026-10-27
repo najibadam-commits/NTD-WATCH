@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { CONSENT_AUDIT_ACTIONS } from '@ntd-watch/domain';
 import { SMALL_CELL_THRESHOLD } from '@ntd-watch/programme';
 import { mockServer } from './node';
-import { loadRecords, setMockClock } from './programmeStore';
+import { loadRecords, setFgsSeedEnabled, setMockClock } from './programmeStore';
 import { serverDb } from './serverDb';
 import { localDb } from '../offline/localDb';
 import { requestDeletion, saveAssessment, withdrawConsent } from '../offline/repository';
@@ -29,10 +29,13 @@ const fgsRecord = (i: number) =>
 beforeAll(() => mockServer.listen({ onUnhandledFrame: 'error' }));
 afterAll(() => mockServer.close());
 beforeEach(async () => {
+  // These P1 tests assume the only women-and-girls records are the ones they add.
+  setFgsSeedEnabled(false);
   setMockClock(() => NOW);
   await resetAll();
 });
 afterEach(() => {
+  setFgsSeedEnabled(true);
   mockServer.resetHandlers();
   setMockClock(null);
 });

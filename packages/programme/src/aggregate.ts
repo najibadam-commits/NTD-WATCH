@@ -39,6 +39,14 @@ import {
   type WashRates,
   type WeeklyPoint,
 } from './types';
+import {
+  INTELLIGENCE_NOTE,
+  INTELLIGENCE_THRESHOLD,
+  intelligenceRow,
+  rankIntelligence,
+  type CommunityIntelligenceInput,
+  type IntelligenceSummary,
+} from './intelligence';
 
 /** Fewer assessments than this and a community gets no vulnerability index. */
 export const MIN_ASSESSMENTS_FOR_INDEX = 5;
@@ -264,7 +272,7 @@ function stageCounts(referrals: readonly Referral[]): StageCounts {
  * regulatory requirement and not claimed to be appropriate everywhere; it needs privacy and
  * data-protection review before any real deployment.
  */
-export const SMALL_CELL_THRESHOLD = 5;
+export const SMALL_CELL_THRESHOLD = INTELLIGENCE_THRESHOLD;
 
 function symptomCounts(assessments: readonly Assessment[]): Record<string, number> {
   const counts: Record<string, number> = {};
@@ -350,6 +358,44 @@ export function fgsAggregate(
     referrals: published(s.referrals.length),
     byCategory: cells,
     signalCounts: totalShown === null ? {} : signalCounts,
+  };
+}
+
+/**
+ * Community-level programme intelligence for the women-and-girls module. Takes FGS records only
+ * to count them per community; what leaves this function is bands and ranges, never a record,
+ * case code, response or exact count, and nothing at all below the threshold.
+ */
+export function communityIntelligence(
+  records: ProgrammeRecords,
+  communities: readonly CommunityStat[],
+  communityIds: ReadonlySet<string>,
+  fromMs: number,
+  toMs: number,
+): IntelligenceSummary {
+  const s = slice(fgsOnly(records), communityIds, fromMs, toMs);
+  const rows = communities.map((c) => {
+    const own = s.assessments.filter((a) => a.communityId === c.communityId);
+    const input: CommunityIntelligenceInput = {
+      communityId: c.communityId,
+      name: c.name,
+      stateId: c.stateId,
+      lgaId: c.lgaId,
+      wardId: c.wardId,
+      washBand: c.vulnerabilityBand,
+      observations: own.length,
+      withSignal: own.filter((a) => a.riskLevel !== null && a.riskLevel !== 'LOW').length,
+      withWaterContact: own.filter((a) => a.fgs?.exposure.includes('fgs_exp_freshwater')).length,
+      withAccessBarrier: own.filter((a) => a.fgs?.context.includes('fgs_ctx_far')).length,
+      weeksWithData: new Set(own.map((a) => weekStartMs(Date.parse(a.capturedAt)))).size,
+    };
+    return intelligenceRow(input);
+  });
+  return {
+    demo: true,
+    note: INTELLIGENCE_NOTE,
+    threshold: INTELLIGENCE_THRESHOLD,
+    rows: rankIntelligence(rows),
   };
 }
 
@@ -512,6 +558,7 @@ export function summarise(
     symptomCounts: symptomCounts(s.assessments),
     referralStages: stageCounts(s.referrals),
     fgs: fgsAggregate(all, ids, fromMs, toMs),
+    intelligence: communityIntelligence(all, stats, ids, fromMs, toMs),
     dataSources: {
       seeded: s.assessments.filter((a) => isSeedKey(a.clientKey)).length,
       live: s.assessments.filter((a) => !isSeedKey(a.clientKey)).length,

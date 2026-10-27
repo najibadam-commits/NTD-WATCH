@@ -3,3 +3,5 @@ export * from './aggregate';
 export * from './seed';
 export * from './reports';
 export * from './priority';
+export * from './intelligence';
+export * from './fgsSeed';

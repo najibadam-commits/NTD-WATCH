@@ -284,7 +284,8 @@ describe('women-and-girls (FGS) records at the programme boundary', () => {
     summarise(r, f, scope, ctx);
 
   const general = (r: typeof records) => {
-    const drop = (o: object) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'fgs'));
+    const drop = (o: object) =>
+      Object.fromEntries(Object.entries(o).filter(([k]) => k !== 'fgs' && k !== 'intelligence'));
     const summary = drop(at(r));
     const detail = drop(communityDetail(r, base.communityId, range, ALL_SCOPE, ctx)!);
     return JSON.stringify([summary, detail, monitorReferrals(r, range, ALL_SCOPE, ctx)]);

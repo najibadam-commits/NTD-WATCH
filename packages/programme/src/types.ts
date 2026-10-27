@@ -1,3 +1,4 @@
+import type { IntelligenceSummary } from './intelligence';
 import type {
   Assessment,
   FollowUp,
@@ -155,6 +156,8 @@ export interface ProgrammeSummary {
   symptomCounts: Record<string, number>;
   referralStages: StageCounts;
   fgs: FgsAggregate;
+  /** Community-level programme intelligence (women and girls). Bands only; synthetic. */
+  intelligence: IntelligenceSummary;
   dataSources: DataSources;
 }
 

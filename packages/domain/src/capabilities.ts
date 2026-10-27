@@ -91,6 +91,24 @@ export const CAPABILITIES: readonly Capability[] = [
     note: 'The ranking logic works, but every capability value is synthetic and describes no real facility, clinician or service.',
   },
   {
+    id: 'community-intelligence',
+    name: 'Community programme priority, contextual vulnerability and data confidence',
+    state: 'REAL',
+    note: 'Deterministic, explainable rules run on community-level aggregates of SYNTHETIC women-and-girls records. A prototype decision-support and programme-prioritisation pattern: not a validated epidemiological model, it does not diagnose disease or estimate prevalence. Every limit is a demonstration setting.',
+  },
+  {
+    id: 'intelligence-service-context',
+    name: 'Service and access context for programme priority',
+    state: 'SIMULATED',
+    note: 'Uses the synthetic facility capability list and invented community answers. It describes no real facility or service.',
+  },
+  {
+    id: 'disclosure-control',
+    name: 'Reviewed statistical disclosure control',
+    state: 'FUTURE',
+    note: 'NOT BUILT. Small-cell suppression and coarse ranges are a prototype pattern that does not prevent every differencing attack. It needs privacy and data-protection review before real use.',
+  },
+  {
     id: 'fgs-clinical-validation',
     name: 'Clinical review and validation of FGS content and rules',
     state: 'FUTURE',
