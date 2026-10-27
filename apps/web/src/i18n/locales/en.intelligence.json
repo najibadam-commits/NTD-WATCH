@@ -1,0 +1,77 @@
+{
+  "intel": {
+    "title": "Community programme priority",
+    "lead": "Where further review, outreach or referral strengthening may be useful, based on community signals, contextual vulnerability and data confidence.",
+    "banner": "DEMONSTRATION DATA",
+    "bannerBody": "Synthetic women-and-girls community records. This is a prototype decision-support and programme-prioritisation pattern. It is not a validated epidemiological model, does not diagnose disease and does not estimate prevalence.",
+    "suppression": "Counts below {{threshold}} are not shown and observation numbers appear only as ranges. This is a prototype privacy pattern, not a reviewed disclosure control; it does not stop every way of working out a hidden number.",
+    "notFinding": "A programme priority is a prompt for review, outreach or further assessment. It is not a finding about any person or community.",
+    "summaryTitle": "Programme overview",
+    "observed": "Communities with enough observations",
+    "observedValue": "{{count}} of {{total}}",
+    "attention": "Communities for review or programme attention",
+    "needInfo": "Communities where more information is needed",
+    "referrals": "Referrals in this period (women and girls)",
+    "referralsHidden": "Not shown (fewer than {{threshold}})",
+    "countsTitle": "Communities by programme priority",
+    "tableTitle": "Community signals, context and data confidence",
+    "tableLead": "Ordered with the most programme attention first. Read every priority together with its data confidence.",
+    "showReason": "Why this priority",
+    "reasonFor": "Why {{name}} has this programme priority",
+    "synthetic": "Synthetic",
+    "col": {
+      "community": "Community",
+      "priority": "Programme priority",
+      "signal": "Community signal activity",
+      "context": "Contextual vulnerability",
+      "observations": "Observations",
+      "confidence": "Data confidence"
+    },
+    "priority": {
+      "HIGH_PRIORITY_FOR_ATTENTION": "High priority for programme attention",
+      "PRIORITY_FOR_REVIEW": "Priority for review",
+      "MONITOR": "Monitor",
+      "LOW_PRIORITY": "Low priority",
+      "INSUFFICIENT_DATA": "More information needed"
+    },
+    "signal": {
+      "LOW": "Lower activity",
+      "MODERATE": "Some activity",
+      "ELEVATED": "Elevated activity",
+      "NOT_SHOWN": "Not shown"
+    },
+    "band": {
+      "LOW": "Lower",
+      "MODERATE": "Moderate",
+      "HIGH": "Higher",
+      "NOT_SHOWN": "Not shown"
+    },
+    "confidence": {
+      "HIGH": "High",
+      "MEDIUM": "Medium",
+      "LOW": "Low",
+      "INSUFFICIENT": "Insufficient"
+    },
+    "range": {
+      "UNDER_THRESHOLD": "Fewer than 5",
+      "5_9": "5 to 9",
+      "10_19": "10 to 19",
+      "20_49": "20 to 49",
+      "50_PLUS": "50 or more"
+    },
+    "dim": {
+      "wash": "Water and environment",
+      "waterContact": "Water contact",
+      "access": "Access and service"
+    },
+    "capped": "Held at priority for review because data confidence is low",
+    "gis": {
+      "colourBy": "Colour communities by",
+      "byVulnerability": "Water and environment context",
+      "byPriority": "Programme priority",
+      "legendPriority": "Programme priority",
+      "legendConfidence": "Fainter colour means lower data confidence. Grey means more information is needed.",
+      "mapNote": "Demonstration view of aggregate programme priority on fictional boundaries. It does not show disease or prevalence."
+    }
+  }
+}

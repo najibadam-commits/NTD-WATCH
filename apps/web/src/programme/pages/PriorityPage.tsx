@@ -15,6 +15,7 @@ import {
   type PriorityRow,
 } from '@ntd-watch/programme';
 import { CommunityPanel } from '../components/CommunityPanel';
+import { IntelligenceSection } from '../components/IntelligenceSection';
 import {
   BandPill,
   DataStatus,
@@ -120,8 +121,9 @@ export function PriorityPage() {
       <FilterBar />
       <DataStatus query={query} />
       <QueryBoundary query={query} isEmpty={(s) => s.kpis.assessments === 0}>
-        {() => (
+        {(s) => (
           <>
+            <IntelligenceSection summary={s} />
             <Card title={t('programme.priority.matrixTitle')}>
               <p className={styles.muted}>
                 {t('programme.priority.matrixNote', {

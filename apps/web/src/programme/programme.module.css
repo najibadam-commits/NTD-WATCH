@@ -526,3 +526,143 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ------------------------------------------- P2 programme intelligence */
+.demoBanner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: baseline;
+  background: var(--color-demo-bg);
+  color: var(--color-demo);
+  border: 2px solid var(--color-demo);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+}
+
+.demoBanner strong {
+  font-size: var(--text-sm);
+  letter-spacing: 0.04em;
+}
+
+/* Programme priority pills use their own palette so they are never read as case-level risk. */
+.prio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 2px solid #4a1d3f;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: #1d0a19;
+}
+
+.prio[data-priority='HIGH_PRIORITY_FOR_ATTENTION'] {
+  background: #7a1f5c;
+  border-color: #4a1d3f;
+  color: #fff;
+}
+
+.prio[data-priority='PRIORITY_FOR_REVIEW'] {
+  background: #d6779f;
+  border-color: #7a1f5c;
+}
+
+.prio[data-priority='MONITOR'] {
+  background: #f1c4d6;
+  border-color: #9a5a78;
+}
+
+.prio[data-priority='LOW_PRIORITY'] {
+  background: #fbeef3;
+  border-color: #b98aa0;
+}
+
+.prio[data-priority='INSUFFICIENT_DATA'] {
+  background: #e4eaee;
+  border: 2px dashed #5d7686;
+  color: #27414f;
+}
+
+/* Data confidence: filled meter segments plus a word, never colour alone. */
+.conf {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.confMeter {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.confMeter i {
+  width: 0.5rem;
+  height: 0.9rem;
+  border: 1.5px solid currentcolor;
+  border-radius: 1px;
+}
+
+.confMeter i[data-on='true'] {
+  background: currentcolor;
+}
+
+.prioBands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.dimList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  color: var(--color-ink-2);
+}
+
+.intelMapNote {
+  font-size: var(--text-xs);
+  color: var(--color-ink-2);
+}
+
+.intelList {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.intelItem {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: var(--color-surface);
+}
+
+.intelHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+}
+
+.intelFacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-2) 0;
+}
+
+.intelFacts dt {
+  font-size: var(--text-xs);
+  color: var(--color-ink-2);
+}
+
+.intelFacts dd {
+  margin: 0;
+}

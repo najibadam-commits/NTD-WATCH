@@ -4,8 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { REFERRAL_STAGES, ROLES } from '@ntd-watch/domain';
 import enBase from './locales/en.json';
 import enFgs from './locales/en.fgs.json';
+import enIntelligence from './locales/en.intelligence.json';
 
-const en = { ...enBase, ...enFgs };
+const en = { ...enBase, ...enFgs, ...enIntelligence };
 import {
   AGE_GROUPS,
   CONDITIONS,
