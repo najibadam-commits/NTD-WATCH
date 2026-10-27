@@ -104,3 +104,9 @@ textarea {
   border-radius: 3px;
   white-space: nowrap;
 }
+
+.ntd-map-sublabel {
+  font-weight: 700;
+  font-size: 10px;
+  color: #4a1d3f;
+}

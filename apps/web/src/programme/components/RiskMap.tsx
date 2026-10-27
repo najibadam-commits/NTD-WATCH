@@ -6,7 +6,10 @@ import { Map as MapLibreMap, Marker, NavigationControl, Popup, setWorkerUrl } fr
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { DEMO_GEOGRAPHY, GEOGRAPHY_LABEL } from '@ntd-watch/demo-data';
-import type { CommunityStat } from '@ntd-watch/programme';
+import i18n from '../../i18n';
+import { PRIORITY_COLORS } from './priorityColours';
+import type { CommunityIntelligence, CommunityStat } from '@ntd-watch/programme';
+import { PRIORITY_RANK } from '@ntd-watch/programme';
 import styles from '../programme.module.css';
 
 /**
@@ -22,8 +25,13 @@ export interface MapLayers {
   facilities: boolean;
 }
 
+export type MapColourBy = 'vulnerability' | 'priority';
+
 export interface RiskMapProps {
   communities: CommunityStat[];
+  /** Community-level programme intelligence (synthetic). Optional; needed for the priority view. */
+  intelligence?: CommunityIntelligence[];
+  colourBy?: MapColourBy;
   layers: MapLayers;
   selectedId?: string;
   onSelect: (communityId: string) => void;
@@ -39,6 +47,10 @@ export const VULNERABILITY_COLORS = {
   moderate: '#6fb5d6',
   high: '#0a5578',
 } as const;
+
+/** Fainter fill for weaker evidence, so limited data never looks as solid as strong data. */
+const CONFIDENCE_OPACITY = { HIGH: 0.95, MEDIUM: 0.72, LOW: 0.5, INSUFFICIENT: 0.35 } as const;
+const CONFIDENCE_RANK = { HIGH: 0, MEDIUM: 1, LOW: 2, INSUFFICIENT: 3 } as const;
 
 declare global {
   interface Window {
@@ -57,6 +69,8 @@ const STYLE = {
 
 export default function RiskMap({
   communities,
+  intelligence,
+  colourBy = 'vulnerability',
   layers,
   selectedId,
   onSelect,
@@ -77,11 +91,17 @@ export default function RiskMap({
     [communities],
   );
 
+  const intelById = useMemo(
+    () => new globalThis.Map((intelligence ?? []).map((r) => [r.communityId, r])),
+    [intelligence],
+  );
+
   const polygons = useMemo(
     () => ({
       ...DEMO_GEOGRAPHY.communities,
       features: DEMO_GEOGRAPHY.communities.features.map((f) => {
         const c = byId.get(f.properties.id);
+        const i = intelById.get(f.properties.id);
         return {
           ...f,
           properties: {
@@ -89,11 +109,13 @@ export default function RiskMap({
             inScope: Boolean(c),
             vulnerability: c?.vulnerabilityIndex ?? -1,
             signals: c?.signals ?? 0,
+            priorityRank: i ? PRIORITY_RANK[i.priority] : 4,
+            confidenceRank: i ? CONFIDENCE_RANK[i.confidence] : 3,
           },
         };
       }),
     }),
-    [byId],
+    [byId, intelById],
   );
 
   // create the map once
@@ -233,6 +255,59 @@ export default function RiskMap({
     );
   }, [polygons, ready]);
 
+  // colour mode: water and environment context, or programme priority (faded by data confidence)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    if (colourBy === 'priority') {
+      map.setPaintProperty('community-fill', 'fill-color', [
+        'case',
+        ['<', ['get', 'vulnerability'], 0],
+        NO_DATA,
+        [
+          'step',
+          ['get', 'priorityRank'],
+          PRIORITY_COLORS[0],
+          1,
+          PRIORITY_COLORS[1],
+          2,
+          PRIORITY_COLORS[2],
+          3,
+          PRIORITY_COLORS[3],
+          4,
+          PRIORITY_COLORS[4],
+        ],
+      ]);
+      map.setPaintProperty('community-fill', 'fill-opacity', [
+        'step',
+        ['get', 'confidenceRank'],
+        CONFIDENCE_OPACITY.HIGH,
+        1,
+        CONFIDENCE_OPACITY.MEDIUM,
+        2,
+        CONFIDENCE_OPACITY.LOW,
+        3,
+        CONFIDENCE_OPACITY.INSUFFICIENT,
+      ]);
+    } else {
+      map.setPaintProperty('community-fill', 'fill-color', [
+        'case',
+        ['<', ['get', 'vulnerability'], 0],
+        NO_DATA,
+        [
+          'step',
+          ['get', 'vulnerability'],
+          VULNERABILITY_COLORS.low,
+          30,
+          VULNERABILITY_COLORS.moderate,
+          45,
+          VULNERABILITY_COLORS.high,
+        ],
+      ]);
+      map.setPaintProperty('community-fill', 'fill-opacity', 0.95);
+    }
+  }, [colourBy, polygons, ready]);
+
   // layer switches
   useEffect(() => {
     const map = mapRef.current;
@@ -262,6 +337,13 @@ export default function RiskMap({
       const label = document.createElement('div');
       label.className = 'ntd-map-label';
       label.textContent = c.name.replace('Demo ', '');
+      const intel = intelById.get(c.communityId);
+      if (colourBy === 'priority' && intel) {
+        const sub = document.createElement('div');
+        sub.className = 'ntd-map-sublabel';
+        sub.textContent = `${i18n.t(`intel.priority.${intel.priority}`)} · ${i18n.t(`intel.confidence.${intel.confidence}`)}`;
+        label.appendChild(sub);
+      }
       markers.current.push(
         new Marker({ element: label, anchor: 'top', offset: [0, 14] }).setLngLat(at).addTo(map),
       );
@@ -287,7 +369,7 @@ export default function RiskMap({
         );
       }
     }
-  }, [communities, layers.signals, selectedId, ready]);
+  }, [communities, intelById, colourBy, layers.signals, selectedId, ready]);
 
   return (
     <div className={styles.mapShell}>

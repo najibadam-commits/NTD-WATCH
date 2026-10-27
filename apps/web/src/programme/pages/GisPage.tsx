@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Button, LoadingState, Notice } from '@ntd-watch/design-system';
 import { GEOGRAPHY_NOTICE } from '@ntd-watch/domain';
 import { lgaName } from '@ntd-watch/demo-data';
-import type { CommunityStat } from '@ntd-watch/programme';
+import type { CommunityIntelligence, CommunityStat } from '@ntd-watch/programme';
 import { CommunityPanel } from '../components/CommunityPanel';
 import {
   BandPill,
@@ -14,7 +14,10 @@ import {
   PageHeader,
   QueryBoundary,
 } from '../components/Common';
-import type { MapLayers } from '../components/RiskMap';
+import type { MapColourBy, MapLayers } from '../components/RiskMap';
+import { PRIORITY_COLORS } from '../components/priorityColours';
+import { DemoBanner } from '../components/IntelligenceSection';
+import { ConfidencePill, PriorityPill } from '../components/Intelligence';
 import { formatIndex, formatNumber } from '../format';
 import { useLiveRefresh, useSummary } from '../useProgrammeData';
 import styles from '../programme.module.css';
@@ -32,6 +35,7 @@ export function GisPage() {
     signals: true,
     facilities: true,
   });
+  const [colourBy, setColourBy] = useState<MapColourBy>('vulnerability');
   const [mapProblem, setMapProblem] = useState<string | null>(null);
   useLiveRefresh();
 
@@ -53,6 +57,7 @@ export function GisPage() {
   return (
     <div className={styles.page}>
       <PageHeader title={t('programme.gis.title')} lead={t('programme.gis.lead')} signals />
+      <DemoBanner />
       <Notice tone="info">{GEOGRAPHY_NOTICE}</Notice>
       <FilterBar />
       <DataStatus query={query} />
@@ -70,7 +75,47 @@ export function GisPage() {
                   {toggle('signals')}
                   {toggle('facilities')}
                 </fieldset>
-                <div className={styles.mapLegend}>
+                <fieldset className={styles.toggles} style={{ border: 0, padding: 0, margin: 0 }}>
+                  <legend className={styles.muted}>{t('intel.gis.colourBy')}</legend>
+                  {(['vulnerability', 'priority'] as const).map((m) => (
+                    <label key={m} className={styles.toggle}>
+                      <input
+                        type="radio"
+                        name="map-colour"
+                        checked={colourBy === m}
+                        onChange={() => setColourBy(m)}
+                      />
+                      {t(m === 'priority' ? 'intel.gis.byPriority' : 'intel.gis.byVulnerability')}
+                    </label>
+                  ))}
+                </fieldset>
+                {colourBy === 'priority' ? (
+                  <div className={styles.mapLegend} data-testid="priority-legend">
+                    <strong>{t('intel.gis.legendPriority')}</strong>
+                    <span className={styles.ramp}>
+                      {(
+                        [
+                          'HIGH_PRIORITY_FOR_ATTENTION',
+                          'PRIORITY_FOR_REVIEW',
+                          'MONITOR',
+                          'LOW_PRIORITY',
+                          'INSUFFICIENT_DATA',
+                        ] as const
+                      ).map((p, i) => (
+                        <span key={p}>
+                          <i
+                            className={styles.swatch}
+                            style={{ background: PRIORITY_COLORS[i], border: '1px solid #4a1d3f' }}
+                          />{' '}
+                          {t(`intel.priority.${p}`)}
+                        </span>
+                      ))}
+                    </span>
+                    <span className={styles.intelMapNote}>{t('intel.gis.legendConfidence')}</span>
+                    <span className={styles.intelMapNote}>{t('intel.gis.mapNote')}</span>
+                  </div>
+                ) : null}
+                <div className={styles.mapLegend} hidden={colourBy === 'priority'}>
                   <strong>{t('programme.gis.legendVulnerability')}</strong>
                   <span className={styles.ramp}>
                     <span>
@@ -117,6 +162,8 @@ export function GisPage() {
                     <Suspense fallback={<LoadingState label={t('programme.gis.loadingMap')} />}>
                       <RiskMap
                         communities={s.communities}
+                        intelligence={s.intelligence.rows}
+                        colourBy={colourBy}
                         layers={layers}
                         selectedId={selected?.communityId}
                         onSelect={select}
@@ -162,6 +209,8 @@ export function GisPage() {
                           {t('programme.table.index')}
                         </th>
                         <th scope="col">{t('programme.table.band')}</th>
+                        <th scope="col">{t('intel.col.priority')}</th>
+                        <th scope="col">{t('intel.col.confidence')}</th>
                         <th scope="col">
                           <span className="visually-hidden">{t('programme.table.actions')}</span>
                         </th>
@@ -184,6 +233,7 @@ export function GisPage() {
                           <td>
                             <BandPill band={c.vulnerabilityBand} />
                           </td>
+                          <IntelCells s={s} id={c.communityId} />
                           <td>
                             <Button
                               variant="secondary"
@@ -206,5 +256,33 @@ export function GisPage() {
         }}
       </QueryBoundary>
     </div>
+  );
+}
+
+function IntelCells({
+  s,
+  id,
+}: {
+  s: { intelligence: { rows: CommunityIntelligence[] } };
+  id: string;
+}) {
+  const row = s.intelligence.rows.find((r) => r.communityId === id);
+  if (!row) {
+    return (
+      <>
+        <td>–</td>
+        <td>–</td>
+      </>
+    );
+  }
+  return (
+    <>
+      <td>
+        <PriorityPill priority={row.priority} />
+      </td>
+      <td>
+        <ConfidencePill confidence={row.confidence} />
+      </td>
+    </>
   );
 }
