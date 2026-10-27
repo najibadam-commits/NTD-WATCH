@@ -158,3 +158,5 @@ the problems; manual testing with assistive technology has not been done.
 Every health-signal question and its wording; the rule logic and the mapping to categories; the
 suggested actions; age-specific and safeguarding wording; the counselling pathway; consent wording
 (legal); facility service definitions; translations.
+
+See also [Community programme priority intelligence (P2)](COMMUNITY_INTELLIGENCE_P2.md) for the community-level programme layer built on the suppressed aggregates described here.
