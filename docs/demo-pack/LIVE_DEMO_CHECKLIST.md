@@ -61,12 +61,12 @@ Status: for a presenter running the prototype on their own laptop. Startup steps
 
 - [ ] **GIS map** (`/programme/gis`): **DEMONSTRATION DATA** banner and the fictional-geography notice are visible.
 - [ ] Choose **Programme priority** under "Colour communities by". The legend appears with "Fainter colour means lower data confidence. Grey means more information is needed."
-- [ ] Show that a lower-confidence community is fainter than the High-confidence ones (on 28 October, Demo Baobab Flats and Demo Greenbelt at Medium confidence; use a Low-confidence community if one appears on the day), that communities needing more information are grey, and that the table under the map lists priority and confidence for every community.
+- [ ] Show that a lower-confidence community is fainter than the High-confidence ones (on 28 October, Demo Baobab Flats and Demo Greenbelt at Medium confidence; use a Low-confidence community if one appears on the day), that communities needing more information are grey, and that the table under the map lists priority and confidence for every community. Do not point at the table's assessment or signal counts (see section 9).
 - [ ] Say: fictional boundaries, no household locations, not disease distribution.
 
 ## 9. Privacy warnings and known limitations to state
 
-- [ ] Programme screens show community aggregates only. Priority rows show observation ranges, not counts; exact counts are used in the calculation but not published in those rows. The separate women-and-girls aggregate can show counts at or above 5, and the Priority page shows a women-and-girls referral total once it reaches 5. Small numbers below 5 are suppressed.
+- [ ] Small-number suppression is present in selected priority views, but it is **not consistent across all views**. Priority rows show observation ranges, not counts; exact counts are used in the calculation but not published in those rows. The separate women-and-girls aggregate can show counts at or above 5, and the Priority page shows a women-and-girls referral total once it reaches 5; numbers below 5 are suppressed there. The general GIS signals layer (the map badges and the table under the map) exposes exact community counts, including counts below 5. **Do not present the GIS table or map as evidence of small-number suppression.** Programme screens are intended to show community aggregates only; in this prototype the mock server holds the full synced record.
 - [ ] Deletion is simulated: it removes the record from the device, the mock server and the aggregates, and is not a production deletion process (no backups, logs, replicas or exports are covered).
 - [ ] Suppression is a **prototype pattern** that does not prevent every differencing attack and needs specialist review.
 - [ ] The server is a **mock**; sign-in and roles are simulated; the privacy tests do not prove production-server security.
