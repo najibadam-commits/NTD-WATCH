@@ -13,18 +13,32 @@ export function apiUrl(path: string): string {
 }
 
 /**
+ * True when a reply came from the page server rather than from the mock API. The mock API
+ * answers every request, success or error, with JSON; its only other outcome is a dropped
+ * connection, which throws. So a reply is the page server's, and not the mock's, in two cases:
+ * an HTML page (the single-page fallback, seen for GET), and a bodiless 404 with no content
+ * type (what the Vite dev and preview servers send for POST and PATCH). Any other non-JSON reply,
+ * such as a 502 from a proxy or a plain-text error, is a real answer and is left as it is.
+ */
+async function isPageServerReply(response: Response): Promise<boolean> {
+  const type = response.headers.get('content-type') ?? '';
+  if (type.includes('json')) return false;
+  if (type.includes('text/html')) return true;
+  return response.status === 404 && type === '' && (await response.clone().text()) === '';
+}
+
+/**
  * fetch() for the MOCK API, with a safety net for demos. The mock normally answers through a
  * browser service worker. If that worker is not answering (a blocked or stale worker on the
- * presenting machine), the page server replies with its HTML page instead of JSON, and every
- * view fails with "is not valid JSON". In that case, and only that case, the same mock handlers
- * answer in-page. A real network failure is NOT covered: it still throws, so offline and retry
- * behaviour is unchanged.
+ * presenting machine), the page server answers instead, and every view fails with "is not valid
+ * JSON" or a rejected save. In exactly the cases isPageServerReply() names, the same mock
+ * handlers answer in-page. A real network failure is NOT covered: it still throws, so offline
+ * and retry behaviour is unchanged.
  */
 export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
   const request = new Request(url, init);
   const response = await fetch(request.clone());
-  const type = response.headers.get('content-type') ?? '';
-  if (!type.includes('text/html')) return response;
+  if (!(await isPageServerReply(response))) return response;
   const [{ getResponse }, { handlers }] = await Promise.all([
     import('msw'),
     import('../mock/handlers'),
