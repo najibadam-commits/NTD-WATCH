@@ -1,0 +1,38 @@
+# Runs the NTD-WATCH demonstration prototype (static build) on http://localhost:8080.
+# Synthetic data only. Not a production deployment.
+#
+#   docker compose up --build
+#   docker compose ps        # shows the health status
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ntd-watch:demo
+    container_name: ntd-watch
+    ports:
+      - '8080:8080'
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:8080/healthz']
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    # Volumes: the prototype keeps no server-side data. Its records live in the browser's
+    # IndexedDB, and the fictional GeoJSON is bundled into the build. There is therefore no
+    # model or geospatial data to persist yet. When a server-side data store exists, add a
+    # named volume here, for example:
+    #
+    #   volumes:
+    #     - ntd_watch_data:/var/lib/ntd-watch
+    #
+    # and declare it under a top-level `volumes:` key. Never mount real health data into this
+    # demonstration image.
