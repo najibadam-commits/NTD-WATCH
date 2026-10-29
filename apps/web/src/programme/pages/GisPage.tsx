@@ -18,7 +18,7 @@ import type { MapColourBy, MapLayers } from '../components/RiskMap';
 import { PRIORITY_COLORS } from '../components/priorityColours';
 import { DemoBanner } from '../components/IntelligenceSection';
 import { ConfidencePill, PriorityPill } from '../components/Intelligence';
-import { formatIndex, formatNumber } from '../format';
+import { formatCountShort, formatIndex } from '../format';
 import { useLiveRefresh, useSummary } from '../useProgrammeData';
 import styles from '../programme.module.css';
 import { TableScroll } from '../components/TableScroll';
@@ -224,8 +224,8 @@ export function GisPage() {
                         >
                           <th scope="row">{c.name}</th>
                           <td>{lgaName(c.lgaId)}</td>
-                          <td className={styles.num}>{formatNumber(c.assessments)}</td>
-                          <td className={styles.num}>{formatNumber(c.signals)}</td>
+                          <td className={styles.num}>{formatCountShort(c.assessments)}</td>
+                          <td className={styles.num}>{formatCountShort(c.signals)}</td>
                           <td>
                             <DirectionPill direction={c.direction} />
                           </td>
@@ -250,6 +250,7 @@ export function GisPage() {
                     </tbody>
                   </table>
                 </TableScroll>
+                <p className={styles.muted}>{t('programme.smallCountNote')}</p>
               </section>
             </>
           );

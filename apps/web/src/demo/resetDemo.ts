@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { exclusiveServerWrite, startNewDemoEpoch } from './demoEpoch';
 import { useDraft } from '../chw/draft';
 import { notifyDataChanged } from '../programme/dataChannel';
 import { useProgrammeFilters } from '../programme/filters';
@@ -18,8 +19,12 @@ import { resetLocalDb } from '../offline/localDb';
  * three demo scenarios return to the same shape each time.
  */
 export async function resetDemoEnvironment(client?: QueryClient): Promise<void> {
-  await resetProgrammeData();
+  // New epoch first: a request that started earlier is refused by the mock server from here on,
+  // and one that starts later is cleared with the rest. Then the device, then the server, the
+  // server step queued behind any state-changing request that is already being processed.
+  startNewDemoEpoch();
   await resetLocalDb();
+  await exclusiveServerWrite(() => resetProgrammeData());
   useDraft.getState().clear();
   useMockControls.getState().reset();
   useConnectivity.setState({ simulatedOffline: false });

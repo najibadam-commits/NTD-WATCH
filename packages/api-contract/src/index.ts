@@ -71,6 +71,8 @@ export const API_ROUTES = {
   getConfig: { method: 'GET', path: '/api/v1/config', anyOf: ['config:manage', 'rules:manage'] },
   updateConfig: { method: 'PATCH', path: '/api/v1/config', anyOf: ['config:manage'] },
   resetDemo: { method: 'POST', path: '/api/v1/demo/reset', anyOf: ['config:manage'] },
+  /** MOCK only: which "life" of the mock server answered. See MOCK_GENERATION_HEADER. */
+  serverState: { method: 'GET', path: '/api/v1/server-state', anyOf: ['assessment:create'] },
 } as const satisfies Record<string, RouteSpec>;
 
 export type ApiRouteName = keyof typeof API_ROUTES;
@@ -93,9 +95,16 @@ export const IMPLEMENTED_ROUTES: readonly ApiRouteName[] = [
   'getConfig',
   'updateConfig',
   'resetDemo',
+  'serverState',
 ];
 
 export const DEMO_ROLE_HEADER = 'X-Demo-Role';
 /** SIMULATED data scope of the caller, e.g. `lga:lga-c`. Not a security control. */
 export const DEMO_SCOPE_HEADER = 'X-Demo-Scope';
 export const IDEMPOTENCY_HEADER = 'Idempotency-Key';
+/**
+ * MOCK only. The mock server stamps every answer with the id of its current "generation": a new id
+ * is made whenever its browser database is created or cleared. A device that sees a different id
+ * from the one that acknowledged its records knows the mock server has lost them.
+ */
+export const MOCK_GENERATION_HEADER = 'X-Mock-Server-Generation';

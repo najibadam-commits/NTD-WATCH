@@ -4,7 +4,9 @@ import { REFERRAL_STAGE_LABELS, REFERRAL_STAGES } from '@ntd-watch/domain';
 import { lgaName } from '@ntd-watch/demo-data';
 import { BarList } from '../components/Charts';
 import { DataStatus, FilterBar, Kpi, PageHeader, QueryBoundary } from '../components/Common';
-import { formatNumber } from '../format';
+import { formatCount, formatCountShort, NOT_SHOWN_SHORT } from '../format';
+
+const pct = (n: number | null) => (n === null ? formatCount(null) : `${n}%`);
 import { useLiveRefresh, useReferralMonitor } from '../useProgrammeData';
 import { useRole } from '../useProgrammeData';
 import styles from '../programme.module.css';
@@ -32,15 +34,15 @@ export function ReferralsPage() {
         {(m) => (
           <>
             <div className={styles.grid} role="group" aria-label={t('programme.overview.kpis')}>
-              <Kpi label={t('programme.referrals.total')} value={formatNumber(m.total)} />
+              <Kpi label={t('programme.referrals.total')} value={formatCount(m.total)} />
               <Kpi
                 label={t('programme.overview.completion')}
-                value={`${m.completionRate}%`}
+                value={pct(m.completionRate)}
                 hint={t('programme.overview.completionHint')}
               />
               <Kpi
                 label={t('programme.overview.unresolved')}
-                value={formatNumber(m.unresolved)}
+                value={formatCount(m.unresolved)}
                 hint={t('programme.referrals.unresolvedHint', { days: m.maxUnresolvedDays })}
               />
               <Kpi
@@ -62,7 +64,11 @@ export function ReferralsPage() {
                 <p className={styles.muted}>{t('programme.referrals.reachedNote')}</p>
                 <BarList
                   label={t('programme.referrals.reached')}
-                  max={Math.max(1, m.total)}
+                  max={Math.max(
+                    1,
+                    m.total ?? 0,
+                    ...REFERRAL_STAGES.map((st) => m.reached[st] ?? 0),
+                  )}
                   items={REFERRAL_STAGES.map((st) => ({
                     key: st,
                     label: REFERRAL_STAGE_LABELS[st],
@@ -110,20 +116,23 @@ export function ReferralsPage() {
                       <tr key={f.facilityId}>
                         <th scope="row">{f.name}</th>
                         <td>{lgaName(f.lgaId)}</td>
-                        <td className={styles.num}>{f.referrals}</td>
+                        <td className={styles.num}>{formatCountShort(f.referrals)}</td>
                         {REFERRAL_STAGES.map((st) => (
                           <td key={st} className={styles.num}>
-                            {f.byStage[st]}
+                            {formatCountShort(f.byStage[st])}
                           </td>
                         ))}
-                        <td className={styles.num}>{f.completionRate}%</td>
-                        <td className={styles.num}>{f.unresolved}</td>
+                        <td className={styles.num}>
+                          {f.completionRate === null ? NOT_SHOWN_SHORT : `${f.completionRate}%`}
+                        </td>
+                        <td className={styles.num}>{formatCountShort(f.unresolved)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </TableScroll>
               <p className={styles.muted}>{t('programme.referrals.currentStageNote')}</p>
+              <p className={styles.muted}>{t('programme.smallCountNote')}</p>
             </section>
 
             {m.byLga.length > 1 ? (
@@ -134,7 +143,10 @@ export function ReferralsPage() {
                     key: l.lgaId,
                     label: l.name,
                     value: l.completionRate,
-                    display: `${l.completionRate}% of ${l.referrals}`,
+                    display:
+                      l.completionRate === null || l.referrals === null
+                        ? formatCount(null)
+                        : `${l.completionRate}% of ${l.referrals}`,
                   }))}
                   max={100}
                 />

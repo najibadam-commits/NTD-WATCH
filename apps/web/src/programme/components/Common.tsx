@@ -4,7 +4,7 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { Button, EmptyState, ErrorState, LoadingState, Notice } from '@ntd-watch/design-system';
 import { DEMO_DATA_NOTICE, SIGNAL_NOTICE, type DataScope } from '@ntd-watch/domain';
 import { lgaName, stateName, facilityName } from '@ntd-watch/demo-data';
-import type { SignalDirection, VulnerabilityBand } from '@ntd-watch/programme';
+import type { Count, SignalDirection, VulnerabilityBand } from '@ntd-watch/programme';
 import { scopeForRole } from '../api';
 import { formatDateTime, formatDelta } from '../format';
 import { geoOptions, presetRange, useProgrammeFilters, currentFilters } from '../filters';
@@ -126,8 +126,8 @@ export function Kpi({
 }: {
   label: string;
   value: string;
-  current?: number;
-  previous?: number;
+  current?: Count;
+  previous?: Count;
   /** False when the previous period has too little data for a fair comparison. */
   comparable?: boolean;
   hint?: string;
@@ -139,7 +139,7 @@ export function Kpi({
       <span className={styles.kpiValue}>{value}</span>
       {current !== undefined && previous !== undefined ? (
         <span className={styles.delta}>
-          {comparable
+          {comparable && current !== null && previous !== null
             ? t('programme.vsPrevious', { change: formatDelta(current, previous) })
             : t('programme.noComparison')}
         </span>

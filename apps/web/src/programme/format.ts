@@ -1,6 +1,17 @@
+import { NOT_SHOWN_TEXT, type Count } from '@ntd-watch/programme';
+
 const nf = new Intl.NumberFormat('en');
 
 export const formatNumber = (n: number) => nf.format(n);
+
+/**
+ * A published count. `null` is a count that is not shown (1 to 4, or a total that would reveal
+ * one), written out so it is never mistaken for zero or for missing data.
+ */
+export const formatCount = (c: Count) => (c === null ? NOT_SHOWN_TEXT : nf.format(c));
+/** Short form for tight spaces such as map badges and table cells: "n/s" (not shown). */
+export const NOT_SHOWN_SHORT = 'n/s';
+export const formatCountShort = (c: Count) => (c === null ? NOT_SHOWN_SHORT : nf.format(c));
 export const formatPercent = (share: number | null, digits = 0) =>
   share === null ? '–' : `${(share * 100).toFixed(digits)}%`;
 export const formatIndex = (n: number | null) => (n === null ? '–' : n.toFixed(1));

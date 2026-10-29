@@ -1,4 +1,6 @@
 import type { IntelligenceSummary } from './intelligence';
+import type { Count } from './suppression';
+import type { SignalBand } from './priority';
 import type {
   Assessment,
   FollowUp,
@@ -34,10 +36,18 @@ export interface QueryContext {
   maxUnresolvedDays: number;
 }
 
-export type RiskCounts = Record<RiskLevel, number>;
-export type StageCounts = Record<ReferralStage, number>;
+/** Exact counts. These exist only inside the aggregation functions and are never returned. */
+export type RawRiskCounts = Record<RiskLevel, number>;
+export type RawStageCounts = Record<ReferralStage, number>;
+/** Published counts: every value is a number (0 or at least the threshold) or `null` (not shown). */
+export type RiskCounts = Record<RiskLevel, Count>;
+export type StageCounts = Record<ReferralStage, Count>;
 
 export type VulnerabilityBand = 'LOW' | 'MODERATE' | 'HIGH' | 'INSUFFICIENT_DATA';
+/**
+ * A coarse category derived from the exact 28-day windows before suppression. It is published
+ * even when a window count is not shown, so it can narrow a hidden count. See suppression.ts.
+ */
 export type SignalDirection = 'rising' | 'steady' | 'falling';
 
 export interface WashRates {
@@ -54,22 +64,28 @@ export interface CommunityStat {
   stateId: string;
   lgaId: string;
   wardId: string;
-  assessments: number;
+  /** All counts below are published counts: a number, or null for "not shown" (see suppression.ts). */
+  assessments: Count;
   byRisk: RiskCounts;
   /** Assessments the demonstration rules could not classify. */
-  unclassified: number;
+  unclassified: Count;
   /** HIGH + URGENT demonstration signals. Assessments, not confirmed cases. */
-  signals: number;
-  signalsRecent: number;
-  signalsPrevious: number;
+  signals: Count;
+  signalsRecent: Count;
+  signalsPrevious: Count;
   direction: SignalDirection;
-  referrals: number;
-  referralsCompleted: number;
-  unresolved: number;
+  /**
+   * Demonstration signal band (share of assessments rated HIGH or URGENT), worked out from the
+   * exact counts before suppression. A band is coarse, but it is derived from a hidden value.
+   */
+  signalBand: SignalBand;
+  referrals: Count;
+  referralsCompleted: Count;
+  unresolved: Count;
   /** Follow-up records for this community's assessments and referrals in the period. */
-  followUps: number;
+  followUps: Count;
   /** Referrals assessed at the facility (or beyond) that have no CHW follow-up record yet. */
-  followUpsDue: number;
+  followUpsDue: Count;
   wash: WashRates;
   /** 0 to 100, or null when there are too few assessments. */
   vulnerabilityIndex: number | null;
@@ -81,45 +97,49 @@ export interface CommunityStat {
 export interface WeeklyPoint {
   /** Monday, UTC, YYYY-MM-DD. */
   weekStart: string;
-  assessments: number;
+  assessments: Count;
   byRisk: RiskCounts;
-  signals: number;
-  referrals: number;
+  signals: Count;
+  referrals: Count;
   vulnerabilityIndex: number | null;
 }
 
 export interface Kpis {
-  assessments: number;
-  highUrgent: number;
-  /** HIGH + URGENT as a share of assessments, 0 to 1. Null when there are none. */
+  assessments: Count;
+  highUrgent: Count;
+  /** HIGH + URGENT as a share of assessments, 0 to 1. Null when there are none or it is not shown. */
   highUrgentShare: number | null;
-  referrals: number;
-  /** Percent of referrals that reached ASSESSED or beyond. */
-  referralCompletion: number;
-  unresolved: number;
-  followUps: number;
+  referrals: Count;
+  /** Percent of referrals that reached ASSESSED or beyond. Null when the referral count is not shown. */
+  referralCompletion: number | null;
+  unresolved: Count;
+  followUps: Count;
   /** Sum of the community figures: assessed referrals still waiting for a CHW follow-up. */
-  followUpsDue: number;
-  followUpsWorse: number;
+  followUpsDue: Count;
+  followUpsWorse: Count;
   activeChws: number;
   communitiesReporting: number;
   communitiesInScope: number;
-  unclassified: number;
+  unclassified: Count;
 }
 
 export interface PreviousPeriod {
   from: string;
   to: string;
-  assessments: number;
-  highUrgent: number;
-  referrals: number;
+  assessments: Count;
+  highUrgent: Count;
+  referrals: Count;
 }
 
 export interface DataSources {
   /** Synthetic seed records in the filtered set. */
-  seeded: number;
-  /** Records entered through the CHW app in this browser and synced to the mock server. */
-  live: number;
+  seeded: Count;
+  /**
+   * Assessments entered through the CHW app in this browser and synced to the mock server. Shown
+   * exactly (including 1 to 4) only when every one of them is verified demo-created
+   * (`isVerifiedDemoCreated`); otherwise the small-count rule applies.
+   */
+  live: Count;
 }
 
 /**
@@ -153,7 +173,8 @@ export interface ProgrammeSummary {
   byRisk: RiskCounts;
   communities: CommunityStat[];
   weekly: WeeklyPoint[];
-  symptomCounts: Record<string, number>;
+  /** A symptom missing from this record has no records; null means it is not shown. */
+  symptomCounts: Record<string, Count>;
   referralStages: StageCounts;
   fgs: FgsAggregate;
   /** Community-level programme intelligence (women and girls). Bands only; synthetic. */
@@ -168,20 +189,20 @@ export interface CommunityDetail {
   filters: ProgrammeFilters;
   stat: CommunityStat;
   weekly: WeeklyPoint[];
-  symptomCounts: Record<string, number>;
+  symptomCounts: Record<string, Count>;
   referralStages: StageCounts;
   fgs: FgsAggregate;
-  facilities: { facilityId: string; name: string; referrals: number }[];
+  facilities: { facilityId: string; name: string; referrals: Count }[];
 }
 
 export interface FacilityStat {
   facilityId: string;
   name: string;
   lgaId: string;
-  referrals: number;
+  referrals: Count;
   byStage: StageCounts;
-  completionRate: number;
-  unresolved: number;
+  completionRate: number | null;
+  unresolved: Count;
 }
 
 export interface ReferralMonitor {
@@ -192,21 +213,21 @@ export interface ReferralMonitor {
   clamped: boolean;
   scope: DataScope;
   maxUnresolvedDays: number;
-  total: number;
+  total: Count;
   /** Referrals whose CURRENT stage is this one. */
   current: StageCounts;
   /** Referrals that reached this stage or beyond. */
   reached: StageCounts;
-  completionRate: number;
-  unresolved: number;
-  ageing: { label: string; count: number }[];
+  completionRate: number | null;
+  unresolved: Count;
+  ageing: { label: string; count: Count }[];
   byFacility: FacilityStat[];
   byLga: {
     lgaId: string;
     name: string;
-    referrals: number;
-    completionRate: number;
-    unresolved: number;
+    referrals: Count;
+    completionRate: number | null;
+    unresolved: Count;
   }[];
   medianHoursToAccept: number | null;
   medianDaysToAssessed: number | null;

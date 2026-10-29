@@ -100,7 +100,8 @@ describe('referral outcome and the closed loop', () => {
     await patchReferralStage('facility', id, 'ACCEPTED');
     const after = await fetchSummary('admin', range);
     expect(after.kpis.referrals).toBe(before.kpis.referrals);
-    expect(after.kpis.assessments).toBe(before.kpis.assessments);
+    expect(after.kpis.assessments).toEqual(before.kpis.assessments);
+    expect(after.byRisk).toEqual(before.byRisk);
   });
   it('raises follow-ups due when a referral is assessed without a follow-up', async () => {
     const before = await fetchSummary('admin', range);
@@ -110,7 +111,7 @@ describe('referral outcome and the closed loop', () => {
     await patchReferralStage('facility', id, 'PATIENT_ARRIVED');
     await patchReferralStage('facility', id, 'ASSESSED', 'CARE_PROVIDED');
     const after = await fetchSummary('admin', range);
-    expect(after.kpis.followUpsDue).toBe(before.kpis.followUpsDue + 1);
+    expect(after.kpis.followUpsDue).toBe(before.kpis.followUpsDue! + 1);
   });
 });
 

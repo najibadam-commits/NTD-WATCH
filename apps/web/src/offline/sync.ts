@@ -1,6 +1,7 @@
 import { notifyDataChanged } from '../programme/dataChannel';
 import { isOnline } from './connectivity';
-import { sendItem } from './apiClient';
+import type { ConsentEvent } from '@ntd-watch/domain';
+import { probeServerGeneration, sendItem } from './apiClient';
 import { localDb, type OutboxItem } from './localDb';
 
 export interface SyncSummary {
@@ -71,9 +72,81 @@ export function syncOutbox(options: SyncOptions = {}): Promise<SyncSummary> {
   return inFlight;
 }
 
+/**
+ * What to send again for a synced item whose server copy may be gone, or undefined when there
+ * is nothing to restore (the record is no longer on the device, or the item is a deletion
+ * request, whose end state "not on the server" already holds). Nothing here deletes anything.
+ *
+ * Assessments and follow-ups are sent as first queued: assessments never change on the device
+ * except through consent events, which are sent again after them, in the same order as before.
+ * A referral is sent as it is on the device now, so a stage the server had reached and the
+ * device had read is not lost.
+ */
+async function payloadToRestore(item: OutboxItem): Promise<OutboxItem['payload'] | undefined> {
+  switch (item.kind) {
+    case 'assessment':
+      return (await localDb.assessments.get(item.clientKey)) ? item.payload : undefined;
+    case 'referral':
+      return localDb.referrals.where('assessmentKey').equals(item.clientKey).first();
+    case 'followUp':
+      return (await localDb.followUps.get(item.clientKey)) ? item.payload : undefined;
+    case 'consentEvent':
+      return (item.payload as ConsentEvent).kind === 'CONSENT_WITHDRAWN' ? item.payload : undefined;
+  }
+}
+
+/**
+ * Called with the generation the mock server reports now. Every item the device calls synced but
+ * that was acknowledged by a different generation, or by none that was recorded, is not known to
+ * be on the server any more. Each is put back in the queue, marked `restore`, so it is sent again
+ * through the normal idempotent path (parents before children, normal back-off). The local
+ * records are never touched, and the status stops saying "synced" until the server says so again.
+ * Safe to repeat: items already acknowledged by the current generation are left alone.
+ */
+export async function restoreLostRecords(generation: string): Promise<number> {
+  return localDb.transaction(
+    'rw',
+    localDb.outbox,
+    localDb.assessments,
+    localDb.referrals,
+    localDb.followUps,
+    async () => {
+      let queued = 0;
+      for (const item of await localDb.outbox.where('status').equals('synced').toArray()) {
+        if (item.serverGeneration === generation) continue;
+        const payload = await payloadToRestore(item);
+        if (payload === undefined) {
+          // nothing to send: record that this item was checked against this generation
+          await localDb.outbox.update(item.key, { serverGeneration: generation });
+          continue;
+        }
+        await localDb.outbox.update(item.key, {
+          status: 'pending',
+          attempts: 0,
+          lastError: null,
+          nextAttemptAt: 0,
+          syncedAt: null,
+          restore: true,
+          payload,
+        });
+        queued++;
+      }
+      return queued;
+    },
+  );
+}
+
 async function run({ force = false, now = Date.now }: SyncOptions): Promise<SyncSummary> {
   const summary: SyncSummary = { skipped: null, sent: 0, failed: 0, rejected: 0, deferred: 0 };
   if (!isOnline()) return { ...summary, skipped: 'offline' };
+
+  // Is what this device calls "synced" still on the mock server? Ask it which generation it is.
+  // No answer (an outage, a refusal) is no information: nothing is changed on a failed probe.
+  let generation: string | null = null;
+  if ((await localDb.outbox.where('status').equals('synced').count()) > 0) {
+    generation = await probeServerGeneration();
+    if (generation) await restoreLostRecords(generation);
+  }
 
   const waiting = await localDb.outbox
     .where('status')
@@ -112,7 +185,13 @@ async function run({ force = false, now = Date.now }: SyncOptions): Promise<Sync
     const outcome = await sendItem(item);
     const patch: Partial<OutboxItem> =
       outcome.kind === 'ok'
-        ? { status: 'synced', lastError: null, syncedAt: now() }
+        ? {
+            status: 'synced',
+            lastError: null,
+            syncedAt: now(),
+            serverGeneration: outcome.generation ?? generation,
+            restore: false,
+          }
         : outcome.kind === 'retry'
           ? {
               status: 'failed',

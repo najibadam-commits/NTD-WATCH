@@ -9,6 +9,7 @@ import {
 } from '@ntd-watch/demo-data';
 import {
   REFERRAL_STAGES,
+  type ReferralStage,
   SIGNAL_CATEGORIES,
   SIGNAL_CATEGORY_BY_LEVEL,
   completionRate,
@@ -32,13 +33,23 @@ import {
   type ProgrammeSummary,
   type QueryContext,
   type ReferralMonitor,
-  type RiskCounts,
+  type RawRiskCounts,
+  type RawStageCounts,
   type SignalDirection,
-  type StageCounts,
   type VulnerabilityBand,
   type WashRates,
   type WeeklyPoint,
 } from './types';
+import { signalBand, type SignalBand } from './priority';
+import {
+  SMALL_COUNT_THRESHOLD,
+  isSmallCount,
+  suppress,
+  suppressRecord,
+  publishTotal,
+  type Count,
+  type Part,
+} from './suppression';
 import {
   INTELLIGENCE_NOTE,
   INTELLIGENCE_THRESHOLD,
@@ -60,8 +71,34 @@ const WEEK = 7 * DAY;
 
 export const isSeedKey = (clientKey: string) => clientKey.startsWith('seed-');
 
-const emptyRisk = (): RiskCounts => ({ LOW: 0, MODERATE: 0, HIGH: 0, URGENT: 0 });
-const emptyStages = (): StageCounts => ({
+/**
+ * A record created through the demonstration workflow that carries its own evidence of being a
+ * demonstration record: a key that is not a generated seed key, the `demo` flag every stored
+ * record must have (the mock API refuses anything else), and a demonstration rule set. The key
+ * prefix alone is never enough. Read at run time, because stored data is not trusted to match
+ * its type.
+ */
+export function isVerifiedDemoCreated(a: Assessment): boolean {
+  return (
+    !isSeedKey(a.clientKey) &&
+    (a as { demo?: unknown }).demo === true &&
+    typeof a.ruleSetId === 'string' &&
+    a.ruleSetId.startsWith('demo-')
+  );
+}
+
+/**
+ * Demo-created count for the overview. When every non-seed assessment in the view is verified
+ * demo-created, the count holds only synthetic demonstration records and is published as it
+ * is, including 1 to 4: it describes nothing about real people. If even one non-seed record
+ * cannot be verified, the existing small-count rule applies to the whole figure.
+ */
+function demoCreatedCount(nonSeed: Assessment[]): Count {
+  return nonSeed.every(isVerifiedDemoCreated) ? nonSeed.length : suppress(nonSeed.length);
+}
+
+const emptyRisk = (): RawRiskCounts => ({ LOW: 0, MODERATE: 0, HIGH: 0, URGENT: 0 });
+const emptyStages = (): RawStageCounts => ({
   GENERATED: 0,
   ACCEPTED: 0,
   PATIENT_ARRIVED: 0,
@@ -240,7 +277,7 @@ export function vulnerabilityBand(index: number | null): VulnerabilityBand {
 }
 
 function countRisk(assessments: readonly Assessment[]): {
-  byRisk: RiskCounts;
+  byRisk: RawRiskCounts;
   unclassified: number;
 } {
   const byRisk = emptyRisk();
@@ -252,7 +289,7 @@ function countRisk(assessments: readonly Assessment[]): {
   return { byRisk, unclassified };
 }
 
-const signalCount = (b: RiskCounts) => b.HIGH + b.URGENT;
+const signalCount = (b: RawRiskCounts) => b.HIGH + b.URGENT;
 
 function direction(recent: number, previous: number): SignalDirection {
   if (recent - previous >= 2 && recent > previous * 1.5) return 'rising';
@@ -260,7 +297,7 @@ function direction(recent: number, previous: number): SignalDirection {
   return 'steady';
 }
 
-function stageCounts(referrals: readonly Referral[]): StageCounts {
+function stageCounts(referrals: readonly Referral[]): RawStageCounts {
   const c = emptyStages();
   for (const r of referrals) c[r.stage]++;
   return c;
@@ -368,7 +405,10 @@ export function fgsAggregate(
  */
 export function communityIntelligence(
   records: ProgrammeRecords,
-  communities: readonly CommunityStat[],
+  communities: readonly Pick<
+    RawCommunityStat,
+    'communityId' | 'name' | 'stateId' | 'lgaId' | 'wardId' | 'vulnerabilityBand'
+  >[],
   communityIds: ReadonlySet<string>,
   fromMs: number,
   toMs: number,
@@ -399,6 +439,234 @@ export function communityIntelligence(
   };
 }
 
+/* ------------------------------------------------ exact (internal) and published shapes */
+
+/** Exact figures for one community. Internal: suppressed by `publishCommunity` before it leaves. */
+interface RawCommunityStat {
+  communityId: string;
+  name: string;
+  stateId: string;
+  lgaId: string;
+  wardId: string;
+  assessments: number;
+  byRisk: RawRiskCounts;
+  unclassified: number;
+  signals: number;
+  signalsRecent: number;
+  signalsPrevious: number;
+  direction: SignalDirection;
+  referrals: number;
+  referralsCompleted: number;
+  unresolved: number;
+  followUps: number;
+  followUpsDue: number;
+  wash: WashRates;
+  vulnerabilityIndex: number | null;
+  vulnerabilityBand: VulnerabilityBand;
+  chwsAssigned: number;
+  chwsActive: number;
+}
+
+interface RawWeeklyPoint {
+  weekStart: string;
+  assessments: number;
+  unclassified: number;
+  byRisk: RawRiskCounts;
+  signals: number;
+  referrals: number;
+  vulnerabilityIndex: number | null;
+}
+
+/**
+ * The risk-level cells of one group (a community, a week or the whole selection) plus the total
+ * and the signal count they make up. Primary suppression hides each cell of 1 to 4. If exactly
+ * one cell is hidden, the smallest visible non-zero cell is hidden as well, so the hidden value
+ * cannot be recovered from the published total by subtraction. The total and the signal count are
+ * then published by `publishTotal`, which withholds them when they would give a hidden cell away.
+ */
+function publishRiskGroup(
+  byRisk: RawRiskCounts,
+  unclassified: number,
+  assessments: number,
+  /** Lists (communities, weeks) that each risk level is also the sum of, as published. */
+  lists: Partial<Record<keyof RawRiskCounts, Part[][]>> = {},
+): {
+  byRisk: Record<keyof RawRiskCounts, Count>;
+  unclassified: Count;
+  assessments: Count;
+  signals: Count;
+} {
+  const cells: Record<string, Count> = {
+    ...suppressRecord(byRisk),
+    unclassified: suppress(unclassified),
+  };
+  // A risk level that is the sum of a list with a hidden row would give that row away.
+  for (const k of Object.keys(lists) as (keyof RawRiskCounts)[]) {
+    // A level with no records at all is a true zero whatever its rows show.
+    cells[k] = byRisk[k] === 0 ? 0 : publishTotal(byRisk[k], ...(lists[k] ?? []));
+  }
+  const raw: Record<string, number> = { ...byRisk, unclassified };
+  const hiddenKeys = Object.keys(cells).filter((k) => cells[k] === null);
+  if (hiddenKeys.length === 1) {
+    // One hidden cell would be the total minus the visible cells. Hide the smallest visible
+    // non-zero cell as well, so a reader can only recover the sum of the two.
+    const smallest = Object.keys(cells)
+      .filter((k) => cells[k] !== null && raw[k]! > 0)
+      .sort((x, y) => raw[x]! - raw[y]!)[0];
+    if (smallest) cells[smallest] = null;
+  }
+  const parts = (keys: string[]) => keys.map((k) => ({ raw: raw[k]!, shown: cells[k]! }));
+  // With no visible non-zero cell left to hide, a lone hidden cell cannot be protected: hide the total.
+  let total = publishTotal(assessments, parts(Object.keys(cells)));
+  const signals = publishTotal(byRisk.HIGH + byRisk.URGENT, parts(['HIGH', 'URGENT']));
+  // Two published sums overlap: the total contains the signals. Their difference is the count of
+  // everything that is not a signal (LOW, MODERATE and unclassified), so that difference must
+  // itself be safe to publish. Otherwise a reader subtracts the signals from the total and
+  // recovers the hidden cells behind it. Withhold the total in that case.
+  if (total !== null && signals !== null) {
+    const rest = ['LOW', 'MODERATE', 'unclassified'];
+    const restRaw = rest.reduce((n, k) => n + raw[k]!, 0);
+    if (publishTotal(restRaw, parts(rest)) === null && restRaw !== 0) total = null;
+  }
+  const { unclassified: unc, ...risk } = cells;
+  const riskCells = risk as Record<keyof RawRiskCounts, Count>;
+  return {
+    byRisk: riskCells,
+    unclassified: unc ?? null,
+    assessments: total,
+    signals,
+  };
+}
+
+const publishStages = (raw: RawStageCounts) => suppressRecord(raw);
+
+/**
+ * The signal band, worked out from the exact counts, unless it would narrow a hidden signals
+ * count. When the signals figure is not shown it could be any of 1 to 4; if those values would
+ * not all give the same band, the band published beside it would tell a reader which of them it
+ * is (for example 8 assessments: 1 signal is MODERATE, 2 to 4 are HIGH). The band is then
+ * withheld (INSUFFICIENT_DATA). Where every candidate gives the same band, it is published.
+ * A band that differs from that uniform band still shows the count is not 1 to 4: documented.
+ */
+function publishedSignalBand(signals: number, assessments: number, shown: Count): SignalBand {
+  if (shown !== null) return signalBand(signals, assessments);
+  const candidates = new Set([1, 2, 3, 4].map((v) => signalBand(v, assessments)));
+  return candidates.size > 1 ? 'INSUFFICIENT_DATA' : signalBand(signals, assessments);
+}
+
+function publishCommunity(c: RawCommunityStat): CommunityStat {
+  const g = publishRiskGroup(c.byRisk, c.unclassified, c.assessments);
+  const recent = suppress(c.signalsRecent);
+  const previous = suppress(c.signalsPrevious);
+  return {
+    communityId: c.communityId,
+    name: c.name,
+    stateId: c.stateId,
+    lgaId: c.lgaId,
+    wardId: c.wardId,
+    assessments: g.assessments,
+    byRisk: g.byRisk,
+    unclassified: g.unclassified,
+    signals: g.signals,
+    signalsRecent: recent,
+    signalsPrevious: previous,
+    // Derived from the exact windows, like signalBand. See suppression.ts, "Known limits".
+    direction: c.direction,
+    signalBand: publishedSignalBand(c.signals, c.assessments, g.signals),
+    referrals: suppress(c.referrals),
+    // referrals minus completed is a count of its own: do not let two published numbers give it away.
+    referralsCompleted: isSmallCount(c.referrals - c.referralsCompleted)
+      ? null
+      : suppress(c.referralsCompleted),
+    unresolved: suppress(c.unresolved),
+    followUps: suppress(c.followUps),
+    followUpsDue: suppress(c.followUpsDue),
+    wash: c.wash,
+    vulnerabilityIndex: c.vulnerabilityIndex,
+    vulnerabilityBand: c.vulnerabilityBand,
+    chwsAssigned: c.chwsAssigned,
+    chwsActive: c.chwsActive,
+  };
+}
+
+function publishWeekly(w: RawWeeklyPoint): WeeklyPoint {
+  const g = publishRiskGroup(w.byRisk, w.unclassified, w.assessments);
+  return {
+    weekStart: w.weekStart,
+    assessments: g.assessments,
+    byRisk: g.byRisk,
+    signals: g.signals,
+    referrals: suppress(w.referrals),
+    vulnerabilityIndex: w.vulnerabilityIndex,
+  };
+}
+
+/**
+ * The weekly series, with secondary suppression: if one week is hidden, another is hidden with
+ * its risk-level cells, so the weeks cannot be added up and taken from the overall total.
+ */
+function publishWeeks(raw: readonly RawWeeklyPoint[]): WeeklyPoint[] {
+  const weeks = raw.map(publishWeekly);
+  const paired = weeks.map((w, i) => ({ w, raw: raw[i]! }));
+  const hideRisk = (r: (typeof paired)[number]) => {
+    r.w.assessments = null;
+    r.w.signals = null;
+    r.w.byRisk = { LOW: null, MODERATE: null, HIGH: null, URGENT: null };
+  };
+  // Every column of the risk detail is a list that adds up to a figure published elsewhere (the
+  // summary total, signals and risk bars). Hiding a second week for one column changes the others,
+  // so repeat until no column has a lone hidden week.
+  const columns: {
+    raw: (r: (typeof paired)[number]) => number;
+    shown: (r: (typeof paired)[number]) => Count;
+  }[] = [
+    { raw: (r) => r.raw.assessments, shown: (r) => r.w.assessments },
+    { raw: (r) => r.raw.byRisk.HIGH + r.raw.byRisk.URGENT, shown: (r) => r.w.signals },
+    ...(['LOW', 'MODERATE', 'HIGH', 'URGENT'] as const).map((k) => ({
+      raw: (r: (typeof paired)[number]) => r.raw.byRisk[k],
+      shown: (r: (typeof paired)[number]) => r.w.byRisk[k],
+    })),
+  ];
+  for (let pass = 0; pass < paired.length + 1; pass++) {
+    const before = paired.filter((r) => r.w.assessments === null).length;
+    for (const col of columns) {
+      complementAcross(paired, {
+        raw: col.raw,
+        shown: col.shown,
+        hide: hideRisk,
+        // Only the assessments column may prefer a week whose own cells cannot rebuild it; the
+        // signals and risk columns are rebuilt from the same cells, so any week must do.
+        prefer: col === columns[0] ? (r) => anyRiskCellHidden(r.w.byRisk) : undefined,
+      });
+    }
+    if (paired.filter((r) => r.w.assessments === null).length === before) break;
+  }
+  complementAcross(paired, {
+    raw: (r) => r.raw.referrals,
+    shown: (r) => r.w.referrals,
+    hide: (r) => {
+      r.w.referrals = null;
+    },
+  });
+  return weeks;
+}
+
+/** Symptom counts: below-threshold symptoms are `null` (not shown); a symptom never seen is absent. */
+const publishSymptoms = (raw: Record<string, number>): Record<string, Count> =>
+  Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, suppress(v)]));
+
+/**
+ * Percent of referrals that reached ASSESSED or beyond, published only when it cannot hand over a
+ * small count. A percentage of a published total pins the split: 1 of 5 is 20%, 38 of 40 is 95%.
+ * So it is withheld when either side of the split (assessed or beyond, and the rest) is 1 to 4.
+ */
+function publishedCompletion(stages: readonly ReferralStage[], shownTotal: Count): number | null {
+  if (shownTotal === null) return null;
+  const done = stages.filter((st) => stageIndex(st) >= stageIndex('ASSESSED')).length;
+  if (isSmallCount(done) || isSmallCount(stages.length - done)) return null;
+  return completionRate(stages);
+}
+
 function unresolvedCount(referrals: readonly Referral[], ctx: QueryContext): number {
   return referrals.filter((r) =>
     isUnresolved(r.stage, new Date(referralCreatedMs(r)), ctx.now, ctx.maxUnresolvedDays),
@@ -410,7 +678,7 @@ function communityStat(
   s: Slice,
   toMs: number,
   ctx: QueryContext,
-): CommunityStat {
+): RawCommunityStat {
   const a = s.assessments.filter((x) => x.communityId === community.id);
   const r = s.referrals.filter((x) => x.communityId === community.id);
   const { byRisk, unclassified } = countRisk(a);
@@ -460,8 +728,8 @@ function communityStat(
   };
 }
 
-function weeklySeries(s: Slice, fromMs: number, toMs: number): WeeklyPoint[] {
-  const points: WeeklyPoint[] = [];
+function weeklySeries(s: Slice, fromMs: number, toMs: number): RawWeeklyPoint[] {
+  const points: RawWeeklyPoint[] = [];
   for (let w = weekStartMs(fromMs); w < toMs; w += WEEK) {
     const a = s.assessments.filter((x) => {
       const t = Date.parse(x.capturedAt);
@@ -471,10 +739,11 @@ function weeklySeries(s: Slice, fromMs: number, toMs: number): WeeklyPoint[] {
       const t = referralCreatedMs(x);
       return t >= w && t < w + WEEK;
     });
-    const { byRisk } = countRisk(a);
+    const { byRisk, unclassified } = countRisk(a);
     points.push({
       weekStart: isoDate(w),
       assessments: a.length,
+      unclassified,
       byRisk,
       signals: signalCount(byRisk),
       referrals: r.length,
@@ -486,23 +755,105 @@ function weeklySeries(s: Slice, fromMs: number, toMs: number): WeeklyPoint[] {
 
 /* ---------------------------------------------------------------- outputs */
 
-function kpisFor(s: Slice, communities: CommunityStat[], ctx: QueryContext): Kpis {
+/**
+ * Headline figures. Every total is published only if each community figure it is the sum of is
+ * published, and only if the risk-level cells it is made of are, so the total cannot be used to
+ * recover a hidden community or risk cell by subtraction.
+ */
+function kpisFor(
+  s: Slice,
+  raw: readonly RawCommunityStat[],
+  communities: readonly CommunityStat[],
+  ctx: QueryContext,
+): Kpis {
   const { byRisk, unclassified } = countRisk(s.assessments);
-  const highUrgent = signalCount(byRisk);
+  const risk = publishRiskGroup(byRisk, unclassified, s.assessments.length);
+  const over = (rawOf: (c: RawCommunityStat) => number, shownOf: (c: CommunityStat) => Count) =>
+    raw.map((c, i) => ({ raw: rawOf(c), shown: shownOf(communities[i]!) }));
+  const riskParts = (get: (r: typeof byRisk) => number[], shown: Count[]) =>
+    get(byRisk).map((v, i) => ({ raw: v, shown: shown[i]! }));
+  const highUrgentRaw = signalCount(byRisk);
+  const highUrgent = publishTotal(
+    highUrgentRaw,
+    over(
+      (c) => c.signals,
+      (c) => c.signals,
+    ),
+    riskParts((r) => [r.HIGH, r.URGENT], [risk.byRisk.HIGH, risk.byRisk.URGENT]),
+  );
+  const referralsRaw = s.referrals.length;
+  const stageRaw = stageCounts(s.referrals);
+  const stageShown = publishStages(stageRaw);
+  const referrals = publishTotal(
+    referralsRaw,
+    over(
+      (c) => c.referrals,
+      (c) => c.referrals,
+    ),
+    (Object.keys(stageRaw) as (keyof typeof stageRaw)[]).map((k) => ({
+      raw: stageRaw[k],
+      shown: stageShown[k],
+    })),
+  );
+  const assessments = publishTotal(
+    s.assessments.length,
+    over(
+      (c) => c.assessments,
+      (c) => c.assessments,
+    ),
+    [
+      ...(Object.keys(byRisk) as (keyof typeof byRisk)[]).map((k) => ({
+        raw: byRisk[k],
+        shown: risk.byRisk[k],
+      })),
+      { raw: unclassified, shown: risk.unclassified },
+    ],
+  );
+  const followUpsDueRaw = raw.reduce((n, c) => n + c.followUpsDue, 0);
   return {
-    assessments: s.assessments.length,
+    assessments,
     highUrgent,
-    highUrgentShare: s.assessments.length === 0 ? null : highUrgent / s.assessments.length,
-    referrals: s.referrals.length,
-    referralCompletion: completionRate(s.referrals.map((r) => r.stage)),
-    unresolved: unresolvedCount(s.referrals, ctx),
-    followUps: s.followUps.length,
-    followUpsDue: communities.reduce((n, c) => n + c.followUpsDue, 0),
-    followUpsWorse: s.followUps.filter((f) => f.condition === 'worse').length,
+    highUrgentShare:
+      highUrgent === null || assessments === null || s.assessments.length === 0
+        ? null
+        : highUrgentRaw / s.assessments.length,
+    referrals,
+    referralCompletion: publishedCompletion(
+      s.referrals.map((r) => r.stage),
+      referrals,
+    ),
+    unresolved: publishTotal(
+      unresolvedCount(s.referrals, ctx),
+      over(
+        (c) => c.unresolved,
+        (c) => c.unresolved,
+      ),
+    ),
+    followUps: publishTotal(
+      s.followUps.length,
+      over(
+        (c) => c.followUps,
+        (c) => c.followUps,
+      ),
+    ),
+    followUpsDue: publishTotal(
+      followUpsDueRaw,
+      over(
+        (c) => c.followUpsDue,
+        (c) => c.followUpsDue,
+      ),
+    ),
+    followUpsWorse: suppress(s.followUps.filter((f) => f.condition === 'worse').length),
     activeChws: new Set(s.assessments.map((a) => a.chwId)).size,
-    communitiesReporting: communities.filter((c) => c.assessments > 0).length,
+    communitiesReporting: raw.filter((c) => c.assessments > 0).length,
     communitiesInScope: communities.length,
-    unclassified,
+    unclassified: publishTotal(
+      unclassified,
+      over(
+        (c) => c.unclassified,
+        (c) => c.unclassified,
+      ),
+    ),
   };
 }
 
@@ -532,10 +883,58 @@ export function summarise(
   const toMs = dayEndMs(filters.to);
   const s = slice(records, ids, fromMs, toMs);
 
-  const stats = communities.map((c) => communityStat(c, s, toMs, ctx));
+  const rawStats = communities.map((c) => communityStat(c, s, toMs, ctx));
+  const stats = rawStats.map(publishCommunity);
+  const paired = stats.map((st, i) => ({ st, raw: rawStats[i]! }));
+  for (const key of [
+    'assessments',
+    'signals',
+    'referrals',
+    'unresolved',
+    'followUps',
+    'followUpsDue',
+  ] as const) {
+    complementAcross(paired, {
+      raw: (r) => r.raw[key],
+      shown: (r) => r.st[key],
+      hide: (r) => {
+        r.st[key] = null;
+      },
+      // For the headline counts only rows with a hidden risk cell of their own: a row whose
+      // cells are all visible could be added back up from them.
+      prefer:
+        key === 'assessments' || key === 'signals'
+          ? (r) => anyRiskCellHidden(r.st.byRisk)
+          : undefined,
+    });
+  }
   const length = toMs - fromMs;
   const prev = slice(records, ids, fromMs - length, fromMs);
-  const prevRisk = countRisk(prev.assessments).byRisk;
+  const prevCounts = countRisk(prev.assessments);
+  const prevRisk = publishRiskGroup(
+    prevCounts.byRisk,
+    prevCounts.unclassified,
+    prev.assessments.length,
+  );
+  const nowCounts = countRisk(s.assessments);
+  const rawWeeks = weeklySeries(s, fromMs, toMs);
+  const weekly = publishWeeks(rawWeeks);
+  const levels = ['LOW', 'MODERATE', 'HIGH', 'URGENT'] as const;
+  const lists = Object.fromEntries(
+    levels.map((k) => [
+      k,
+      [
+        paired.map((r) => ({ raw: r.raw.byRisk[k], shown: r.st.byRisk[k] })),
+        rawWeeks.map((w, i) => ({ raw: w.byRisk[k], shown: weekly[i]!.byRisk[k] })),
+      ],
+    ]),
+  );
+  const nowRisk = publishRiskGroup(
+    nowCounts.byRisk,
+    nowCounts.unclassified,
+    s.assessments.length,
+    lists,
+  );
 
   return {
     demo: true,
@@ -544,27 +943,54 @@ export function summarise(
     filters,
     clamped,
     scope,
-    kpis: kpisFor(s, stats, ctx),
+    kpis: kpisFor(s, rawStats, stats, ctx),
     previous: {
       from: isoDate(fromMs - length),
       to: isoDate(fromMs - DAY),
-      assessments: prev.assessments.length,
-      highUrgent: signalCount(prevRisk),
-      referrals: prev.referrals.length,
+      assessments: prevRisk.assessments,
+      highUrgent: prevRisk.signals,
+      referrals: suppress(prev.referrals.length),
     },
-    byRisk: countRisk(s.assessments).byRisk,
+    byRisk: nowRisk.byRisk,
     communities: stats,
-    weekly: weeklySeries(s, fromMs, toMs),
-    symptomCounts: symptomCounts(s.assessments),
-    referralStages: stageCounts(s.referrals),
+    weekly,
+    symptomCounts: publishSymptoms(symptomCounts(s.assessments)),
+    referralStages: publishStages(stageCounts(s.referrals)),
     fgs: fgsAggregate(all, ids, fromMs, toMs),
-    intelligence: communityIntelligence(all, stats, ids, fromMs, toMs),
+    intelligence: communityIntelligence(all, rawStats, ids, fromMs, toMs),
     dataSources: {
-      seeded: s.assessments.filter((a) => isSeedKey(a.clientKey)).length,
-      live: s.assessments.filter((a) => !isSeedKey(a.clientKey)).length,
+      seeded: suppress(s.assessments.filter((a) => isSeedKey(a.clientKey)).length),
+      live: demoCreatedCount(s.assessments.filter((a) => !isSeedKey(a.clientKey))),
     },
   };
 }
+
+/**
+ * Secondary (complementary) suppression across a list. If exactly one row of a column is hidden,
+ * the overall total minus the visible rows would be that row, and the overall total is usually
+ * public elsewhere (the risk-level bars add up to it). So the smallest other row that still has
+ * a hidden neighbour of its own is hidden too, and a reader can only recover the sum of the two.
+ * `prefer` limits the choice to rows whose value cannot be rebuilt from their own visible cells.
+ * When no such row exists nothing is added, and the total itself stays withheld (`publishTotal`).
+ */
+function complementAcross<T>(
+  rows: readonly T[],
+  o: {
+    raw: (t: T) => number;
+    shown: (t: T) => Count;
+    hide: (t: T) => void;
+    prefer?: (t: T) => boolean;
+  },
+): void {
+  if (rows.filter((t) => o.shown(t) === null).length !== 1) return;
+  const pool = rows.filter(
+    (t) => o.shown(t) !== null && o.raw(t) > 0 && (o.prefer ? o.prefer(t) : true),
+  );
+  const pick = pool.sort((a, b) => o.raw(a) - o.raw(b))[0];
+  if (pick) o.hide(pick);
+}
+
+const anyRiskCellHidden = (b: Record<string, Count>) => Object.values(b).some((v) => v === null);
 
 /** One community's aggregates. Null when the community is outside the caller's scope. */
 export function communityDetail(
@@ -590,19 +1016,63 @@ export function communityDetail(
   const perFacility = new Map<string, number>();
   for (const r of s.referrals)
     perFacility.set(r.facilityId, (perFacility.get(r.facilityId) ?? 0) + 1);
+  const rawStat = communityStat(community, s, toMs, ctx);
+  const stat = publishCommunity(rawStat);
+  const stageCells = publishStages(stageCounts(s.referrals));
+  const facilities = [...perFacility.entries()]
+    .map(([facilityId, referrals]) => ({
+      facilityId,
+      name: facilityName(facilityId),
+      raw: referrals,
+      referrals: suppress(referrals),
+    }))
+    .sort((a, b) => b.raw - a.raw || a.name.localeCompare(b.name));
+  const stageRaw = stageCounts(s.referrals);
+  stat.referrals = publishTotal(
+    rawStat.referrals,
+    (Object.keys(stageRaw) as (keyof typeof stageRaw)[]).map((k) => ({
+      raw: stageRaw[k],
+      shown: stageCells[k],
+    })),
+    facilities.map((f) => ({ raw: f.raw, shown: f.referrals })),
+  );
+  // "Assessed or beyond" is the sum of the later stages, and the remainder is the sum of the
+  // earlier ones, so it is withheld unless both sums are safe to publish.
+  const assessedAt = stageIndex('ASSESSED');
+  const stagePart = (keep: (i: number) => boolean) =>
+    REFERRAL_STAGES.filter((_, i) => keep(i)).map((st) => ({
+      raw: stageRaw[st],
+      shown: stageCells[st],
+    }));
+  const rawLater = stagePart((i) => i >= assessedAt).reduce((n, p) => n + p.raw, 0);
+  const rawEarlier = stagePart((i) => i < assessedAt).reduce((n, p) => n + p.raw, 0);
+  if (
+    publishTotal(
+      rawLater,
+      stagePart((i) => i >= assessedAt),
+    ) === null ||
+    publishTotal(
+      rawEarlier,
+      stagePart((i) => i < assessedAt),
+    ) === null
+  ) {
+    stat.referralsCompleted = null;
+  }
   return {
     demo: true,
     notice: SYNTHETIC_NOTICE,
     generatedAt: ctx.now.toISOString(),
     filters,
-    stat: communityStat(community, s, toMs, ctx),
-    weekly: weeklySeries(s, fromMs, toMs),
-    symptomCounts: symptomCounts(s.assessments),
-    referralStages: stageCounts(s.referrals),
+    stat,
+    weekly: publishWeeks(weeklySeries(s, fromMs, toMs)),
+    symptomCounts: publishSymptoms(symptomCounts(s.assessments)),
+    referralStages: stageCells,
     fgs: fgsAggregate(all, new Set([communityId]), fromMs, toMs),
-    facilities: [...perFacility.entries()]
-      .map(([facilityId, referrals]) => ({ facilityId, name: facilityName(facilityId), referrals }))
-      .sort((a, b) => b.referrals - a.referrals),
+    facilities: facilities.map(({ facilityId, name, referrals }) => ({
+      facilityId,
+      name,
+      referrals,
+    })),
   };
 }
 
@@ -613,7 +1083,7 @@ function median(values: number[]): number | null {
   return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 }
 
-function reachedCounts(referrals: readonly Referral[]): StageCounts {
+function reachedCounts(referrals: readonly Referral[]): RawStageCounts {
   const c = emptyStages();
   for (const r of referrals) {
     for (const stage of REFERRAL_STAGES) {
@@ -623,20 +1093,52 @@ function reachedCounts(referrals: readonly Referral[]): StageCounts {
   return c;
 }
 
+/**
+ * Cumulative "reached this stage or beyond" counts. Each one is the sum of the current-stage
+ * counts from that stage onwards, so two neighbouring cumulative counts differ by exactly one
+ * current-stage count. Whenever a current-stage count is hidden, every cumulative count at or
+ * before it is hidden too, so the hidden count cannot be recovered by subtracting them.
+ */
+function publishReached(
+  reached: RawStageCounts,
+  currentShown: ReturnType<typeof publishStages>,
+): ReturnType<typeof publishStages> {
+  const lastHidden = REFERRAL_STAGES.reduce(
+    (idx, st, i) => (currentShown[st] === null ? i : idx),
+    -1,
+  );
+  return Object.fromEntries(
+    REFERRAL_STAGES.map((st, i) => [st, i <= lastHidden ? null : suppress(reached[st])]),
+  ) as ReturnType<typeof publishStages>;
+}
+
 function facilityStat(
   facilityId: string,
   referrals: readonly Referral[],
   ctx: QueryContext,
-): FacilityStat {
+): FacilityStat & { rawReferrals: number } {
   const fac = DEMO_FACILITIES.find((f) => f.id === facilityId);
+  const stageRaw = stageCounts(referrals);
+  const byStage = publishStages(stageRaw);
+  const total = publishTotal(
+    referrals.length,
+    (Object.keys(stageRaw) as (keyof typeof stageRaw)[]).map((k) => ({
+      raw: stageRaw[k],
+      shown: byStage[k],
+    })),
+  );
   return {
     facilityId,
     name: facilityName(facilityId),
     lgaId: fac?.lgaId ?? '',
-    referrals: referrals.length,
-    byStage: stageCounts(referrals),
-    completionRate: completionRate(referrals.map((r) => r.stage)),
-    unresolved: unresolvedCount(referrals, ctx),
+    referrals: total,
+    rawReferrals: referrals.length,
+    byStage,
+    completionRate: publishedCompletion(
+      referrals.map((r) => r.stage),
+      total,
+    ),
+    unresolved: suppress(unresolvedCount(referrals, ctx)),
   };
 }
 
@@ -666,22 +1168,24 @@ export function monitorReferrals(
   });
   if (scope.kind === 'facility') referrals = referrals.filter((r) => r.facilityId === scope.id);
 
-  const ageing = [
+  const ageingRaw = [
     { label: '0–3 days', min: 0, max: 3 },
     { label: '4–7 days', min: 3, max: 7 },
     { label: '8–14 days', min: 7, max: 14 },
     { label: 'Over 14 days', min: 14, max: Infinity },
   ].map((band) => ({
     label: band.label,
-    count: referrals.filter((r) => {
+    raw: referrals.filter((r) => {
       if (stageIndex(r.stage) >= stageIndex('ASSESSED')) return false;
       const age = (ctx.now.getTime() - referralCreatedMs(r)) / DAY;
       return age > band.min && age <= band.max;
     }).length,
   }));
+  const ageing = ageingRaw.map((b) => ({ label: b.label, count: suppress(b.raw) }));
+  const ageingParts = ageingRaw.map((b, i) => ({ raw: b.raw, shown: ageing[i]!.count }));
 
   const facilityIds = [...new Set(referrals.map((r) => r.facilityId))];
-  const byFacility = facilityIds
+  const facilityRows = facilityIds
     .map((id) =>
       facilityStat(
         id,
@@ -689,24 +1193,70 @@ export function monitorReferrals(
         ctx,
       ),
     )
-    .sort((a, b) => b.referrals - a.referrals);
+    .sort((a, b) => b.rawReferrals - a.rawReferrals || a.name.localeCompare(b.name));
+  complementAcross(facilityRows, {
+    raw: (f) => f.rawReferrals,
+    shown: (f) => f.referrals,
+    hide: (f) => {
+      f.referrals = null;
+      f.completionRate = null;
+    },
+    prefer: (f) => anyRiskCellHidden(f.byStage),
+  });
+  const byFacility: FacilityStat[] = facilityRows.map(({ rawReferrals: _raw, ...rest }) => rest);
 
   const lgaIds = [...new Set(byFacility.map((f) => f.lgaId))];
-  const byLga = lgaIds
+  const lgaRows = lgaIds
     .map((id) => {
       const inLga = referrals.filter(
         (r) => DEMO_FACILITIES.find((f) => f.id === r.facilityId)?.lgaId === id,
       );
+      const shown = suppress(inLga.length);
       return {
+        raw: inLga.length,
         lgaId: id,
         name: lgaName(id),
-        referrals: inLga.length,
-        completionRate: completionRate(inLga.map((r) => r.stage)),
-        unresolved: unresolvedCount(inLga, ctx),
+        referrals: shown,
+        completionRate: publishedCompletion(
+          inLga.map((r) => r.stage),
+          shown,
+        ),
+        unresolved: suppress(unresolvedCount(inLga, ctx)),
       };
     })
-    .sort((a, b) => b.referrals - a.referrals);
+    .sort((a, b) => b.raw - a.raw || a.name.localeCompare(b.name));
+  complementAcross(lgaRows, {
+    raw: (l) => l.raw,
+    shown: (l) => l.referrals,
+    hide: (l) => {
+      l.referrals = null;
+      l.completionRate = null;
+    },
+  });
+  const byLga = lgaRows.map(({ raw: _raw, ...rest }) => rest);
+  const currentRaw = stageCounts(referrals);
+  const current = publishStages(currentRaw);
+  const total = publishTotal(
+    referrals.length,
+    (Object.keys(currentRaw) as (keyof typeof currentRaw)[]).map((k) => ({
+      raw: currentRaw[k],
+      shown: current[k],
+    })),
+    byFacility.map((f, i) => ({ raw: facilityRows[i]!.rawReferrals, shown: f.referrals })),
+    lgaRows.map((l, i) => ({ raw: l.raw, shown: byLga[i]!.referrals })),
+  );
 
+  const reached = publishReached(reachedCounts(referrals), current);
+  // Referrals not yet assessed are total minus completed. If that is a hidden small cell the
+  // completion percentage would give it away, so the percentage is withheld.
+  const assessedIdx0 = stageIndex('ASSESSED');
+  const preAssessed = publishTotal(
+    REFERRAL_STAGES.filter((_, i) => i < assessedIdx0).reduce((n, st) => n + currentRaw[st], 0),
+    REFERRAL_STAGES.filter((_, i) => i < assessedIdx0).map((st) => ({
+      raw: currentRaw[st],
+      shown: current[st],
+    })),
+  );
   const hoursToAccept = referrals
     .filter((r) => r.stageTimestamps.length >= 2)
     .map(
@@ -725,15 +1275,24 @@ export function monitorReferrals(
     clamped,
     scope,
     maxUnresolvedDays: ctx.maxUnresolvedDays,
-    total: referrals.length,
-    current: stageCounts(referrals),
-    reached: reachedCounts(referrals),
-    completionRate: completionRate(referrals.map((r) => r.stage)),
-    unresolved: unresolvedCount(referrals, ctx),
+    total,
+    current,
+    reached,
+    completionRate:
+      reached.ASSESSED === null || preAssessed === null
+        ? null
+        : publishedCompletion(
+            referrals.map((r) => r.stage),
+            total,
+          ),
+    unresolved: publishTotal(unresolvedCount(referrals, ctx), ageingParts),
     ageing,
     byFacility,
     byLga,
-    medianHoursToAccept: median(hoursToAccept),
-    medianDaysToAssessed: median(daysToAssessed),
+    // A median of fewer than the threshold values would describe individual referrals.
+    medianHoursToAccept:
+      hoursToAccept.length < SMALL_COUNT_THRESHOLD ? null : median(hoursToAccept),
+    medianDaysToAssessed:
+      daysToAssessed.length < SMALL_COUNT_THRESHOLD ? null : median(daysToAssessed),
   };
 }

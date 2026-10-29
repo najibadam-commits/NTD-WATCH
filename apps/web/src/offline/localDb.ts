@@ -18,6 +18,14 @@ export interface OutboxItem {
   createdAt: number;
   nextAttemptAt: number;
   syncedAt: number | null;
+  /**
+   * The mock-server generation that acknowledged this item. A synced item whose generation
+   * differs from the server's current one, or that has none recorded, is not known to be on the
+   * server any more.
+   */
+  serverGeneration?: string | null;
+  /** True while a record the server once acknowledged is being sent again after server loss. */
+  restore?: boolean;
 }
 
 /**
@@ -43,7 +51,23 @@ class LocalDb extends Dexie {
 
 export const localDb = new LocalDb();
 
+/**
+ * Removes every record held on this device, including the offline queue. The tables are emptied
+ * in one transaction; the database itself stays open. (Deleting and reopening it would close it
+ * for a moment, and any sync or live query that touched it in that moment would fail with
+ * `DatabaseClosedError`.)
+ */
 export async function resetLocalDb(): Promise<void> {
-  await localDb.delete();
-  await localDb.open();
+  await localDb.transaction(
+    'rw',
+    [localDb.assessments, localDb.referrals, localDb.followUps, localDb.outbox],
+    async () => {
+      await Promise.all([
+        localDb.assessments.clear(),
+        localDb.referrals.clear(),
+        localDb.followUps.clear(),
+        localDb.outbox.clear(),
+      ]);
+    },
+  );
 }

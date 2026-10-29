@@ -18,7 +18,7 @@ import {
 } from '@ntd-watch/demo-data';
 import { DEMO_RULES_NOTICE, referralIdFor, type Referral } from '@ntd-watch/domain';
 import { localDb } from '../../offline/localDb';
-import { saveReferral } from '../../offline/repository';
+import { ConsentWithdrawnError, saveReferral } from '../../offline/repository';
 import { DemoLabel } from '../components/Shared';
 import { useRecord } from '../useRecord';
 import i18n from '../../i18n';
@@ -37,6 +37,8 @@ export function ReferralNewScreen() {
   const [error, setError] = useState<string | undefined>();
   const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
+  /** Why the last attempt to save failed, so the notice can say so. Cleared on the next attempt. */
+  const [saveFailure, setSaveFailure] = useState<'consent' | 'other' | undefined>();
 
   if (assessment.loading || existing.loading) return <LoadingState label={t('common.loading')} />;
   const a = assessment.value;
@@ -77,6 +79,7 @@ export function ReferralNewScreen() {
       return;
     }
     setSaving(true);
+    setSaveFailure(undefined);
     const now = new Date();
     const referral: Referral = {
       demo: true,
@@ -90,8 +93,16 @@ export function ReferralNewScreen() {
       stage: 'GENERATED',
       stageTimestamps: [now.toISOString()],
     };
-    await saveReferral(referral);
-    navigate(`/chw/referrals/${referral.id}`, { replace: true });
+    try {
+      await saveReferral(referral);
+      navigate(`/chw/referrals/${referral.id}`, { replace: true });
+    } catch (error) {
+      // Nothing was saved, so do not move on as if a referral exists. Say why, without
+      // showing technical details, and leave the button available to try again.
+      setSaveFailure(error instanceof ConsentWithdrawnError ? 'consent' : 'other');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -124,6 +135,13 @@ export function ReferralNewScreen() {
         }}
       />
       <Notice tone="demo">{DEMO_RULES_NOTICE}</Notice>
+      {saveFailure ? (
+        <Notice tone="error">
+          {saveFailure === 'consent'
+            ? t('chw.referral.consentWithdrawn')
+            : t('chw.referral.saveFailed')}
+        </Notice>
+      ) : null}
       <div className={styles.actions}>
         <Button block disabled={saving} onClick={() => void confirm()}>
           {t('chw.referral.confirm')}

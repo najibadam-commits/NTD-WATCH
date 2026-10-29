@@ -53,6 +53,11 @@ export function InboxPage() {
       notifyDataChanged();
       void client.invalidateQueries({ queryKey: ['programme'] });
     },
+    // A refused update (for example the referral had already moved on) leaves this view out of
+    // date, so reload the authoritative state from the mock server. No success is reported.
+    onError: () => {
+      void client.invalidateQueries({ queryKey: ['programme'] });
+    },
   });
 
   return (
@@ -152,6 +157,7 @@ export function InboxPage() {
                               onClick={() => {
                                 setSelectedId(i.referral.id);
                                 setOutcome('');
+                                advance.reset();
                               }}
                             >
                               {t('programme.inbox.open')}
@@ -237,6 +243,7 @@ export function InboxPage() {
                       <Button
                         disabled={advance.isPending || (next === 'ASSESSED' && !outcome)}
                         onClick={() =>
+                          !advance.isPending &&
                           advance.mutate({
                             id: selected.referral.id,
                             stage: next,
@@ -250,6 +257,13 @@ export function InboxPage() {
                   ) : (
                     <p className={styles.muted}>{t('programme.inbox.finished')}</p>
                   )}
+                  {advance.isSuccess && advance.data.referral.id === selected.referral.id ? (
+                    <Notice tone="success">
+                      {t('programme.inbox.updated', {
+                        stage: REFERRAL_STAGE_LABELS[advance.data.referral.stage],
+                      })}
+                    </Notice>
+                  ) : null}
                   {advance.isError ? (
                     <Notice tone="error">
                       {advance.error instanceof Error

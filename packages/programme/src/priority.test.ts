@@ -47,7 +47,12 @@ describe('seeded demo scenarios', () => {
     const r = row('com-09');
     expect(r.category).toBe('PRIORITY_INTERVENTION');
     expect(r.direction).toBe('rising');
-    expect(r.unresolved + r.followUpsDue).toBeGreaterThanOrEqual(3);
+    // Open work is still there, and neither figure is published as zero. The earlier test of
+    // "at least 3 in total" cannot be made on published figures: both are small counts and are
+    // correctly not shown, and a hidden count is at least 1.
+    expect(r.unresolved).not.toBe(0);
+    expect(r.followUpsDue).not.toBe(0);
+    expect((r.unresolved ?? 1) + (r.followUpsDue ?? 1)).toBeGreaterThanOrEqual(2);
   });
   it('scenario B: com-03 has a high signal but lower vulnerability', () => {
     const r = row('com-03');
@@ -88,9 +93,12 @@ describe('ranking and explanation', () => {
       expect(r.unresolved).toBe(c.unresolved);
       expect(r.followUpsDue).toBe(c.followUpsDue);
     }
-    expect(summary.kpis.followUpsDue).toBe(
-      summary.communities.reduce((n, c) => n + c.followUpsDue, 0),
-    );
+    const published = summary.communities.reduce((n, c) => n + (c.followUpsDue ?? 0), 0);
+    const anyHidden = summary.communities.some((c) => c.followUpsDue === null);
+    if (summary.kpis.followUpsDue !== null) {
+      if (anyHidden) expect(summary.kpis.followUpsDue).toBeGreaterThan(published);
+      else expect(summary.kpis.followUpsDue).toBe(published);
+    }
   });
   it('explains each placement from figures and never declares an outbreak', () => {
     for (const r of rows) {

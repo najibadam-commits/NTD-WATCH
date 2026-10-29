@@ -11,7 +11,7 @@ import {
   PageHeader,
   QueryBoundary,
 } from '../components/Common';
-import { formatNumber, formatPercent } from '../format';
+import { formatCountShort, formatPercent } from '../format';
 import { useLiveRefresh, useSummary } from '../useProgrammeData';
 import styles from '../programme.module.css';
 import { TableScroll } from '../components/TableScroll';
@@ -29,9 +29,18 @@ export function SignalsPage() {
       <QueryBoundary query={query} isEmpty={(s) => s.kpis.assessments === 0}>
         {(s) => {
           const ranked = [...s.communities]
-            .filter((c) => c.assessments > 0)
-            .sort((a, b) => b.signals - a.signals || b.signalsRecent - a.signalsRecent);
-          const symptoms = Object.entries(s.symptomCounts).sort((a, b) => b[1] - a[1]);
+            // A community whose assessment count is not shown still has assessments, so it stays
+            // in the list (ranked last) rather than disappearing as if it were zero.
+            .filter((c) => c.assessments !== 0)
+            .sort(
+              (a, b) =>
+                (b.signals ?? 0) - (a.signals ?? 0) ||
+                (b.signalsRecent ?? 0) - (a.signalsRecent ?? 0) ||
+                a.name.localeCompare(b.name),
+            );
+          const symptoms = Object.entries(s.symptomCounts).sort(
+            (a, b) => (b[1] ?? 0) - (a[1] ?? 0) || a[0].localeCompare(b[0]),
+          );
           return (
             <>
               <div className={styles.grid2}>
@@ -93,14 +102,16 @@ export function SignalsPage() {
                         <tr key={c.communityId} data-selected={c.communityId === selected}>
                           <th scope="row">{c.name}</th>
                           <td>{lgaName(c.lgaId)}</td>
-                          <td className={styles.num}>{formatNumber(c.assessments)}</td>
-                          <td className={styles.num}>{formatNumber(c.signals)}</td>
-                          <td className={styles.num}>{formatNumber(c.byRisk.URGENT)}</td>
+                          <td className={styles.num}>{formatCountShort(c.assessments)}</td>
+                          <td className={styles.num}>{formatCountShort(c.signals)}</td>
+                          <td className={styles.num}>{formatCountShort(c.byRisk.URGENT)}</td>
                           <td className={styles.num}>
-                            {formatPercent(c.signals / c.assessments, 1)}
+                            {c.signals === null || c.assessments === null || c.assessments === 0
+                              ? t('programme.notShown')
+                              : formatPercent(c.signals / c.assessments, 1)}
                           </td>
-                          <td className={styles.num}>{formatNumber(c.signalsRecent)}</td>
-                          <td className={styles.num}>{formatNumber(c.signalsPrevious)}</td>
+                          <td className={styles.num}>{formatCountShort(c.signalsRecent)}</td>
+                          <td className={styles.num}>{formatCountShort(c.signalsPrevious)}</td>
                           <td>
                             <DirectionPill direction={c.direction} />
                           </td>
@@ -120,6 +131,7 @@ export function SignalsPage() {
                   </table>
                 </TableScroll>
                 <p className={styles.muted}>{t('programme.signals.directionNote')}</p>
+                <p className={styles.muted}>{t('programme.smallCountNote')}</p>
               </section>
               {selected ? <CommunityPanel communityId={selected} showMapLink /> : null}
             </>

@@ -113,7 +113,9 @@ describe('browser refresh', () => {
     const freshSync = await import('./sync');
     await freshSync.recoverInterrupted();
     await freshSync.syncOutbox({ force: true });
-    expect(requests).toEqual([]);
+    // Phase 3: the only traffic is the read-only check of which mock-server generation is
+    // answering; nothing is sent again because the generation is the one that acknowledged it.
+    expect(requests).toEqual(['GET /api/v1/server-state']);
   });
 });
 

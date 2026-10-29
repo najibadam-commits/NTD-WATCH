@@ -111,15 +111,22 @@ describe('CHW records flow into the programme views', () => {
     await syncOutbox();
     const after = await fetchSummary('admin', range);
     const comAfter = after.communities.find((c) => c.communityId === 'com-01')!;
-    expect(after.kpis.assessments).toBe(before.kpis.assessments + 1);
-    expect(comAfter.assessments).toBe(comBefore.assessments + 1);
-    expect(comAfter.signals).toBe(comBefore.signals + 1); // the factory assessment is HIGH
-    expect(after.dataSources.live).toBe(before.dataSources.live + 1);
+    // The community figures are large enough to be published, so they change by exactly one.
+    expect(comAfter.assessments).toBe(comBefore.assessments! + 1);
+    expect(comAfter.signals).toBe(comBefore.signals! + 1); // the factory assessment is HIGH
+    // The overall HIGH count moves by one too. (The overall assessment total is correctly not
+    // shown here, because a hidden community figure sits beneath it.)
+    expect(after.byRisk.HIGH).toBe(before.byRisk.HIGH! + 1);
+    // One verified demo-created record: published as 1 (Phase 4A), not hidden and not zero.
+    expect(before.dataSources.live).toBe(0);
+    expect(after.dataSources.live).toBe(1);
   });
   it('does not change anything until the record has synced', async () => {
     const before = await fetchSummary('admin', range);
     await saveAssessment(makeAssessment());
-    expect((await fetchSummary('admin', range)).kpis.assessments).toBe(before.kpis.assessments);
+    const after = await fetchSummary('admin', range);
+    expect(after.byRisk).toEqual(before.byRisk);
+    expect(after.kpis).toEqual(before.kpis);
   });
   it('a new referral and follow-up appear in the programme views', async () => {
     const before = await fetchSummary('admin', range);
@@ -127,10 +134,9 @@ describe('CHW records flow into the programme views', () => {
     await syncChwRecords();
     const after = await fetchSummary('admin', range);
     const monAfter = await fetchReferralMonitor('admin', range);
-    expect(after.kpis.referrals).toBe(before.kpis.referrals + 1);
-    expect(after.kpis.followUps).toBe(before.kpis.followUps + 1);
-    expect(monAfter.total).toBe(monBefore.total + 1);
-    expect(monAfter.current.GENERATED).toBe(monBefore.current.GENERATED + 1);
+    expect(after.kpis.referrals).toBe(before.kpis.referrals! + 1);
+    expect(after.kpis.followUps).toBe(before.kpis.followUps! + 1);
+    expect(monAfter.current.GENERATED).toBe(monBefore.current.GENERATED! + 1);
   });
   it('a referral status change moves it between stages', async () => {
     await syncChwRecords();
@@ -142,25 +148,35 @@ describe('CHW records flow into the programme views', () => {
     });
     expect(res.status).toBe(200);
     const after = await fetchReferralMonitor('admin', range);
-    expect(after.current.GENERATED).toBe(before.current.GENERATED - 1);
-    expect(after.current.ACCEPTED).toBe(before.current.ACCEPTED + 1);
-    expect(after.reached.ACCEPTED).toBe(before.reached.ACCEPTED + 1);
+    expect(after.current.GENERATED).toBe(before.current.GENERATED! - 1);
+    expect(after.current.ACCEPTED).toBe(before.current.ACCEPTED! + 1);
+    // A cumulative count is withheld whenever a current-stage count at or below it is, so it
+    // cannot be used to work that count out. Compare it only when it is published.
+    if (before.reached.ACCEPTED !== null && after.reached.ACCEPTED !== null) {
+      expect(after.reached.ACCEPTED).toBe(before.reached.ACCEPTED + 1);
+    }
   });
   it('an LGA outside the community does not see its records', async () => {
     const before = await fetchSummary('lga', range); // lga-c, which includes com-01
     await saveAssessment(makeAssessment('k2', { communityId: 'com-13', id: 'A-2' }));
     await syncOutbox();
     const after = await fetchSummary('lga', range);
-    expect(after.kpis.assessments).toBe(before.kpis.assessments);
+    expect(after.kpis).toEqual(before.kpis);
+    expect(after.byRisk).toEqual(before.byRisk);
   });
   it('filters change the summary and the referral monitor consistently', async () => {
     await syncChwRecords();
     const all = await fetchSummary('admin', range);
     const one = await fetchSummary('admin', { ...range, communityId: 'com-01' });
     const monOne = await fetchReferralMonitor('admin', { ...range, communityId: 'com-01' });
-    expect(one.kpis.assessments).toBeLessThan(all.kpis.assessments);
+    const allTotal = Object.values(all.byRisk).reduce<number>((n, v) => n + (v ?? 0), 0);
+    expect(one.communities[0]!.assessments!).toBeLessThan(allTotal);
     expect(one.communities).toHaveLength(1);
-    expect(monOne.total).toBe(one.kpis.referrals);
+    // The summary and the monitor must never contradict each other: where both publish the
+    // referral total it is the same figure.
+    if (monOne.total !== null && one.kpis.referrals !== null) {
+      expect(monOne.total).toBe(one.kpis.referrals);
+    }
   });
 });
 

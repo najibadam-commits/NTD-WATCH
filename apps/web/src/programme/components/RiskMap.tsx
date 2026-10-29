@@ -10,6 +10,8 @@ import i18n from '../../i18n';
 import { PRIORITY_COLORS } from './priorityColours';
 import type { CommunityIntelligence, CommunityStat } from '@ntd-watch/programme';
 import { PRIORITY_RANK } from '@ntd-watch/programme';
+import { NOT_SHOWN_SHORT } from '../format';
+import { layoutLabels, type LabelInput, type Rect } from './labelLayout';
 import styles from '../programme.module.css';
 
 /**
@@ -81,6 +83,7 @@ export default function RiskMap({
   const markers = useRef<Marker[]>([]);
   const onSelectRef = useRef(onSelect);
   const [ready, setReady] = useState(false);
+  const [hiddenLabels, setHiddenLabels] = useState(0);
 
   useEffect(() => {
     onSelectRef.current = onSelect;
@@ -108,7 +111,6 @@ export default function RiskMap({
             ...f.properties,
             inScope: Boolean(c),
             vulnerability: c?.vulnerabilityIndex ?? -1,
-            signals: c?.signals ?? 0,
             priorityRank: i ? PRIORITY_RANK[i.priority] : 4,
             confidenceRank: i ? CONFIDENCE_RANK[i.confidence] : 3,
           },
@@ -128,7 +130,14 @@ export default function RiskMap({
         container: el,
         style: STYLE,
         bounds: DEMO_GEOGRAPHY.bounds,
-        fitBoundsOptions: { padding: 24 },
+        // Narrow maps keep a small margin so the fictional geography fills the width; the wider
+        // 80px margin on a phone would shrink it until the count badges collide.
+        fitBoundsOptions: {
+          padding:
+            el.clientWidth > 0 && el.clientWidth < 500
+              ? { top: 56, bottom: 24, left: 28, right: 28 }
+              : { top: 24, bottom: 24, left: 80, right: 80 },
+        },
         attributionControl: false,
         cooperativeGestures: true,
         dragRotate: false,
@@ -325,55 +334,145 @@ export default function RiskMap({
     map.setFilter('selected-outline', ['==', ['get', 'id'], selectedId ?? '']);
   }, [selectedId, ready]);
 
-  // DOM markers: names and signal counts. Real buttons, so they work with a keyboard.
+  // DOM markers: community names and signal badges. Names are placed by a deterministic
+  // collision-aware layout (labelLayout.ts); a name that cannot be placed without overlapping is
+  // hidden, never moved off its community, and stays available in the table, in the detail panel
+  // and in the badge's accessible name. A badge shows a published count, or "n/s" when the count
+  // is not shown. No exact suppressed value is written to the text, an attribute or a label.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
     for (const m of markers.current) m.remove();
     markers.current = [];
+
+    interface Item {
+      id: string;
+      at: [number, number];
+      rank: number;
+      label: HTMLDivElement;
+      marker: Marker;
+      badge?: HTMLButtonElement;
+    }
+    const items: Item[] = [];
     for (const c of communities) {
       const at = DEMO_GEOGRAPHY.centroids[c.communityId];
       if (!at) continue;
+      const intel = intelById.get(c.communityId);
       const label = document.createElement('div');
       label.className = 'ntd-map-label';
+      label.dataset.community = c.communityId;
+      // The visible name is decoration for sighted users; the same names are in the table.
+      label.setAttribute('aria-hidden', 'true');
       label.textContent = c.name.replace('Demo ', '');
-      const intel = intelById.get(c.communityId);
-      if (colourBy === 'priority' && intel) {
+      if (colourBy === 'priority' && intel && c.communityId === selectedId) {
+        // The longer priority text is revealed for the selected community only, so it does not
+        // widen every label and cause more overlaps.
         const sub = document.createElement('div');
         sub.className = 'ntd-map-sublabel';
         sub.textContent = `${i18n.t(`intel.priority.${intel.priority}`)} · ${i18n.t(`intel.confidence.${intel.confidence}`)}`;
         label.appendChild(sub);
       }
-      markers.current.push(
-        new Marker({ element: label, anchor: 'top', offset: [0, 14] }).setLngLat(at).addTo(map),
-      );
+      const marker = new Marker({ element: label, anchor: 'top-left' }).setLngLat(at).addTo(map);
+      markers.current.push(marker);
+      const item: Item = {
+        id: c.communityId,
+        at,
+        rank: intel ? PRIORITY_RANK[intel.priority] : 5,
+        label,
+        marker,
+      };
 
-      if (layers.signals && c.signals > 0) {
+      // c.signals is null when the count is not shown (1 to 4, or withheld so that it cannot
+      // be worked out by subtraction). Zero is a published count and draws no badge.
+      if (layers.signals && (c.signals === null || c.signals > 0)) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = styles.signalMarker!;
-        button.textContent = `▲ ${c.signals}`;
+        button.textContent = c.signals === null ? `▲ ${NOT_SHOWN_SHORT}` : `▲ ${c.signals}`;
         button.dataset.selected = String(c.communityId === selectedId);
         button.dataset.direction = c.direction;
         button.dataset.community = c.communityId;
+        const trend = c.direction;
         button.setAttribute(
           'aria-label',
-          `${c.name}: ${c.signals} demonstration risk signals (HIGH or URGENT assessments), ${c.direction}. Show community details.`,
+          c.signals === null
+            ? `${c.name}: ${NOT_SHOWN_SHORT}, demonstration risk signals not shown (small-count rule), ${trend}. Show community details.`
+            : `${c.name}: ${c.signals} demonstration risk signals (HIGH or URGENT assessments), ${trend}. Show community details.`,
         );
         button.addEventListener('click', (ev) => {
           ev.stopPropagation();
           onSelectRef.current(c.communityId);
         });
+        item.badge = button;
         markers.current.push(
           new Marker({ element: button, anchor: 'bottom' }).setLngLat(at).addTo(map),
         );
       }
+      items.push(item);
     }
+
+    const place = () => {
+      const box = map.getContainer();
+      const W = box.clientWidth;
+      const H = box.clientHeight;
+      const origin = box.getBoundingClientRect();
+      const rel = (r: DOMRect): Rect => ({
+        x: r.left - origin.left,
+        y: r.top - origin.top,
+        w: r.width,
+        h: r.height,
+      });
+      const obstacles: Rect[] = [];
+      const controls = box.querySelector('.maplibregl-ctrl-top-right');
+      if (controls) obstacles.push(rel(controls.getBoundingClientRect()));
+      const notice = box.parentElement?.querySelector('[data-testid="map-badge"]');
+      if (notice) obstacles.push(rel(notice.getBoundingClientRect()));
+      const inputs: LabelInput[] = [];
+      // On a narrow map the badges are drawn smaller (still 24px high) so fewer of them touch.
+      for (const it of items) it.badge?.setAttribute('data-compact', String(W < 500));
+      for (const it of items) {
+        const pt = map.project(it.at);
+        if (it.badge) {
+          const bw = it.badge.offsetWidth;
+          const bh = it.badge.offsetHeight;
+          obstacles.push({ x: pt.x - bw / 2, y: pt.y - bh, w: bw, h: bh });
+        }
+        inputs.push({
+          id: it.id,
+          px: pt.x,
+          py: pt.y,
+          w: it.label.offsetWidth,
+          h: it.label.offsetHeight,
+          rank: it.rank,
+          pinned: it.id === selectedId,
+        });
+      }
+      const out = layoutLabels(inputs, { width: W, height: H }, obstacles);
+      let hidden = 0;
+      for (const p of out) {
+        const it = items.find((x) => x.id === p.id)!;
+        const inp = inputs.find((x) => x.id === p.id)!;
+        it.label.style.visibility = p.visible ? 'visible' : 'hidden';
+        it.label.dataset.visible = String(p.visible);
+        if (p.visible) it.marker.setOffset([p.x - inp.px, p.y - inp.py]);
+        else hidden += 1;
+      }
+      setHiddenLabels(hidden);
+    };
+    place();
+    map.on('moveend', place);
+    map.on('resize', place);
+    return () => {
+      map.off('moveend', place);
+      map.off('resize', place);
+    };
   }, [communities, intelById, colourBy, layers.signals, selectedId, ready]);
 
   return (
     <div className={styles.mapShell}>
-      <div className={styles.mapBadge}>{GEOGRAPHY_LABEL}</div>
+      <div className={styles.mapBadge} data-testid="map-badge">
+        {GEOGRAPHY_LABEL}
+      </div>
       <div
         ref={container}
         className={styles.mapCanvas}
@@ -382,6 +481,11 @@ export default function RiskMap({
         role="region"
         aria-label="Fictional demonstration map of communities. The same information is in the table below the map."
       />
+      {hiddenLabels > 0 ? (
+        <p className={styles.mapNote} data-testid="map-label-note">
+          {i18n.t('programme.gis.labelsHidden', { count: hiddenLabels })}
+        </p>
+      ) : null}
     </div>
   );
 }

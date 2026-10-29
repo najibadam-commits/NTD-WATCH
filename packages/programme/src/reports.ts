@@ -1,6 +1,7 @@
 import { lgaName, wardName } from '@ntd-watch/demo-data';
 import { REFERRAL_STAGE_LABELS, REFERRAL_STAGES } from '@ntd-watch/domain';
 import { SYNTHETIC_NOTICE, type ProgrammeSummary, type ReferralMonitor } from './types';
+import { NOT_SHOWN_TEXT, type Count } from './suppression';
 
 export const REPORT_KINDS = [
   'programme-summary',
@@ -37,6 +38,9 @@ export interface Report {
   json: string;
 }
 
+/** A published count, or the not-shown text. Never an empty cell or a zero for a hidden value. */
+const cnt = (v: Count): string | number => (v === null ? NOT_SHOWN_TEXT : v);
+
 const n = (v: number | null, digits = 1) => (v === null ? '' : Number(v.toFixed(digits)));
 
 /** Cells that a spreadsheet could read as a formula are prefixed so they stay text. */
@@ -69,33 +73,33 @@ function body(
       const k = summary.kpis;
       return [
         ['metric', 'value', 'data_status'],
-        ['Assessments', k.assessments, ROW_STATUS],
-        ['HIGH and URGENT demonstration signals', k.highUrgent, ROW_STATUS],
+        ['Assessments', cnt(k.assessments), ROW_STATUS],
+        ['HIGH and URGENT demonstration signals', cnt(k.highUrgent), ROW_STATUS],
         [
           'Signals as share of assessments (%)',
           n(k.highUrgentShare === null ? null : k.highUrgentShare * 100),
           ROW_STATUS,
         ],
-        ['Referrals generated', k.referrals, ROW_STATUS],
-        ['Referral completion (%)', k.referralCompletion, ROW_STATUS],
-        ['Unresolved referrals', k.unresolved, ROW_STATUS],
-        ['Follow-ups recorded', k.followUps, ROW_STATUS],
-        ['Follow-ups reporting worse condition', k.followUpsWorse, ROW_STATUS],
+        ['Referrals generated', cnt(k.referrals), ROW_STATUS],
+        ['Referral completion (%)', k.referralCompletion ?? NOT_SHOWN_TEXT, ROW_STATUS],
+        ['Unresolved referrals', cnt(k.unresolved), ROW_STATUS],
+        ['Follow-ups recorded', cnt(k.followUps), ROW_STATUS],
+        ['Follow-ups reporting worse condition', cnt(k.followUpsWorse), ROW_STATUS],
         ['Active CHWs', k.activeChws, ROW_STATUS],
         ['Communities reporting', k.communitiesReporting, ROW_STATUS],
         ['Communities in scope', k.communitiesInScope, ROW_STATUS],
-        ['Assessments not classified', k.unclassified, ROW_STATUS],
-        ['LOW', summary.byRisk.LOW, ROW_STATUS],
-        ['MODERATE', summary.byRisk.MODERATE, ROW_STATUS],
-        ['HIGH', summary.byRisk.HIGH, ROW_STATUS],
-        ['URGENT', summary.byRisk.URGENT, ROW_STATUS],
+        ['Assessments not classified', cnt(k.unclassified), ROW_STATUS],
+        ['LOW', cnt(summary.byRisk.LOW), ROW_STATUS],
+        ['MODERATE', cnt(summary.byRisk.MODERATE), ROW_STATUS],
+        ['HIGH', cnt(summary.byRisk.HIGH), ROW_STATUS],
+        ['URGENT', cnt(summary.byRisk.URGENT), ROW_STATUS],
         [
           `Previous period assessments (${summary.previous.from} to ${summary.previous.to})`,
-          summary.previous.assessments,
+          cnt(summary.previous.assessments),
           ROW_STATUS,
         ],
-        ['Previous period HIGH and URGENT', summary.previous.highUrgent, ROW_STATUS],
-        ['Previous period referrals', summary.previous.referrals, ROW_STATUS],
+        ['Previous period HIGH and URGENT', cnt(summary.previous.highUrgent), ROW_STATUS],
+        ['Previous period referrals', cnt(summary.previous.referrals), ROW_STATUS],
       ];
     }
     case 'community-signals':
@@ -124,19 +128,19 @@ function body(
           c.name,
           lgaName(c.lgaId),
           wardName(c.wardId),
-          c.assessments,
-          c.byRisk.LOW,
-          c.byRisk.MODERATE,
-          c.byRisk.HIGH,
-          c.byRisk.URGENT,
-          c.signals,
-          c.signalsRecent,
-          c.signalsPrevious,
+          cnt(c.assessments),
+          cnt(c.byRisk.LOW),
+          cnt(c.byRisk.MODERATE),
+          cnt(c.byRisk.HIGH),
+          cnt(c.byRisk.URGENT),
+          cnt(c.signals),
+          cnt(c.signalsRecent),
+          cnt(c.signalsPrevious),
           c.direction,
           n(c.vulnerabilityIndex),
           c.vulnerabilityBand,
-          c.referrals,
-          c.unresolved,
+          cnt(c.referrals),
+          cnt(c.unresolved),
           c.chwsAssigned,
           ROW_STATUS,
         ]),
@@ -157,10 +161,10 @@ function body(
         ...monitor.byFacility.map((f) => [
           f.name,
           lgaName(f.lgaId),
-          f.referrals,
-          ...REFERRAL_STAGES.map((s) => f.byStage[s]),
-          f.completionRate,
-          f.unresolved,
+          cnt(f.referrals),
+          ...REFERRAL_STAGES.map((s) => cnt(f.byStage[s])),
+          f.completionRate ?? NOT_SHOWN_TEXT,
+          cnt(f.unresolved),
           ROW_STATUS,
         ]),
       ];
@@ -180,13 +184,13 @@ function body(
         ],
         ...summary.weekly.map((w) => [
           w.weekStart,
-          w.assessments,
-          w.byRisk.LOW,
-          w.byRisk.MODERATE,
-          w.byRisk.HIGH,
-          w.byRisk.URGENT,
-          w.signals,
-          w.referrals,
+          cnt(w.assessments),
+          cnt(w.byRisk.LOW),
+          cnt(w.byRisk.MODERATE),
+          cnt(w.byRisk.HIGH),
+          cnt(w.byRisk.URGENT),
+          cnt(w.signals),
+          cnt(w.referrals),
           n(w.vulnerabilityIndex),
           ROW_STATUS,
         ]),
@@ -209,6 +213,9 @@ export function buildReport(
     [`Report: ${title}`],
     [`Generated: ${meta.generatedAt} for ${meta.roleLabel} (${meta.scopeLabel})`],
     [`Filters: ${filterLabel(summary.filters)}`],
+    [
+      `Small counts: a count of 1 to 4, or a count withheld so it cannot be worked out by subtraction, is written as "${NOT_SHOWN_TEXT}". It is not zero. Prototype display rule, not a security control.`,
+    ],
     [],
   ];
   const csv = toCsv([...header, ...rows, [], [SYNTHETIC_NOTICE]]);
@@ -222,6 +229,7 @@ export function buildReport(
       generatedAt: meta.generatedAt,
       generatedFor: { role: meta.roleLabel, scope: meta.scopeLabel },
       filters: summary.filters,
+      smallCounts: `Counts of 1 to 4, and counts withheld so they cannot be worked out by subtraction, are written as "${NOT_SHOWN_TEXT}". They are not zero.`,
       columns,
       rows: data.map((r) => Object.fromEntries(columns.map((c, i) => [String(c), r[i]]))),
     },

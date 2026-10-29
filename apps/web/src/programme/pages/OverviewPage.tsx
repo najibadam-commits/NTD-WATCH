@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Card } from '@ntd-watch/design-system';
+import { Card, Notice } from '@ntd-watch/design-system';
 import { REFERRAL_STAGE_LABELS, REFERRAL_STAGES } from '@ntd-watch/domain';
 import { CommunityPanel } from '../components/CommunityPanel';
 import { BarList, LineChart, RiskBar } from '../components/Charts';
@@ -12,7 +12,7 @@ import {
   PageHeader,
   QueryBoundary,
 } from '../components/Common';
-import { formatDate, formatNumber, formatPercent } from '../format';
+import { formatCount, formatCountShort, formatDate, formatPercent } from '../format';
 import { useSummary, useLiveRefresh } from '../useProgrammeData';
 import { useState } from 'react';
 import styles from '../programme.module.css';
@@ -35,30 +35,43 @@ export function OverviewPage() {
         {(s) => {
           const k = s.kpis;
           // Compare only when the earlier period holds at least half as much data.
-          const comparable = s.previous.assessments >= k.assessments * 0.5;
+          // A count that is not shown cannot be compared.
+          const comparable =
+            s.previous.assessments !== null &&
+            k.assessments !== null &&
+            s.previous.assessments >= k.assessments * 0.5;
+          // Communities whose signal count is not shown are listed apart: they are neither
+          // ranked nor treated as zero.
           const top = [...s.communities]
-            .filter((c) => c.signals > 0)
-            .sort((a, b) => b.signals - a.signals);
-          const attention = s.communities.filter((c) => c.direction === 'rising' && c.signals > 0);
+            .filter((c) => c.signals !== null && c.signals > 0)
+            .sort((a, b) => (b.signals ?? 0) - (a.signals ?? 0));
+          const hiddenSignals = s.communities.filter((c) => c.signals === null);
+          const attention = s.communities.filter((c) => c.direction === 'rising');
           return (
             <>
-              <p className={styles.muted}>
-                {t('programme.overview.sources', {
-                  seeded: formatNumber(s.dataSources.seeded),
-                  live: formatNumber(s.dataSources.live),
-                })}
-              </p>
+              <Notice tone="demo" title={t('programme.overview.provenanceTitle')}>
+                <span data-testid="provenance-notice">
+                  {t('programme.overview.provenanceBody')}
+                </span>{' '}
+                <strong data-testid="provenance-counts">
+                  {t('programme.overview.provenanceCounts', {
+                    seeded: formatCount(s.dataSources.seeded),
+                    live: formatCount(s.dataSources.live),
+                  })}
+                </strong>{' '}
+                {t('programme.overview.provenanceNote')}
+              </Notice>
               <div className={styles.grid} aria-label={t('programme.overview.kpis')} role="group">
                 <Kpi
                   label={t('programme.overview.assessments')}
-                  value={formatNumber(k.assessments)}
+                  value={formatCount(k.assessments)}
                   current={k.assessments}
                   previous={s.previous.assessments}
                   comparable={comparable}
                 />
                 <Kpi
                   label={t('programme.overview.signals')}
-                  value={formatNumber(k.highUrgent)}
+                  value={formatCount(k.highUrgent)}
                   current={k.highUrgent}
                   previous={s.previous.highUrgent}
                   comparable={comparable}
@@ -68,34 +81,38 @@ export function OverviewPage() {
                 />
                 <Kpi
                   label={t('programme.overview.referrals')}
-                  value={formatNumber(k.referrals)}
+                  value={formatCount(k.referrals)}
                   current={k.referrals}
                   previous={s.previous.referrals}
                   comparable={comparable}
                 />
                 <Kpi
                   label={t('programme.overview.completion')}
-                  value={`${k.referralCompletion}%`}
+                  value={
+                    k.referralCompletion === null ? formatCount(null) : `${k.referralCompletion}%`
+                  }
                   hint={t('programme.overview.completionHint')}
                 />
                 <Kpi
                   label={t('programme.overview.unresolved')}
-                  value={formatNumber(k.unresolved)}
+                  value={formatCount(k.unresolved)}
                   hint={t('programme.overview.unresolvedHint')}
                 />
                 <Kpi
                   label={t('programme.overview.followUps')}
-                  value={formatNumber(k.followUps)}
-                  hint={t('programme.overview.followUpsWorse', { count: k.followUpsWorse })}
+                  value={formatCount(k.followUps)}
+                  hint={t('programme.overview.followUpsWorse', {
+                    count: formatCount(k.followUpsWorse),
+                  })}
                 />
                 <Kpi
                   label={t('programme.overview.followUpsDue')}
-                  value={formatNumber(k.followUpsDue)}
+                  value={formatCount(k.followUpsDue)}
                   hint={t('programme.overview.followUpsDueHint')}
                 />
                 <Kpi
                   label={t('programme.overview.chws')}
-                  value={formatNumber(k.activeChws)}
+                  value={formatCount(k.activeChws)}
                   hint={t('programme.overview.coverage', {
                     reporting: k.communitiesReporting,
                     total: k.communitiesInScope,
@@ -106,9 +123,9 @@ export function OverviewPage() {
               <div className={styles.grid2}>
                 <Card title={t('programme.overview.riskMix')}>
                   <RiskBar counts={s.byRisk} label={t('programme.overview.riskMix')} />
-                  {k.unclassified > 0 ? (
+                  {k.unclassified === null || k.unclassified > 0 ? (
                     <p className={styles.muted}>
-                      {t('programme.overview.unclassified', { count: k.unclassified })}
+                      {t('programme.overview.unclassified', { count: formatCount(k.unclassified) })}
                     </p>
                   ) : null}
                 </Card>
@@ -129,6 +146,7 @@ export function OverviewPage() {
                 <LineChart
                   title={t('programme.overview.trendTitle')}
                   yLabel={t('programme.community.perWeek')}
+                  nullText={formatCount(null)}
                   labels={s.weekly.map((w) => formatDate(w.weekStart))}
                   series={[
                     {
@@ -185,13 +203,19 @@ export function OverviewPage() {
                           >
                             {c.name}
                           </button>{' '}
-                          <DirectionPill direction={c.direction} /> ({c.signalsRecent}{' '}
-                          {t('programme.overview.vs')} {c.signalsPrevious})
+                          <DirectionPill direction={c.direction} /> (
+                          {formatCountShort(c.signalsRecent)} {t('programme.overview.vs')}{' '}
+                          {formatCountShort(c.signalsPrevious)})
                         </li>
                       ))}
                     </ul>
                   )}
                   <p className={styles.muted}>{t('programme.overview.attentionNote')}</p>
+                  {hiddenSignals.length > 0 ? (
+                    <p className={styles.muted}>
+                      {t('programme.overview.hiddenSignals', { count: hiddenSignals.length })}
+                    </p>
+                  ) : null}
                 </Card>
               </div>
 

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Role } from '@ntd-watch/domain';
+import { DEMO_COMMUNITIES } from '@ntd-watch/demo-data';
 import '../i18n';
 import { routes } from '../routes';
 import { mockServer } from '../mock/node';
@@ -14,13 +15,19 @@ import { syncOutbox } from '../offline/sync';
 import { makeAssessment } from '../testing/factories';
 import { resetAll } from '../testing/resetAll';
 import { useProgrammeFilters } from './filters';
+import { intersects } from './components/labelLayout';
 
 // A small stand-in for MapLibre, so map behaviour can be tested without WebGL.
 const fake = vi.hoisted(() => {
   type Handler = (e: unknown) => void;
   const state = {
     maps: [] as unknown[],
-    markers: [] as { element: HTMLElement; added: boolean }[],
+    markers: [] as {
+      element: HTMLElement;
+      added: boolean;
+      at?: [number, number];
+      offset?: [number, number];
+    }[],
   };
   class FakeMap {
     handlers: Record<string, Handler[]> = {};
@@ -60,6 +67,21 @@ const fake = vi.hoisted(() => {
     getCanvas() {
       return document.createElement('canvas');
     }
+    container?: HTMLElement;
+    /** A 800 x 500 box, so label placement has a size to work with. */
+    getContainer() {
+      if (!this.container) {
+        this.container = document.createElement('div');
+        Object.defineProperty(this.container, 'clientWidth', { value: 800 });
+        Object.defineProperty(this.container, 'clientHeight', { value: 500 });
+      }
+      return this.container;
+    }
+    /** A fixed, spread-out projection: enough for placement code, not a real map. */
+    project(at: [number, number]) {
+      return { x: 50 + (Math.abs(at[0] * 1000) % 700), y: 50 + (Math.abs(at[1] * 1000) % 400) };
+    }
+    off() {}
     remove() {}
     click(layer: string, id: string) {
       for (const h of this.layerHandlers[`click:${layer}`] ?? []) {
@@ -68,12 +90,22 @@ const fake = vi.hoisted(() => {
     }
   }
   class FakeMarker {
-    entry: { element: HTMLElement; added: boolean };
+    entry: {
+      element: HTMLElement;
+      added: boolean;
+      at?: [number, number];
+      offset?: [number, number];
+    };
     constructor(o: { element: HTMLElement }) {
       this.entry = { element: o.element, added: false };
       state.markers.push(this.entry);
     }
-    setLngLat() {
+    setLngLat(at: [number, number]) {
+      this.entry.at = at;
+      return this;
+    }
+    setOffset(o: [number, number]) {
+      this.entry.offset = o;
       return this;
     }
     addTo() {
@@ -341,6 +373,140 @@ describe('GIS map', () => {
     await u.click(await screen.findByRole('button', { name: /show details for demo hillview/i }));
     expect(await screen.findByText(/Aggregated synthetic summary/i)).toBeInTheDocument();
     vi.restoreAllMocks();
+  });
+
+  const markerButtons = () =>
+    fake.state.markers.filter((m) => m.added && m.element.tagName === 'BUTTON');
+  const labels = () =>
+    fake.state.markers.filter((m) => m.added && m.element.classList.contains('ntd-map-label'));
+  const tableRow = (name: string) =>
+    screen
+      .getAllByRole('rowheader')
+      .find((th) => th.textContent === name)!
+      .closest('tr')!;
+
+  it('keeps the map badges and the table from contradicting each other', async () => {
+    await open('/programme/gis');
+    await waitFor(() => expect(markerButtons().length).toBeGreaterThan(0));
+    await screen.findAllByRole('rowheader');
+    let hiddenSeen = 0;
+    let shownSeen = 0;
+    for (const b of markerButtons()) {
+      const name = b.element.getAttribute('aria-label')!.split(':')[0]!;
+      const cells = tableRow(name).querySelectorAll('td');
+      const signalsCell = cells[2]!.textContent; // community, then LGA, assessments, signals
+      const badge = b.element.textContent!.replace('▲', '').trim();
+      expect(badge).toBe(signalsCell);
+      if (badge === 'n/s') hiddenSeen += 1;
+      else shownSeen += 1;
+    }
+    // The synthetic data has both kinds, so the check above exercised both.
+    expect(hiddenSeen).toBeGreaterThan(0);
+    expect(shownSeen).toBeGreaterThan(0);
+  });
+
+  it('puts no small count into any marker text, label, title or data attribute', async () => {
+    await open('/programme/gis');
+    await waitFor(() => expect(markerButtons().length).toBeGreaterThan(0));
+    for (const m of fake.state.markers.filter((x) => x.added)) {
+      const el = m.element;
+      expect(el.getAttribute('title')).toBeNull();
+      const attrs = [...el.attributes]
+        .filter((a) => a.name !== 'style' && a.name !== 'class')
+        .map((a) => `${a.name}=${a.value}`)
+        .join(' ');
+      expect(`${el.textContent} ${attrs}`).not.toMatch(/(^|[^\d.])[1-4]([^\d.]|$)/);
+      for (const name of Object.keys(el.dataset)) {
+        expect(['selected', 'direction', 'community', 'visible', 'compact']).toContain(name);
+      }
+    }
+    // A hidden count is announced as not shown, never as a number or as zero.
+    const hidden = markerButtons().find((b) => b.element.textContent!.includes('n/s'))!;
+    // The accessible name contains the visible text ("n/s") and says what it means.
+    expect(hidden.element.getAttribute('aria-label')).toMatch(/n\/s, .*not shown/);
+    expect(hidden.element.getAttribute('aria-label')).not.toMatch(/\b0\b/);
+  });
+
+  it('keeps every community name available in the table and the detail panel', async () => {
+    const u = userEvent.setup();
+    await open('/programme/gis');
+    await screen.findAllByRole('rowheader');
+    const names = screen.getAllByRole('rowheader').map((th) => th.textContent!);
+    for (const c of DEMO_COMMUNITIES) expect(names).toContain(c.name);
+    await u.click(screen.getByRole('button', { name: /show details for demo reedbed/i }));
+    expect(await screen.findByRole('heading', { name: 'Demo Reedbed' })).toBeInTheDocument();
+  });
+
+  describe('label placement', () => {
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
+    const originalH = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+    beforeEach(() => {
+      // Wide labels so that several must collide on the 800 x 500 fake map.
+      Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+        configurable: true,
+        get() {
+          return (this as HTMLElement).classList.contains('ntd-map-label') ? 220 : 40;
+        },
+      });
+      Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+        configurable: true,
+        get() {
+          return (this as HTMLElement).classList.contains('ntd-map-label') ? 22 : 24;
+        },
+      });
+    });
+    afterEach(() => {
+      if (original) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', original);
+      if (originalH) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', originalH);
+    });
+
+    const rectOf = (
+      m: (typeof fake.state.markers)[number],
+      map: InstanceType<typeof fake.FakeMap>,
+    ) => {
+      const p = map.project(m.at!);
+      return { x: p.x + m.offset![0], y: p.y + m.offset![1], w: 220, h: 22 };
+    };
+
+    it('shows only labels that fit inside the map and clear of each other, and says so', async () => {
+      await open('/programme/gis');
+      await waitFor(() => expect(labels().length).toBe(DEMO_COMMUNITIES.length));
+      const map = fake.state.maps[0] as InstanceType<typeof fake.FakeMap>;
+      const shown = labels().filter((l) => l.element.dataset.visible === 'true');
+      const hidden = labels().filter((l) => l.element.dataset.visible === 'false');
+      expect(shown.length).toBeGreaterThan(0);
+      expect(hidden.length).toBeGreaterThan(0);
+      for (const l of shown) {
+        const r = rectOf(l, map);
+        expect(r.x).toBeGreaterThanOrEqual(0);
+        expect(r.y).toBeGreaterThanOrEqual(0);
+        expect(r.x + r.w).toBeLessThanOrEqual(800);
+        expect(r.y + r.h).toBeLessThanOrEqual(500);
+      }
+      for (let i = 0; i < shown.length; i++) {
+        for (let j = i + 1; j < shown.length; j++) {
+          expect(intersects(rectOf(shown[i]!, map), rectOf(shown[j]!, map))).toBe(false);
+        }
+      }
+      expect(await screen.findByTestId('map-label-note')).toHaveTextContent(
+        `Names hidden on the map to avoid overlap: ${hidden.length}`,
+      );
+      // Hidden labels are not announced twice; the names are in the table.
+      for (const l of hidden) expect(l.element.style.visibility).toBe('hidden');
+    });
+
+    it('reveals the label of a selected community even when it was hidden', async () => {
+      await open('/programme/gis');
+      await waitFor(() => expect(labels().length).toBe(DEMO_COMMUNITIES.length));
+      const map = fake.state.maps[0] as InstanceType<typeof fake.FakeMap>;
+      const hiddenId = labels().find((l) => l.element.dataset.visible === 'false')!.element.dataset
+        .community!;
+      map.click('community-fill', hiddenId);
+      await waitFor(() => {
+        const l = labels().find((x) => x.element.dataset.community === hiddenId)!;
+        expect(l.element.dataset.visible).toBe('true');
+      });
+    });
   });
 
   it('explains a coverage gap instead of showing blank figures', async () => {

@@ -1,4 +1,5 @@
 import type { CommunityStat, SignalDirection, VulnerabilityBand } from './types';
+import type { Count } from './suppression';
 
 /**
  * PRIORITY INTELLIGENCE (Stage 7): combines two synthetic layers per community.
@@ -36,7 +37,7 @@ export const PRIORITY_LABELS: Record<PriorityCategory, string> = {
   INVESTIGATE_SIGNAL: 'Investigate an unusual signal',
   PREVENTION_SURVEILLANCE: 'Prevention or active surveillance opportunity',
   LOWER_PRIORITY: 'Lower immediate priority',
-  INSUFFICIENT_DATA: 'Not enough assessments to place',
+  INSUFFICIENT_DATA: 'Not placed: too few assessments, or counts not shown',
 };
 
 /** Order used for ranking (most attention first). */
@@ -81,56 +82,75 @@ export interface PriorityRow {
   stateId: string;
   lgaId: string;
   wardId: string;
-  assessments: number;
-  signals: number;
-  /** 0 to 1, or null with too few assessments. */
+  /** Published counts: a number, or null for "not shown" (see suppression.ts). */
+  assessments: Count;
+  signals: Count;
+  /** 0 to 1. Null with too few assessments, or when either count is not shown. */
   signalShare: number | null;
   signalBand: SignalBand;
   vulnerabilityBand: VulnerabilityBand;
   vulnerabilityIndex: number | null;
   category: PriorityCategory;
   direction: SignalDirection;
-  referrals: number;
-  referralsCompleted: number;
-  unresolved: number;
-  followUps: number;
-  followUpsDue: number;
-  /** Plain-language reasons built from the figures above, never from anything else. */
+  referrals: Count;
+  referralsCompleted: Count;
+  unresolved: Count;
+  followUps: Count;
+  followUpsDue: Count;
+  /** Plain-language reasons built from the published figures above, never from anything else. */
   why: string[];
 }
 
+const hiddenText = 'not shown (small-count rule)';
+const shownOr = (c: Count) => (c === null ? hiddenText : String(c));
+
 function reasons(c: CommunityStat, signal: SignalBand, category: PriorityCategory): string[] {
+  if (
+    category === 'INSUFFICIENT_DATA' &&
+    c.signals === null &&
+    (c.assessments === null || c.assessments >= MIN_ASSESSMENTS_FOR_SIGNAL_BAND)
+  ) {
+    return [
+      'The signal band is not shown because the signals count is not shown (small-count rule). A count that is not shown is not zero.',
+    ];
+  }
   if (category === 'INSUFFICIENT_DATA') {
     return [
-      `Only ${c.assessments} assessments in this period, so no signal or vulnerability band is shown.`,
+      `Too few assessments in this period (${c.assessments === null ? 'count not shown' : c.assessments}), so no signal or vulnerability band is shown.`,
     ];
   }
   const out: string[] = [];
-  const share = c.assessments === 0 ? 0 : Math.round((c.signals / c.assessments) * 100);
-  out.push(
-    `${c.signals} of ${c.assessments} assessments (${share}%) were rated HIGH or URGENT by the demonstration rules: signal ${signal.toLowerCase()}.`,
-  );
+  if (c.signals === null || c.assessments === null) {
+    out.push(
+      `Signals: ${shownOr(c.signals)} of ${shownOr(c.assessments)} assessments were rated HIGH or URGENT by the demonstration rules. The signal band is ${signal.toLowerCase()}. A count that is not shown is not zero.`,
+    );
+  } else {
+    const share = c.assessments === 0 ? 0 : Math.round((c.signals / c.assessments) * 100);
+    out.push(
+      `${c.signals} of ${c.assessments} assessments (${share}%) were rated HIGH or URGENT by the demonstration rules: signal ${signal.toLowerCase()}.`,
+    );
+  }
   out.push(
     `Water, sanitation and handwashing answers give a vulnerability index of ${c.vulnerabilityIndex === null ? 'n/a' : c.vulnerabilityIndex.toFixed(0)}: ${c.vulnerabilityBand.toLowerCase()}.`,
   );
-  if (c.direction === 'rising') {
+  if (c.direction === 'rising' || c.direction === 'falling') {
     out.push(
-      `Signals are rising (${c.signalsRecent} in the last 28 days, ${c.signalsPrevious} in the 28 before).`,
-    );
-  } else if (c.direction === 'falling') {
-    out.push(
-      `Signals are falling (${c.signalsRecent} in the last 28 days, ${c.signalsPrevious} in the 28 before).`,
+      `Signals are ${c.direction} (${shownOr(c.signalsRecent)} in the last 28 days, ${shownOr(c.signalsPrevious)} in the 28 before).`,
     );
   }
-  if (c.unresolved > 0)
+  if (c.unresolved === null)
+    out.push('Some referrals are unresolved beyond the allowed days (count not shown).');
+  else if (c.unresolved > 0)
     out.push(`${c.unresolved} referral(s) are unresolved beyond the allowed days.`);
-  if (c.followUpsDue > 0)
+  if (c.followUpsDue === null)
+    out.push('Some assessed referrals are waiting for a community follow-up (count not shown).');
+  else if (c.followUpsDue > 0)
     out.push(`${c.followUpsDue} assessed referral(s) are waiting for a community follow-up.`);
   return out;
 }
 
 export function priorityRow(c: CommunityStat): PriorityRow {
-  const sb = signalBand(c.signals, c.assessments);
+  const sb = c.signalBand;
   const category = priorityCategory(sb, c.vulnerabilityBand);
   return {
     communityId: c.communityId,
@@ -140,7 +160,12 @@ export function priorityRow(c: CommunityStat): PriorityRow {
     wardId: c.wardId,
     assessments: c.assessments,
     signals: c.signals,
-    signalShare: c.assessments < MIN_ASSESSMENTS_FOR_SIGNAL_BAND ? null : c.signals / c.assessments,
+    signalShare:
+      c.signals === null ||
+      c.assessments === null ||
+      c.assessments < MIN_ASSESSMENTS_FOR_SIGNAL_BAND
+        ? null
+        : c.signals / c.assessments,
     signalBand: sb,
     vulnerabilityBand: c.vulnerabilityBand,
     vulnerabilityIndex: c.vulnerabilityIndex,
@@ -167,7 +192,9 @@ export function rankPriorities(communities: readonly CommunityStat[]): PriorityR
         CATEGORY_RANK[a.category] - CATEGORY_RANK[b.category] ||
         Number(b.direction === 'rising') - Number(a.direction === 'rising') ||
         (b.signalShare ?? -1) - (a.signalShare ?? -1) ||
-        b.unresolved + b.followUpsDue - (a.unresolved + a.followUpsDue) ||
+        (b.unresolved ?? 0) +
+          (b.followUpsDue ?? 0) -
+          ((a.unresolved ?? 0) + (a.followUpsDue ?? 0)) ||
         a.name.localeCompare(b.name),
     );
 }

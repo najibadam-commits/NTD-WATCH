@@ -25,7 +25,8 @@ import {
   QueryBoundary,
 } from '../components/Common';
 import { TableScroll } from '../components/TableScroll';
-import { formatIndex, formatNumber, formatPercent } from '../format';
+import { NOT_SHOWN_TEXT } from '@ntd-watch/programme';
+import { formatCountShort, formatIndex, formatPercent } from '../format';
 import { useLiveRefresh, useSummary } from '../useProgrammeData';
 import styles from '../programme.module.css';
 
@@ -74,12 +75,12 @@ function csvOf(rows: readonly PriorityRow[]): string {
       r.vulnerabilityBand,
       r.vulnerabilityIndex === null ? '' : r.vulnerabilityIndex.toFixed(1),
       r.direction,
-      r.assessments,
-      r.referrals,
-      r.referralsCompleted,
-      r.unresolved,
-      r.followUps,
-      r.followUpsDue,
+      r.assessments ?? NOT_SHOWN_TEXT,
+      r.referrals ?? NOT_SHOWN_TEXT,
+      r.referralsCompleted ?? NOT_SHOWN_TEXT,
+      r.unresolved ?? NOT_SHOWN_TEXT,
+      r.followUps ?? NOT_SHOWN_TEXT,
+      r.followUpsDue ?? NOT_SHOWN_TEXT,
     ]),
   ]);
 }
@@ -107,7 +108,7 @@ export function PriorityPage() {
     (r) =>
       (!category || r.category === category) &&
       (!trend || r.direction === trend) &&
-      (!openWork || r.unresolved + r.followUpsDue > 0),
+      (!openWork || r.unresolved !== 0 || r.followUpsDue !== 0),
   );
 
   return (
@@ -216,7 +217,9 @@ export function PriorityPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => download('ntd-watch-priority-communities.csv', csvOf(shown))}
+                  onClick={() =>
+                    download('DEMO-SYNTHETIC-ntd-watch-priority-communities.csv', csvOf(shown))
+                  }
                 >
                   {t('programme.priority.exportCsv')}
                 </Button>
@@ -265,14 +268,14 @@ export function PriorityPage() {
                         <td>
                           <DirectionPill direction={r.direction} />
                         </td>
-                        <td className={styles.num}>{formatNumber(r.assessments)}</td>
+                        <td className={styles.num}>{formatCountShort(r.assessments)}</td>
                         <td className={styles.num}>
-                          {r.referralsCompleted}/{r.referrals}
+                          {formatCountShort(r.referralsCompleted)}/{formatCountShort(r.referrals)}
                         </td>
                         <td className={styles.num}>
                           {t('programme.priority.openWorkCell', {
-                            unresolved: r.unresolved,
-                            due: r.followUpsDue,
+                            unresolved: formatCountShort(r.unresolved),
+                            due: formatCountShort(r.followUpsDue),
                           })}
                         </td>
                         <td>
@@ -293,6 +296,7 @@ export function PriorityPage() {
               {shown.length === 0 ? (
                 <p className={styles.muted}>{t('programme.priority.noneMatch')}</p>
               ) : null}
+              <p className={styles.muted}>{t('programme.smallCountNote')}</p>
             </section>
 
             {selected ? (

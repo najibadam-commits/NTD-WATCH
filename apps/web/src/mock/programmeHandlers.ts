@@ -1,3 +1,4 @@
+import { startNewDemoEpoch } from '../demo/demoEpoch';
 import { DEMO_SCOPE_HEADER } from '@ntd-watch/api-contract';
 import {
   DEMO_COMMUNITIES,
@@ -294,6 +295,7 @@ export const programmeHandlers = [
   }),
 
   route('resetDemo', async () => {
+    startNewDemoEpoch();
     await resetProgrammeData();
     return json({ ok: true });
   }),

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { RISK_LEVELS, RISK_SYMBOL, type RiskLevel } from '@ntd-watch/domain';
-import { formatNumber, niceMax } from '../format';
+import type { Count, RiskCounts } from '@ntd-watch/programme';
+import { formatCount, formatNumber, niceMax } from '../format';
 import styles from '../programme.module.css';
 import { TableScroll } from './TableScroll';
 
@@ -73,12 +74,15 @@ export function LineChart({
   series,
   yLabel,
   decimals = 0,
+  nullText = '–',
 }: {
   title: string;
   labels: string[];
   series: LineSeries[];
   yLabel: string;
   decimals?: number;
+  /** Table text for a point with no value. Use "Not shown" for suppressed counts, never a bare dash. */
+  nullText?: string;
 }) {
   const all = series.flatMap((s) => s.values).filter((v): v is number => v !== null);
   const top = niceMax(Math.max(0, ...all));
@@ -186,7 +190,7 @@ export function LineChart({
         rows={labels.map((l, i) => [
           l,
           ...series.map((s) =>
-            s.values[i] === null || s.values[i] === undefined ? '–' : fmt(s.values[i]!),
+            s.values[i] === null || s.values[i] === undefined ? nullText : fmt(s.values[i]!),
           ),
         ])}
       />
@@ -194,45 +198,63 @@ export function LineChart({
   );
 }
 
-export function RiskLegend({ counts }: { counts?: Record<RiskLevel, number> }) {
+export function RiskLegend({ counts }: { counts?: RiskCounts }) {
   return (
     <ul className={styles.legend} aria-label="Risk levels">
       {RISK_LEVELS.map((l) => (
         <li key={l}>
           <span className={`${styles.swatch} ${styles[`risk${l}`]}`} aria-hidden="true" />
           <span aria-hidden="true">{RISK_SYMBOL[l]}</span> {l}
-          {counts ? ` ${formatNumber(counts[l])}` : ''}
+          {counts ? ` ${formatCount(counts[l])}` : ''}
         </li>
       ))}
     </ul>
   );
 }
 
-/** One horizontal stacked bar for a risk mix, with the numbers in a legend beneath it. */
-export function RiskBar({ counts, label }: { counts: Record<RiskLevel, number>; label: string }) {
-  const total = RISK_LEVELS.reduce((s, l) => s + counts[l], 0);
+/**
+ * One horizontal stacked bar for a risk mix, with the numbers in a legend beneath it. A level
+ * that is not shown is drawn as a neutral hatched segment and written out as "not shown", so
+ * the bar never suggests that it is zero.
+ */
+export function RiskBar({ counts, label }: { counts: RiskCounts; label: string }) {
+  const shown = RISK_LEVELS.reduce((s, l) => s + (counts[l] ?? 0), 0);
+  const anyHidden = RISK_LEVELS.some((l) => counts[l] === null);
   return (
     <div className={styles.stack}>
       <div
         className={styles.riskBar}
         role="img"
-        aria-label={`${label}: ${RISK_LEVELS.map((l) => `${counts[l]} ${l}`).join(', ')}`}
+        aria-label={`${label}: ${RISK_LEVELS.map((l) => `${l} ${formatCount(counts[l])}`).join(', ')}`}
       >
-        {total === 0 ? (
+        {shown === 0 && !anyHidden ? (
           <span
             className={styles.riskSeg}
             style={{ flex: 1, background: 'var(--color-surface-2)' }}
           />
         ) : (
-          RISK_LEVELS.map((l) =>
-            counts[l] > 0 ? (
+          <>
+            {RISK_LEVELS.map((l) =>
+              (counts[l] ?? 0) > 0 ? (
+                <span
+                  key={l}
+                  className={`${styles.riskSeg} ${styles[`risk${l}`]}`}
+                  style={{ flex: counts[l]! }}
+                />
+              ) : null,
+            )}
+            {anyHidden ? (
               <span
-                key={l}
-                className={`${styles.riskSeg} ${styles[`risk${l}`]}`}
-                style={{ flex: counts[l] }}
+                className={styles.riskSeg}
+                data-testid="risk-not-shown"
+                style={{
+                  flex: Math.max(1, shown * 0.05),
+                  background:
+                    'repeating-linear-gradient(45deg, var(--color-surface-2), var(--color-surface-2) 3px, var(--color-border) 3px, var(--color-border) 5px)',
+                }}
               />
-            ) : null,
-          )
+            ) : null}
+          </>
         )}
       </div>
       <RiskLegend counts={counts} />
@@ -244,13 +266,16 @@ export function StackedColumns({
   title,
   labels,
   stacks,
+  totals,
 }: {
   title: string;
   labels: string[];
-  stacks: Record<RiskLevel, number>[];
+  stacks: RiskCounts[];
+  /** Published weekly totals. Null where the total is not shown. */
+  totals: Count[];
 }) {
-  const totals = stacks.map((s) => RISK_LEVELS.reduce((a, l) => a + s[l], 0));
-  const top = niceMax(Math.max(0, ...totals));
+  const drawn = stacks.map((s) => RISK_LEVELS.reduce((a, l) => a + (s[l] ?? 0), 0));
+  const top = niceMax(Math.max(0, ...drawn));
   const n = labels.length;
   const slot = (W - M.l - M.r) / Math.max(1, n);
   const bw = Math.min(28, slot * 0.6);
@@ -292,8 +317,8 @@ export function StackedColumns({
             <g key={labels[i]}>
               {RISK_LEVELS.map((l) => {
                 const from = acc;
-                acc += s[l];
-                if (s[l] === 0) return null;
+                acc += s[l] ?? 0;
+                if (!s[l]) return null;
                 return (
                   <rect
                     key={l}
@@ -305,7 +330,7 @@ export function StackedColumns({
                     stroke="var(--color-surface)"
                     strokeWidth={1}
                   >
-                    <title>{`Week of ${labels[i]}, ${l}: ${s[l]}`}</title>
+                    <title>{`Week of ${labels[i]}, ${l}: ${formatCount(s[l]!)}`}</title>
                   </rect>
                 );
               })}
@@ -322,7 +347,11 @@ export function StackedColumns({
       <ChartTable
         caption={title}
         columns={['Week starting', ...RISK_LEVELS, 'Total']}
-        rows={stacks.map((s, i) => [labels[i]!, ...RISK_LEVELS.map((l) => s[l]), totals[i]!])}
+        rows={stacks.map((s, i) => [
+          labels[i]!,
+          ...RISK_LEVELS.map((l) => formatCount(s[l])),
+          formatCount(totals[i] ?? null),
+        ])}
       />
     </figure>
   );
@@ -331,13 +360,14 @@ export function StackedColumns({
 export interface BarItem {
   key: string;
   label: ReactNode;
-  value: number;
+  /** A published count; null when it is not shown. */
+  value: Count;
   display?: string;
 }
 
 /** Ranked horizontal bars. Values are printed, so no value depends on bar length alone. */
 export function BarList({ items, max, label }: { items: BarItem[]; max?: number; label: string }) {
-  const top = max ?? Math.max(1, ...items.map((i) => i.value));
+  const top = max ?? Math.max(1, ...items.map((i) => i.value ?? 0));
   return (
     <ul className={styles.barList} aria-label={label}>
       {items.map((i) => (
@@ -346,10 +376,10 @@ export function BarList({ items, max, label }: { items: BarItem[]; max?: number;
           <span className={styles.barTrack} aria-hidden="true">
             <span
               className={styles.barFill}
-              style={{ width: `${Math.max(2, (i.value / top) * 100)}%` }}
+              style={{ width: `${Math.max(2, ((i.value ?? 0) / top) * 100)}%` }}
             />
           </span>
-          <span className={styles.barValue}>{i.display ?? formatNumber(i.value)}</span>
+          <span className={styles.barValue}>{i.display ?? formatCount(i.value)}</span>
         </li>
       ))}
     </ul>

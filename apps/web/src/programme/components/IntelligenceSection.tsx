@@ -36,7 +36,6 @@ export function IntelligenceSection({ summary }: { summary: ProgrammeSummary }) 
   const needInfo = rows.filter(
     (r) => r.confidence === 'LOW' || r.confidence === 'INSUFFICIENT',
   ).length;
-  const reason = rows.find((r) => r.communityId === open);
 
   return (
     <section className={styles.stack} aria-labelledby="intel-title" data-testid="intelligence">
@@ -124,19 +123,19 @@ export function IntelligenceSection({ summary }: { summary: ProgrammeSummary }) 
                 {t('intel.showReason')}
                 <span className="visually-hidden"> {r.name}</span>
               </button>
+              {r.communityId === open ? (
+                <div role="region" aria-label={t('intel.reasonFor', { name: r.name })}>
+                  <h4>{t('intel.reasonFor', { name: r.name })}</h4>
+                  <ul>
+                    {r.why.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
-        {reason ? (
-          <div role="region" aria-label={t('intel.reasonFor', { name: reason.name })}>
-            <h4>{t('intel.reasonFor', { name: reason.name })}</h4>
-            <ul>
-              {reason.why.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
       </div>
     </section>
   );

@@ -1,10 +1,15 @@
-import { DEMO_ROLE_HEADER, IDEMPOTENCY_HEADER } from '@ntd-watch/api-contract';
+import {
+  DEMO_ROLE_HEADER,
+  IDEMPOTENCY_HEADER,
+  MOCK_GENERATION_HEADER,
+} from '@ntd-watch/api-contract';
 import type { Referral, Role } from '@ntd-watch/domain';
+import { DEMO_EPOCH_HEADER, currentDemoEpoch } from '../demo/demoEpoch';
 import { notifyDataChanged } from '../programme/dataChannel';
 import type { OutboxItem } from './localDb';
 
 export type SendOutcome =
-  | { kind: 'ok'; duplicate: boolean }
+  | { kind: 'ok'; duplicate: boolean; generation: string | null }
   | { kind: 'retry'; reason: string }
   | { kind: 'rejected'; reason: string };
 
@@ -36,7 +41,13 @@ async function isPageServerReply(response: Response): Promise<boolean> {
  * and retry behaviour is unchanged.
  */
 export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
-  const request = new Request(url, init);
+  // A state-changing request is stamped with the demo epoch it starts in (see demoEpoch.ts).
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const headers = new Headers(init?.headers);
+  if (method !== 'GET' && method !== 'HEAD' && !headers.has(DEMO_EPOCH_HEADER)) {
+    headers.set(DEMO_EPOCH_HEADER, currentDemoEpoch());
+  }
+  const request = new Request(url, { ...init, headers });
   const response = await fetch(request.clone());
   if (!(await isPageServerReply(response))) return response;
   const [{ getResponse }, { handlers }] = await Promise.all([
@@ -73,7 +84,11 @@ export async function sendItem(item: OutboxItem, role: Role = 'chw'): Promise<Se
 
   if (response.ok) {
     const body = (await response.json().catch(() => ({}))) as { duplicate?: boolean };
-    return { kind: 'ok', duplicate: body.duplicate === true };
+    return {
+      kind: 'ok',
+      duplicate: body.duplicate === true,
+      generation: response.headers.get(MOCK_GENERATION_HEADER),
+    };
   }
 
   const problem = (await response.json().catch(() => ({}))) as {
@@ -90,6 +105,23 @@ export async function sendItem(item: OutboxItem, role: Role = 'chw'): Promise<Se
   return retryable
     ? { kind: 'retry', reason: `${response.status} ${text}` }
     : { kind: 'rejected', reason: `${response.status} ${text}` };
+}
+
+/**
+ * Asks the MOCK API which generation of the mock server is answering. Returns null when it did
+ * not answer with a generation (an outage, a refusal, an unreachable server): that is "no
+ * information", never evidence that the server lost anything.
+ */
+export async function probeServerGeneration(role: Role = 'chw'): Promise<string | null> {
+  try {
+    const response = await apiFetch(apiUrl('/api/v1/server-state'), {
+      headers: { [DEMO_ROLE_HEADER]: role },
+    });
+    if (!response.ok) return null;
+    return response.headers.get(MOCK_GENERATION_HEADER);
+  } catch {
+    return null;
+  }
 }
 
 /** Reads a referral from the MOCK API (needs a connection). Returns null when it is not there. */

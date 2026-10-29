@@ -21,7 +21,7 @@ export function DemoLabel() {
   );
 }
 
-export type SyncState = 'local' | OutboxItem['status'];
+export type SyncState = 'local' | 'restoring' | OutboxItem['status'];
 
 export function SyncBadge({ state }: { state: SyncState }) {
   const { t } = useTranslation();
@@ -37,7 +37,11 @@ export function SyncBadge({ state }: { state: SyncState }) {
 export function useSyncState(kind: OutboxItem['kind'], clientKey: string): SyncState | undefined {
   return useLiveQuery(async () => {
     const item = await localDb.outbox.get(`${kind}:${clientKey}`);
-    return item ? item.status : 'local';
+    if (!item) return 'local';
+    // A record the mock server once acknowledged and then lost is being sent again.
+    const waiting =
+      item.status === 'pending' || item.status === 'syncing' || item.status === 'failed';
+    return item.restore && waiting ? 'restoring' : item.status;
   }, [kind, clientKey]);
 }
 
@@ -54,6 +58,15 @@ export function ConnectivityBanner() {
   const online = browserOnline && !simulatedOffline;
   const waiting =
     useLiveQuery(() => localDb.outbox.where('status').notEqual('synced').count(), [], 0) ?? 0;
+  const restoring =
+    useLiveQuery(
+      () =>
+        localDb.outbox
+          .filter((i) => !!i.restore && i.status !== 'synced' && i.status !== 'rejected')
+          .count(),
+      [],
+      0,
+    ) ?? 0;
 
   return (
     <div className={styles.conn} data-online={online} role="status" aria-label={t('sync.label')}>
@@ -62,6 +75,7 @@ export function ConnectivityBanner() {
         {simulatedOffline ? ` ${t('sync.simulated')}` : ''}
         {' · '}
         {waiting > 0 ? t('sync.waiting', { count: waiting }) : t('sync.allSynced')}
+        {restoring > 0 ? ` · ${t('sync.restoringNote', { count: restoring })}` : ''}
       </span>
       {waiting > 0 && isOnline() ? (
         <Button size="sm" variant="secondary" onClick={() => void syncOutbox({ force: true })}>

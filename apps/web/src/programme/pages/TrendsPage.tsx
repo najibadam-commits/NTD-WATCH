@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '@ntd-watch/design-system';
 import { LineChart, StackedColumns } from '../components/Charts';
 import { DataStatus, FilterBar, PageHeader, QueryBoundary } from '../components/Common';
-import { formatDate } from '../format';
+import { formatCount, formatDate } from '../format';
 import { useLiveRefresh, useSummary } from '../useProgrammeData';
 import styles from '../programme.module.css';
 
@@ -41,6 +41,7 @@ export function TrendsPage() {
                   yLabel={t(`programme.trends.metrics.${metric}`)}
                   labels={labels}
                   decimals={metric === 'vulnerabilityIndex' ? 1 : 0}
+                  nullText={metric === 'vulnerabilityIndex' ? '–' : formatCount(null)}
                   series={[
                     {
                       key: metric,
@@ -57,6 +58,7 @@ export function TrendsPage() {
                   title={t('programme.trends.mixTitle')}
                   labels={labels}
                   stacks={s.weekly.map((w) => w.byRisk)}
+                  totals={s.weekly.map((w) => w.assessments)}
                 />
               </Card>
             </>

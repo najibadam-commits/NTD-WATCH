@@ -1,7 +1,14 @@
 import { HttpResponse, delay, http } from 'msw';
-import { API_ROUTES, DEMO_ROLE_HEADER, type ApiRouteName } from '@ntd-watch/api-contract';
+import {
+  API_ROUTES,
+  DEMO_ROLE_HEADER,
+  MOCK_GENERATION_HEADER,
+  type ApiRouteName,
+} from '@ntd-watch/api-contract';
 import { ROLES, can, type Role } from '@ntd-watch/domain';
+import { DEMO_EPOCH_HEADER, exclusiveServerWrite, isEndedDemoEpoch } from '../demo/demoEpoch';
 import { useMockControls } from './controls';
+import { serverGeneration } from './serverDb';
 
 export type Ctx = {
   request: Request;
@@ -39,11 +46,28 @@ export function route(name: ApiRouteName, handler: Handler) {
     if (!spec.anyOf.some((p) => can(role, p))) {
       return problem(403, 'FORBIDDEN', `The simulated ${role} role may not call this route.`);
     }
-    const response = await handler(ctx as unknown as Ctx, role);
+    // State-changing requests run one at a time, with the epoch check inside the same step as the
+    // write, so a request from before a demo reset can never land after it.
+    const response =
+      spec.method === 'GET'
+        ? await handler(ctx as unknown as Ctx, role)
+        : await exclusiveServerWrite(() => {
+            const sent = ctx.request.headers.get(DEMO_EPOCH_HEADER);
+            if (sent !== null && isEndedDemoEpoch(sent)) {
+              return problem(
+                409,
+                'STALE_DEMO_EPOCH',
+                'This request started before the demo was reset and was not applied.',
+              );
+            }
+            return handler(ctx as unknown as Ctx, role);
+          });
     if (controls.dropResponseNext > 0) {
       controls.setDropResponseNext(controls.dropResponseNext - 1);
       return HttpResponse.error(); // stored on the "server", but the device never hears back
     }
+    // Which "generation" of the mock server answered, so a device can tell it has lost records.
+    response.headers.set(MOCK_GENERATION_HEADER, await serverGeneration());
     return response;
   });
 }

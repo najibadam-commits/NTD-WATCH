@@ -1,6 +1,6 @@
 # Live demo checklist
 
-Status: for a presenter running the prototype on their own laptop. Startup steps below were checked against `README.md`, `package.json` and `docs/stage7/DEMO_SETUP_GUIDE.md`. Everything runs in the browser against a **mock API**; nothing here demonstrates production behaviour.
+Status: internal presenter notes for running the prototype on your own laptop; not for external copies. Startup steps below were checked against `README.md`, `package.json` and `docs/stage7/DEMO_SETUP_GUIDE.md`. Everything runs in the browser against a **mock API**; nothing here demonstrates production behaviour.
 
 ## 1. Start the app (about 5 minutes, do this before the audience arrives)
 
@@ -33,7 +33,7 @@ Status: for a presenter running the prototype on their own laptop. Startup steps
 - [ ] On the dashboard use **Women and girls: community assessment**. The larger first button, **Start new assessment**, opens the general NTD assessment, which uses a different rule set and can return HIGH or URGENT. Do not use it, and do not follow `docs/stage7/DEMO_SCRIPT.md` for this demo, because that script runs the general flow. A general-flow result is not evidence of the women-and-girls workflow.
 - [ ] Dashboard, **Women and girls: community assessment** (`/chw/fgs`), **Start**.
 - [ ] Consent screen "Her permission" (`/chw/fgs/consent`) shows the demonstration-wording line.
-- [ ] Decline path: choose **No, she does not agree** to reach `/chw/fgs/declined` ("No answers or details about her were saved."). Start again for the main run.
+- [ ] Decline path: choose **No, she does not agree** to reach `/chw/fgs/declined` ("No answers or details about her were saved." is the screen's own wording, not verified storage behaviour; do not say aloud that nothing is recorded, because refusal and data-handling behaviour still require technical and privacy verification). Start again for the main run.
 - [ ] Use only made-up answers.
 
 ## 5. Non-diagnostic result
@@ -45,7 +45,7 @@ Status: for a presenter running the prototype on their own laptop. Startup steps
 
 ## 6. Referral and follow-up
 
-- [ ] **Generate referral** (`/chw/assessments/<key>/referral`). Point at the "invented for the demonstration" facility notice.
+- [ ] **Generate referral** (`/chw/assessments/<key>/referral`). Point at the "invented for the demonstration" facility notice, and call it a simulated referral to an invented facility.
 - [ ] Optional (adds about 90 seconds, not in the two-minute script): switch role to **Health Facility Worker**, open the referral in the inbox (`/programme/inbox`), move it through the stages one at a time; switch back to the CHW, **Referrals**, **Refresh status**, record a follow-up. Facility capabilities are synthetic.
 - [ ] The CHW referral screen also has a labelled demonstration shortcut; avoid it when speaking to a technical reviewer.
 
@@ -63,13 +63,16 @@ Status: for a presenter running the prototype on their own laptop. Startup steps
 - [ ] Choose **Programme priority** under "Colour communities by". The legend appears with "Fainter colour means lower data confidence. Grey means more information is needed."
 - [ ] Show that a lower-confidence community is fainter than the High-confidence ones (on 28 October, Demo Baobab Flats and Demo Greenbelt at Medium confidence; use a Low-confidence community if one appears on the day), that communities needing more information are grey, and that the table under the map lists priority and confidence for every community. Do not point at the table's assessment or signal counts (see section 9).
 - [ ] Say: fictional boundaries, no household locations, not disease distribution.
+- [ ] If images are needed, use only `08l`, `08m` or `08n`, described as a display rule on synthetic data. Show or paste each one with this caption directly beneath it, and in its alt text: "Synthetic demonstration data. Prototype. Small-count display rule, not a security control." The caption must travel with the image (a slide or message that drops it is not approved). Do not use `08o`, `08-gis-priority.png`, the labels-diagnostic capture, any superseded GIS capture, or `07b`.
 
 ## 9. Privacy warnings and known limitations to state
 
-- [ ] Small-number suppression is present in selected priority views, but it is **not consistent across all views**. Priority rows show observation ranges, not counts; exact counts are used in the calculation but not published in those rows. The separate women-and-girls aggregate can show counts at or above 5, and the Priority page shows a women-and-girls referral total once it reaches 5; numbers below 5 are suppressed there. The general GIS signals layer (the map badges and the table under the map) exposes exact community counts, including counts below 5. **Do not present the GIS table or map as evidence of small-number suppression.** Programme screens are intended to show community aggregates only; in this prototype the mock server holds the full synced record.
+- [ ] Small-number suppression (counts of 1 to 4 shown as "n/s", threshold 5, placeholder pending privacy review) is now applied at the shared aggregation boundary for the programme views, but it is a client-side display rule and **not a security boundary**. Priority rows show observation ranges, not counts; exact counts are used in the calculation but not published in those rows. The separate women-and-girls aggregate can show counts at or above 5, and the Priority page shows a women-and-girls referral total once it reaches 5; numbers below 5 are suppressed there. On the GIS map badges and the table under the map, 1 to 4 appear as "n/s" (not shown; this is not zero). **Do not present the GIS table or map as proof that data is protected**: staff counts, the vulnerability index and differencing across separate requests are not defended, and in this prototype the mock server holds the full synced record.
 - [ ] Deletion is simulated: it removes the record from the device, the mock server and the aggregates, and is not a production deletion process (no backups, logs, replicas or exports are covered).
-- [ ] Suppression is a **prototype pattern** that does not prevent every differencing attack and needs specialist review.
-- [ ] The server is a **mock**; sign-in and roles are simulated; the privacy tests do not prove production-server security.
+- [ ] The prototype applies a small-count display rule to selected published programme views and exports. This is a client-side display measure, not a security control. Unresolved: differencing across separate queries and date ranges; exact WASH percentages and the vulnerability index; staff counts; direction labels and signal bands that can narrow hidden counts; the facility referral inbox, which returns record-level data; full records held in the browser database and mock server; the threshold of 5 is a placeholder not justified by specialist review; and there has been no independent privacy review or production-security validation.
+- [ ] The priority CSV is downloaded as `DEMO-SYNTHETIC-ntd-watch-priority-communities.csv`, and its first row states that it is synthetic demonstration data. A detached copy can still be forwarded or stripped of its context, so do not email, upload or hand it over without the synthetic-data context and an explanation of the limits above.
+- [ ] The server is a **mock**; sign-in and roles are simulated; the privacy tests do not prove production-server security. Reset and sync consistency (Phase 4C) is a demo mechanism, not a security control.
+- [ ] Overview page: a data-provenance line may show an exact count of demo-created records, including 0 to 4, when every non-seed record in the view is verified as synthetic (Phase 4A). The GIS map and table still show 1 to 4 as "n/s". Do not describe the Overview as hiding all counts of 1 to 4. The marker check is a prototype classification, not authentication. Publishing the baseline count beside another total could allow a hidden figure to be inferred by subtraction; this has not been comprehensively audited across combinations of views, filters and dates, and this pack does not claim that hidden counts cannot be reconstructed.
 - [ ] FGS content and rules are placeholders awaiting clinical review; nothing is validated, field tested or endorsed.
 - [ ] Observations are not a representative sample; priority is not severity or prevalence.
 
@@ -92,6 +95,7 @@ Status: for a presenter running the prototype on their own laptop. Startup steps
 - [ ] Do not open `docs/` files that name individuals (for example the provenance record) on a shared screen.
 - [ ] The two Word proposal documents in the repository root are not open or shown.
 - [ ] Case codes shown (format `PC-XXXX-XXXX`) belong to made-up answers.
+- [ ] Engineering caveat: an earlier unit-test run (28 October, 496 tests passed) exited 1 with an unhandled Dexie `DatabaseClosedError`; it was intermittent and its cause was not diagnosed at the time. A reset/sync race fix (Phase 4C) has since been applied, and the latest reported run passed 554 of 554 tests in 44 files, including 6 of 6 dedicated regression tests. Do not say the earlier error's cause was conclusively found, that every reset/sync failure is eliminated, or that the unit suite is proven stable. Phase 4C is a demo-consistency mechanism in a mock API, not a security control. The Playwright result after Phase 4C has not been reported. Known gap: there is no dedicated test for the server-only reset API path; the reset-race tests exercise the `resetDemoEnvironment()` function.
 
 ## 12. Honest scope reminder
 

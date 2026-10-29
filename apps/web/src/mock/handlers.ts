@@ -16,7 +16,7 @@ import {
 import { inboxHandler, programmeHandlers } from './programmeHandlers';
 import { mockNow, seededReferral, writeAudit } from './programmeStore';
 import { json, problem, readJson, route, validationProblem } from './routing';
-import { serverDb } from './serverDb';
+import { serverDb, serverGeneration } from './serverDb';
 
 export const handlers = [
   inboxHandler,
@@ -198,6 +198,8 @@ export const handlers = [
     await serverDb.meta.put({ key: `consent-event:${event.clientKey}`, value: at });
     return json({ duplicate: false }, 201);
   }),
+
+  route('serverState', async () => json({ demo: true, generation: await serverGeneration() })),
 
   ...programmeHandlers,
 ];

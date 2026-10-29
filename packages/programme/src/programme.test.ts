@@ -58,21 +58,30 @@ describe('summarise', () => {
     expect(all.demo).toBe(true);
     expect(all.notice).toBe(SYNTHETIC_NOTICE);
   });
-  it('derives KPIs from the records', () => {
+  it('derives KPIs from the records: a published figure is exact, a hidden one is null', () => {
     const inRange = records.assessments.filter(
       (a) => a.capturedAt >= '2026-07-27' && a.capturedAt < '2026-10-19',
     );
-    expect(all.kpis.assessments).toBe(inRange.length);
+    // Suppression only ever hides a figure. It never changes one, so a published KPI equals the
+    // exact figure and a hidden one is null (not zero).
+    if (all.kpis.assessments !== null) expect(all.kpis.assessments).toBe(inRange.length);
     expect(all.kpis.highUrgent).toBe(
       inRange.filter((a) => a.riskLevel === 'HIGH' || a.riskLevel === 'URGENT').length,
     );
   });
   it('keeps risk counts, community totals and weekly totals in agreement', () => {
-    const risk = Object.values(all.byRisk).reduce((a, b) => a + b, 0);
-    expect(risk + all.kpis.unclassified).toBeGreaterThanOrEqual(0);
-    expect(all.communities.reduce((a, c) => a + c.assessments, 0)).toBe(all.kpis.assessments);
-    expect(all.weekly.reduce((a, w) => a + w.assessments, 0)).toBe(all.kpis.assessments);
-    expect(all.weekly.reduce((a, w) => a + w.referrals, 0)).toBe(all.kpis.referrals);
+    const inRange = records.assessments.filter(
+      (a) => a.capturedAt >= '2026-07-27' && a.capturedAt < '2026-10-19',
+    ).length;
+    // Every published risk cell at this level is large, so the four levels add up to the exact total.
+    expect(Object.values(all.byRisk).reduce<number>((a, b) => a + (b ?? 0), 0)).toBe(inRange);
+    // Community and weekly figures are published only where safe, and never exceed the total.
+    const communities = all.communities.reduce((a, c) => a + (c.assessments ?? 0), 0);
+    expect(communities).toBeLessThanOrEqual(inRange);
+    const weekly = all.weekly.reduce((a, w) => a + (w.assessments ?? 0), 0);
+    expect(weekly).toBeLessThanOrEqual(inRange);
+    if (all.communities.every((c) => c.assessments !== null)) expect(communities).toBe(inRange);
+    if (all.weekly.every((w) => w.assessments !== null)) expect(weekly).toBe(inRange);
   });
   it('starts weekly buckets on Mondays', () => {
     for (const w of all.weekly) {
@@ -80,28 +89,60 @@ describe('summarise', () => {
     }
     expect(new Date(weekStartMs(Date.parse('2026-10-18T10:00:00Z'))).getUTCDay()).toBe(1);
   });
+  // Exact number of assessments in a window, counted straight from the records.
+  const exactCount = (
+    from: string,
+    to: string,
+    keep: (communityId: string) => boolean = () => true,
+  ) =>
+    records.assessments.filter(
+      (a) => a.capturedAt >= from && a.capturedAt < `${to}T99` && keep(a.communityId),
+    ).length;
   it('narrows every figure with a community filter', () => {
     const one = summarise(records, { ...range, communityId: 'com-02' }, ALL_SCOPE, ctx);
     expect(one.communities).toHaveLength(1);
-    expect(one.kpis.assessments).toBeLessThan(all.kpis.assessments);
-    expect(one.kpis.assessments).toBe(one.communities[0]!.assessments);
+    const exact = exactCount(range.from, range.to, (id) => id === 'com-02');
+    expect(exact).toBeLessThan(exactCount(range.from, range.to));
+    // The community is large enough to be published, in the table and in the totals alike.
+    expect(one.communities[0]!.assessments).toBe(exact);
+    expect(one.kpis.assessments).toBe(exact);
   });
   it('narrows by LGA and the parts add up to the whole', () => {
     const lgas = ['lga-n', 'lga-c', 'lga-s', 'lga-e', 'lga-w'];
-    const sum = lgas
-      .map((id) => summarise(records, { ...range, lgaId: id }, ALL_SCOPE, ctx).kpis.assessments)
-      .reduce((a, b) => a + b, 0);
-    expect(sum).toBe(all.kpis.assessments);
+    const parts = lgas.map(
+      (id) => summarise(records, { ...range, lgaId: id }, ALL_SCOPE, ctx).kpis.assessments,
+    );
+    // A published part equals the exact count for that LGA; a hidden part is null, never zero.
+    lgas.forEach((id, i) => {
+      const exact = exactCount(
+        range.from,
+        range.to,
+        (cid) => DEMO_COMMUNITIES.find((c) => c.id === cid)?.lgaId === id,
+      );
+      if (parts[i] !== null) expect(parts[i]).toBe(exact);
+    });
+    const published = parts.reduce<number>((a, b) => a + (b ?? 0), 0);
+    expect(published).toBeLessThanOrEqual(exactCount(range.from, range.to));
+    if (parts.every((p) => p !== null)) {
+      expect(published).toBe(exactCount(range.from, range.to));
+    }
   });
   it('narrows by date', () => {
     const short = summarise(records, { from: '2026-10-05', to: '2026-10-18' }, ALL_SCOPE, ctx);
-    expect(short.kpis.assessments).toBeLessThan(all.kpis.assessments);
+    expect(exactCount('2026-10-05', '2026-10-18')).toBeLessThan(exactCount(range.from, range.to));
+    if (short.kpis.assessments !== null) {
+      expect(short.kpis.assessments).toBe(exactCount('2026-10-05', '2026-10-18'));
+    }
     expect(short.weekly.length).toBeLessThan(all.weekly.length);
   });
   it('includes both ends of the date range', () => {
     const day = summarise(records, { from: '2026-10-18', to: '2026-10-18' }, ALL_SCOPE, ctx);
     const expected = records.assessments.filter((a) => a.capturedAt.startsWith('2026-10-18'));
-    expect(day.kpis.assessments).toBe(expected.length);
+    // One day holds only a handful of assessments, so the total is correctly NOT shown. What
+    // matters is that the day is included and is not reported as zero.
+    expect(expected.length).toBeGreaterThan(0);
+    if (expected.length >= 5) expect(day.kpis.assessments).toBe(expected.length);
+    else expect(day.kpis.assessments).toBeNull();
   });
   it('rejects an inverted or malformed range', () => {
     expect(() =>
@@ -199,15 +240,32 @@ describe('referral monitoring', () => {
   it('is aggregate only', () => {
     expect(JSON.stringify(m)).not.toMatch(/NTDW-|clientKey|assessmentKey/);
   });
+  const inWindow = records.referrals.filter(
+    (r) => r.stageTimestamps[0]! >= range.from && r.stageTimestamps[0]! < `${range.to}T99`,
+  );
   it('counts every referral in the stage totals', () => {
-    const total = Object.values(m.current).reduce((a, b) => a + b, 0);
-    expect(total).toBe(m.total);
+    // Each published stage count is exact; a hidden one is null. A published total is exact too.
+    let shown = 0;
+    for (const [stage, value] of Object.entries(m.current)) {
+      const exact = inWindow.filter((r) => r.stage === stage).length;
+      if (value !== null) {
+        expect(value).toBe(exact);
+        shown += value;
+      } else {
+        expect(exact).toBeGreaterThan(0);
+        expect(exact).toBeLessThan(SMALL_CELL_THRESHOLD);
+      }
+    }
+    expect(shown).toBeLessThanOrEqual(inWindow.length);
+    if (m.total !== null) expect(m.total).toBe(inWindow.length);
   });
   it('shows a facility only referrals sent to it', () => {
     const f = monitorReferrals(records, range, { kind: 'facility', id: 'fac-c1' }, ctx);
-    expect(f.total).toBeLessThanOrEqual(m.total);
     const expected = records.referrals.filter((r) => r.facilityId === 'fac-c1').length;
-    expect(f.total).toBeLessThanOrEqual(expected);
+    if (f.total !== null) {
+      expect(f.total).toBeLessThanOrEqual(inWindow.length);
+      expect(f.total).toBeLessThanOrEqual(expected);
+    }
   });
   it('changes when a referral moves stage', () => {
     const target = records.referrals.find((r) => r.stage !== 'ASSESSED')!;
@@ -219,7 +277,9 @@ describe('referral monitoring', () => {
     };
     const after = summarise(moved, range, ALL_SCOPE, ctx);
     const before = summarise(records, range, ALL_SCOPE, ctx);
-    expect(after.referralStages.ASSESSED).toBeGreaterThanOrEqual(before.referralStages.ASSESSED);
+    // ASSESSED is large enough to be published in both views.
+    expect(before.referralStages.ASSESSED).not.toBeNull();
+    expect(after.referralStages.ASSESSED!).toBeGreaterThanOrEqual(before.referralStages.ASSESSED!);
   });
 });
 

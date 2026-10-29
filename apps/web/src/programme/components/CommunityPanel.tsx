@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Notice } from '@ntd-watch/design-system';
 import { PROGRAMME_ATTENTION, REFERRAL_STAGE_LABELS, REFERRAL_STAGES } from '@ntd-watch/domain';
 import { lgaName, stateName, wardName } from '@ntd-watch/demo-data';
-import { formatIndex, formatNumber, formatPercent, formatDate } from '../format';
+import { formatCount, formatIndex, formatPercent, formatDate } from '../format';
 import { useCommunityDetail } from '../useProgrammeData';
 import { BarList, LineChart, RiskBar } from './Charts';
 import { BandPill, DirectionPill, QueryBoundary } from './Common';
@@ -74,13 +74,13 @@ export function CommunityPanel({
                   <RiskBar counts={s.byRisk} label={t('programme.community.riskMix')} />
                   <dl className={styles.kv}>
                     <dt>{t('programme.community.assessments')}</dt>
-                    <dd>{formatNumber(s.assessments)}</dd>
+                    <dd>{formatCount(s.assessments)}</dd>
                     <dt>{t('programme.community.signals')}</dt>
-                    <dd>{formatNumber(s.signals)}</dd>
+                    <dd>{formatCount(s.signals)}</dd>
                     <dt>{t('programme.community.signalsRecent')}</dt>
                     <dd>
-                      {formatNumber(s.signalsRecent)} ({t('programme.community.previous')}{' '}
-                      {formatNumber(s.signalsPrevious)})
+                      {formatCount(s.signalsRecent)} ({t('programme.community.previous')}{' '}
+                      {formatCount(s.signalsPrevious)})
                     </dd>
                     <dt>{t('programme.community.direction')}</dt>
                     <dd>
@@ -88,17 +88,17 @@ export function CommunityPanel({
                     </dd>
                     <dt>{t('programme.community.referrals')}</dt>
                     <dd>
-                      {formatNumber(s.referrals)} ({formatNumber(s.referralsCompleted)}{' '}
+                      {formatCount(s.referrals)} ({formatCount(s.referralsCompleted)}{' '}
                       {t('programme.community.completed')})
                     </dd>
                     <dt>{t('programme.community.unresolved')}</dt>
-                    <dd>{formatNumber(s.unresolved)}</dd>
+                    <dd>{formatCount(s.unresolved)}</dd>
                     <dt>{t('programme.community.chws')}</dt>
                     <dd>
                       {s.chwsActive} / {s.chwsAssigned}
                     </dd>
                   </dl>
-                  {s.signals > 0 && s.direction === 'rising' ? (
+                  {s.signals !== null && s.signals > 0 && s.direction === 'rising' ? (
                     <Notice tone="demo">{PROGRAMME_ATTENTION}</Notice>
                   ) : null}
 
@@ -129,6 +129,7 @@ export function CommunityPanel({
                   <LineChart
                     title={t('programme.community.weeklyTitle')}
                     yLabel={t('programme.community.perWeek')}
+                    nullText={formatCount(null)}
                     labels={d.weekly.map((w) => formatDate(w.weekStart))}
                     series={[
                       {
@@ -153,14 +154,16 @@ export function CommunityPanel({
                       {REFERRAL_STAGES.map((st) => (
                         <div key={st} style={{ display: 'contents' }}>
                           <dt>{REFERRAL_STAGE_LABELS[st]}</dt>
-                          <dd>{d.referralStages[st]}</dd>
+                          <dd>{formatCount(d.referralStages[st])}</dd>
                         </div>
                       ))}
                     </dl>
                     {d.facilities.length > 0 ? (
                       <p className={styles.muted}>
                         {t('programme.community.sentTo')}:{' '}
-                        {d.facilities.map((f) => `${f.name} (${f.referrals})`).join('; ')}
+                        {d.facilities
+                          .map((f) => `${f.name} (${formatCount(f.referrals)})`)
+                          .join('; ')}
                       </p>
                     ) : null}
                   </div>
