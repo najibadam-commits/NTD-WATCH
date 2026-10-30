@@ -19,6 +19,10 @@ What it is today: a React and TypeScript web app with a rules-based demonstratio
 
 Core loop: Signal → Assessment → Action → Referral → Follow-up → Intelligence → Response.
 
+## Why rules, and where analytics fit
+
+The signals are produced by readable rules, not machine learning, on purpose: every result must be explainable to a community health worker and reviewable by clinicians before anything is trusted. There is no training data, and a model trained on synthetic records would prove nothing. Data-science methods (spatial statistics, anomaly detection and learned risk models) are planned only after real, ethically approved, validated data exists; see `ROADMAP.md` and `docs/CLINICAL_VALIDATION_PLAN.md`.
+
 ## Architecture flow
 
 ```
@@ -102,6 +106,10 @@ This is the project's own reading of the DPG Standard indicators as we understan
 | 7. Adherence to privacy and laws        | Not met: no privacy review, no real data, no legal compliance assessment                                                  |
 | 8. Adherence to standards and practices | Partial: automated accessibility scans and tests; no manual accessibility testing; no DHIS2 or other standard integration |
 | 9. Do no harm by design                 | Partial: safety scope and disclosure rules documented and tested; no independent review                                   |
+
+## Brand and logo
+
+The NTD-WATCH name and logo are reserved to the project: the Apache License 2.0 covers the code and, under its section 6, grants no trademark rights. The logo was created with a paid AI image generator and is used under that tool's terms.
 
 ## Governance
 

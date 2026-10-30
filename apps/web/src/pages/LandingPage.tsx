@@ -81,38 +81,24 @@ export function LandingPage() {
 
       <section>
         <h2>{t('landing.statusTitle')}</h2>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">Area</th>
-              <th scope="col">Screens</th>
-              <th scope="col">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Foundation: design system, navigation, simulated roles</td>
-              <td>-</td>
-              <td>Built (Stage 1)</td>
-            </tr>
-            <tr>
-              <td>CHW app</td>
-              <td>{CHW_SCREENS.length}</td>
-              <td>
-                Built (Stage 2): rules engine, forms, mock API and offline queue are prototype
-                functionality
-              </td>
-            </tr>
-            <tr>
-              <td>Programme dashboard</td>
-              <td>{PROGRAMME_SCREENS.length}</td>
-              <td>
-                Built (Stage 3): overview, fictional GIS map, signals, vulnerability, referral
-                monitoring, trends, reports, users and settings, all from synthetic data
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <ul className={styles.list}>
+          <li>
+            Women and girls assessment: permission first, a non-diagnostic signal with an
+            explanation, and a simulated referral to invented facilities.
+          </li>
+          <li>
+            Community health worker app ({CHW_SCREENS.length} screens): records are saved on the
+            device first and synchronised later to a mock server.
+          </li>
+          <li>
+            Programme dashboard ({PROGRAMME_SCREENS.length} screens): priority communities, a
+            fictional-geography map, referral monitoring and reports, all from synthetic data.
+          </li>
+          <li>
+            Simulated, not real: sign-in, roles, the server and the facilities. Not yet built: a
+            real backend, integrations, clinical validation and languages other than English.
+          </li>
+        </ul>
       </section>
 
       <section className={styles.notices} aria-label={t('landing.noticesTitle')}>

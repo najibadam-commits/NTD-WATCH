@@ -110,7 +110,7 @@ test('the demo banner states the prototype status without developer UI', async (
   await page.goto('/');
   const banner = page.getByRole('banner');
   await expect(banner).toContainText('NTD-WATCH DEMO MODE');
-  await expect(banner).toContainText(/internal functional prototype/i);
+  await expect(banner).toContainText(/functional prototype/i);
   await expect(banner).toContainText(/synthetic data and illustrative rules/i);
   await expect(banner).toContainText(/not a clinically validated or production system/i);
 });

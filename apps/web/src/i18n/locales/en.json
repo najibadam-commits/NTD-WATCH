@@ -7,7 +7,7 @@
     "signOut": "Exit demo"
   },
   "banner": {
-    "demo": "NTD-WATCH is an internal functional prototype. This demonstration uses synthetic data and illustrative rules. It demonstrates a proposed community-to-action workflow and is not a clinically validated or production system. Every record is synthetic.",
+    "demo": "NTD-WATCH is a functional prototype. This demonstration uses synthetic data and illustrative rules. It demonstrates a proposed community-to-action workflow and is not a clinically validated or production system. Every record is synthetic.",
     "auth": "Simulated login and roles. Not security controls.",
     "role": "Demo role",
     "mode": "NTD-WATCH DEMO MODE",
@@ -16,7 +16,7 @@
     "resetYes": "Yes, reset",
     "resetNo": "Cancel",
     "resetDone": "Demo reset.",
-    "short": "Internal functional prototype using synthetic data and illustrative rules. Every record is synthetic. Not a clinically validated or production system."
+    "short": "Functional prototype using synthetic data and illustrative rules. Every record is synthetic. Not a clinically validated or production system."
   },
   "skip": "Skip to main content",
   "roles": {
@@ -27,17 +27,17 @@
     "admin": "Super Administrator"
   },
   "landing": {
-    "what": "A community-level digital system that captures NTD-related symptoms and contextual risk factors, assesses potential risk using demonstration rules, supports referral and follow-up, and turns anonymised community data into GIS-based intelligence for health programmes.",
+    "what": "A community-level prototype that starts with women and girls: a community health worker asks for permission, records a short private assessment, sees a non-diagnostic signal with an explanation, and can generate a simulated referral. Anonymised community data becomes programme priority and map views. It uses demonstration rules and synthetic data.",
     "notDiagnosis": "NTD-WATCH supports early recognition, triage, referral and programme decisions. It does not diagnose disease.",
     "loopTitle": "The core loop",
     "chwTitle": "Community Health Worker app",
-    "chwBody": "Mobile-first workflow: assess, see a demonstration risk result, refer, follow up.",
+    "chwBody": "Mobile-first workflow, led by the women-and-girls assessment: permission first, a non-diagnostic signal, a simulated referral and follow-up.",
     "chwOpen": "Open the CHW app",
     "progTitle": "Programme dashboard",
     "progBody": "Responsive web dashboard for facility, LGA and state users, and the administrator.",
     "progOpenAs": "Open as",
     "limitsTitle": "What this prototype does not do",
-    "statusTitle": "Build status",
+    "statusTitle": "What works today",
     "noticesTitle": "Prototype notices"
   },
   "loop": {
@@ -104,7 +104,7 @@
       "followUps": "Follow-ups due",
       "recent": "Recent assessments",
       "none": "No assessments yet.",
-      "startNew": "Start a new assessment",
+      "startNew": "General assessment (separate rule set; not the women-and-girls pathway)",
       "viewAll": "View all"
     },
     "start": {

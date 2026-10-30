@@ -52,11 +52,11 @@ export function DashboardScreen() {
         {t('chw.dashboard.community', { name: communityName(DEMO_CHW.communityId) })}
       </p>
       <Notice tone="demo">{DEMO_DATA_NOTICE}</Notice>
-      <LinkButton block to="/chw/assessments/new">
-        {t('chw.dashboard.startNew')}
-      </LinkButton>
-      <LinkButton block variant="secondary" to="/chw/fgs">
+      <LinkButton block to="/chw/fgs">
         {t('fgs.start.title')}
+      </LinkButton>
+      <LinkButton block variant="secondary" to="/chw/assessments/new">
+        {t('chw.dashboard.startNew')}
       </LinkButton>
       <div className={styles.grid}>
         {tiles.map(([label, value]) => (
