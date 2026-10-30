@@ -7,6 +7,11 @@
   background: var(--color-bg);
 }
 
+.emblem {
+  display: block;
+  border-radius: var(--radius-sm);
+}
+
 .bar {
   display: flex;
   align-items: center;

@@ -1,6 +1,7 @@
 {
   "app": {
     "name": "NTD-WATCH",
+    "logoAlt": "NTD-WATCH logo: a magnifying glass over a community network",
     "subtitle": "Community Health Intelligence",
     "tagline": "From community signals to timely public-health action.",
     "signOut": "Exit demo"

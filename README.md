@@ -1,5 +1,9 @@
 # NTD-WATCH
 
+<p align="center">
+  <img src="apps/web/public/brand/ntd-watch-logo-640.png" alt="NTD-WATCH logo: a magnifying glass over a community network" width="420" />
+</p>
+
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![DPG Standard: self-assessed](https://img.shields.io/badge/DPG_Standard-self--assessed-lightgrey.svg)](#digital-public-good-self-assessment)
 [![SDG 3: Good Health and Well-being](https://img.shields.io/badge/SDG_3-Good_Health_%26_Well--being-4C9F38.svg)](https://sdgs.un.org/goals/goal3)

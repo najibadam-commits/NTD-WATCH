@@ -22,6 +22,6 @@ Thumbs.db
 # Evidence, screenshots and review documents are not needed to build or run the app.
 artifacts
 docs
-*.png
+/*.png
 Dockerfile
 docker-compose.yml

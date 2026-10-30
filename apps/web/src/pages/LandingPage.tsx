@@ -33,7 +33,14 @@ export function LandingPage() {
   return (
     <main id="main-content" tabIndex={-1} className={styles.page}>
       <section className={styles.hero}>
-        <h1>{t('app.name')}</h1>
+        <img
+          className={styles.logo}
+          src={`${import.meta.env.BASE_URL}brand/ntd-watch-logo-640.png`}
+          width={640}
+          height={240}
+          alt={t('app.logoAlt')}
+        />
+        <h1 className={styles.visuallyHidden}>{t('app.name')}</h1>
         <p className={styles.sub}>{t('app.tagline')}</p>
         <p>{t('landing.what')}</p>
         <Notice tone="demo">{DISCLAIMER}</Notice>

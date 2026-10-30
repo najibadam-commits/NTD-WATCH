@@ -11,7 +11,16 @@ export function ChwLayout() {
   useSyncEngine();
   return (
     <div className={styles.shell}>
-      <div className={styles.bar}>{t('app.name')}</div>
+      <div className={styles.bar}>
+        <img
+          className={styles.emblem}
+          src={`${import.meta.env.BASE_URL}brand/ntd-watch-emblem-64.png`}
+          width={32}
+          height={32}
+          alt=""
+        />
+        {t('app.name')}
+      </div>
       <main id="main-content" tabIndex={-1} className={styles.main}>
         <ConnectivityBanner />
         <Outlet />
