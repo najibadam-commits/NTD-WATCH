@@ -1,0 +1,25 @@
+# Netlify settings for the NTD-WATCH demonstration prototype (static build, synthetic data only).
+[build]
+  command = "npm run build"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Single-page app: unknown paths return the app shell so deep links survive a refresh.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# The mock API runs in a service worker. Never serve a stale worker script.
+[[headers]]
+  for = "/mockServiceWorker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
