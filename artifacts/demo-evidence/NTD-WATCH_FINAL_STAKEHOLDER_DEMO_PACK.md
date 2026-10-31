@@ -3,7 +3,7 @@
 **Assembled 28 October 2026 from the current documentation and approved screenshots.**
 **Synthetic data. Prototype. Mock API. Not clinically validated. Not a production system.**
 
-Repository reference: this pack was assembled on 28 October 2026 against branch `feat/fgs-femtech-prep`, HEAD `3f91e8c`, plus uncommitted changes that existed then. Those changes, this pack and its supporting documents were later committed (commit `aaec91c`, 29 October 2026), and governance files, a logo and landing-page changes were added up to commit `700525b`, which is public on GitHub. The 31 October 2026 laptop verification run described in section 9 was made at `700525b`. The screenshots in this pack were captured on 28 October 2026, before Phase 4C, the logo and those landing-page changes, and have not been recaptured. The 28 October test figures remain as history for the earlier tree.
+Repository reference: this pack was assembled on 28 October 2026 against branch `feat/fgs-femtech-prep`, HEAD `3f91e8c`, plus uncommitted changes that existed then. Those changes, this pack and its supporting documents were later committed (commit `aaec91c`, 29 October 2026), and governance files, a logo and landing-page changes were added up to commit `700525b`, which is public on GitHub. The 31 October 2026 laptop verification run described in section 9 was made at `700525b`. The screenshots in this pack were recaptured on 1 November 2026 (00:07 Africa/Lagos) from a build of commit `700525b`, so they include Phase 4C, the logo and the landing-page changes. The 28 October test figures remain as history for the earlier tree.
 
 > **Read this first.** Everything shown is synthetic and runs in a browser against a mock server. NTD-WATCH does not diagnose, has not been clinically validated, has not been field tested or piloted, holds no real patient or programme data, and has no independent privacy or security review. The small-count rule described in this pack is a client-side display rule in the prototype, not a security control.
 >
@@ -51,7 +51,7 @@ Users in the prototype (all simulated roles): community health worker, health fa
 
 ## 3. Approved screenshots
 
-Each image is a real capture from the running prototype on 28 October 2026. Caption each, wherever used: **"Synthetic demonstration data. Prototype."** Classifications are taken from `artifacts/demo-evidence/SCREENSHOT_INDEX.md`.
+Each image is a real capture from the running prototype (a production build of commit `700525b`, synthetic data, recaptured 1 November 2026). Caption each, wherever used: **"Synthetic demonstration data. Prototype."** Classifications are taken from `artifacts/demo-evidence/SCREENSHOT_INDEX.md`.
 
 ### 3.1 GIS map: the three approved images
 
@@ -106,9 +106,9 @@ _Synthetic demonstration data on fictional geography, 768 px. Counts of 1 to 4 a
 | `08b`, `08-gis-priority-remediated-1440.png`, `08c`, `08d` to `08k`       | Superseded GIS captures.                                         |
 | `07b-why-this-priority-full-page-context.png`, `07-why-this-priority.png` | Diagnostic and historical only.                                  |
 
-Original screenshots were not overwritten or replaced.
+The eleven approved images were replaced by the 1 November recaptures; the earlier versions remain in git history. The diagnostic and superseded files listed here are older captures and were not recaptured.
 
-**Gap.** The approved GIS images were captured before four disclosure fixes (section 9). The fixes did not change any value shown on the synthetic seed, so the images were not recaptured. That is an inference from the seed values, not a fresh capture.
+**Note.** All images in this section were recaptured on 1 November 2026, after the four disclosure fixes (section 9), so they no longer rest on an inference from the seed values. They were captured by the pack preparer on a cloud copy of commit `700525b`, not on the founder's laptop. The earlier 28 October captures are replaced in this folder, and remain in git history.
 
 ## 4. Two-minute demonstration script
 

@@ -1,6 +1,6 @@
 # Screenshot index
 
-Captured 28 October 2026 from the running demo (synthetic data, mock API). Classifications reflect what was verified in `VERIFICATION_REPORT.md` and `RECAPTURE_REPORT.md`, not what was intended. The originals are kept as they are.
+Recaptured 1 November 2026 from a production build of commit `700525b` (synthetic data, mock API). The 28 October originals are replaced in this folder and remain in git history. Classifications reflect what was verified in `VERIFICATION_REPORT.md` and `RECAPTURE_REPORT.md`, not what was intended.
 
 Classes: **A** = Approved for qualified demonstration; **D** = Internal diagnostic only; **X** = Excluded pending correction.
 
