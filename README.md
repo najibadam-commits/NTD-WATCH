@@ -11,6 +11,8 @@
 
 > **DEMONSTRATION ONLY.** All data is synthetic. All risk rules are demonstration placeholders, **not clinically validated**. Sign-in, roles and permissions are simulated and are **not** security controls. The API is a mock running in the browser. Offline capture and synchronisation are prototype functionality, **not production-ready offline operation**. The system supports early recognition, triage, referral and programme decisions. It does not diagnose disease or prescribe medication.
 
+**Live demonstration (synthetic data only):** <https://ntd-watch.netlify.app>. Hosted as a static site; the API is a mock in the browser. Do not enter real personal or health data.
+
 ## Executive summary
 
 NTD-WATCH is an open-source prototype of a community-to-action layer for neglected tropical disease (NTD) programmes in resource-constrained settings. It explores how community health workers (CHWs) can record a short, consented assessment on a phone, receive an explainable, non-diagnostic signal and a referral suggestion, and how that information can reach facilities and programme teams as aggregate risk and priority views.

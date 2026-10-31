@@ -3,6 +3,8 @@
 **Assembled 28 October 2026 from the current documentation and approved screenshots.**
 **Synthetic data. Prototype. Mock API. Not clinically validated. Not a production system.**
 
+Live demonstration (synthetic data only): <https://ntd-watch.netlify.app>. Static hosting; the API is a mock in the browser. The live site was checked on 1 November 2026 by a script run on the founder's laptop (home page, a deep link, the service-worker file and the logo); the screens were not otherwise reviewed there.
+
 Repository reference: this pack was assembled on 28 October 2026 against branch `feat/fgs-femtech-prep`, HEAD `3f91e8c`, plus uncommitted changes that existed then. Those changes, this pack and its supporting documents were later committed (commit `aaec91c`, 29 October 2026), and governance files, a logo and landing-page changes were added up to commit `700525b`, which is public on GitHub. The 31 October 2026 laptop verification run described in section 9 was made at `700525b`. The screenshots in this pack were recaptured on 1 November 2026 (00:07 Africa/Lagos) from a build of commit `700525b`, so they include Phase 4C, the logo and the landing-page changes. The 28 October test figures remain as history for the earlier tree.
 
 > **Read this first.** Everything shown is synthetic and runs in a browser against a mock server. NTD-WATCH does not diagnose, has not been clinically validated, has not been field tested or piloted, holds no real patient or programme data, and has no independent privacy or security review. The small-count rule described in this pack is a client-side display rule in the prototype, not a security control.
