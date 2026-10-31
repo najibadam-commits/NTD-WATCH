@@ -153,15 +153,15 @@
       >
     </p>
     <p>
-      Repository reference (historical for the working tree): this pack was assembled on 28 October
-      2026 against branch <code>feat/fgs-femtech-prep</code>, HEAD <code>3f91e8c</code>, plus the
-      uncommitted changes that existed then. On 29 October 2026 the laptop&#39;s
-      <code>.git</code> files still showed that branch at <code>3f91e8c</code> (no later commit),
-      but later uncommitted changes have been made since, so the committed snapshot does not
-      represent the current working tree and the current tree has not been verified against what
-      this pack shows. Nothing here has been committed or published. The test-evidence wording and
-      image captions were updated on 29 October 2026; the newer test results are founder-reported
-      and were not verified for this pack.
+      Repository reference: this pack was assembled on 28 October 2026 against branch
+      <code>feat/fgs-femtech-prep</code>, HEAD <code>3f91e8c</code>, plus uncommitted changes that
+      existed then. Those changes, this pack and its supporting documents were later committed
+      (commit <code>aaec91c</code>, 29 October 2026), and governance files, a logo and landing-page
+      changes were added up to commit <code>700525b</code>, which is public on GitHub. The 31
+      October 2026 laptop verification run described in section 9 was made at <code>700525b</code>.
+      The screenshots in this pack were captured on 28 October 2026, before Phase 4C, the logo and
+      those landing-page changes, and have not been recaptured. The 28 October test figures remain
+      as history for the earlier tree.
     </p>
     <blockquote>
       <p>
@@ -174,8 +174,11 @@
       <p>
         <strong>Test status.</strong> Reported by the founder and not independently verified for
         this pack: <code>npx vitest run</code> passed 554 of 554 tests across 44 files, and the 6
-        dedicated reset-race and epoch tests passed 6 of 6. No test run was made by the person who
-        prepared this pack. An earlier intermittent, undiagnosed
+        dedicated reset-race and epoch tests passed 6 of 6. On 31 October 2026 the founder ran the
+        full set of checks on the laptop at commit <code>700525b</code> with a script prepared for
+        this pack and the output was read by the pack preparer: 554 of 554 unit tests in 44 files,
+        80 of 80 end-to-end tests, and typecheck, lint, format and build clean (section 9). The pack
+        preparer did not run the tests on the laptop. An earlier intermittent, undiagnosed
         <code>DatabaseClosedError</code> (one unit-test run exited 1 on 28 October) has no
         established root cause, and the later reset/sync fix does not mean every possible reset/sync
         failure is eliminated. The unit-test suite is not described as proven stable (section 9).
@@ -1104,6 +1107,22 @@
       API, not a production security or concurrency control.
     </p>
     <p>
+      <strong>Laptop verification run (31 October 2026, commit <code>700525b</code>).</strong> The
+      founder ran a read-only verification script, prepared for this pack, on the laptop; the pack
+      preparer read the console output and the unit-test and end-to-end logs. At commit
+      <code>700525b</code> (branch <code>feat/fgs-femtech-prep</code>, identical to GitHub, with no
+      uncommitted changes to tracked files): <code>git diff --check</code> and
+      <code>npm run format:check</code> passed; <code>npm run typecheck</code>,
+      <code>npm run lint</code> and <code>npm run build</code> exited 0;
+      <code>npx vitest run</code> passed 44 test files and 554 of 554 tests with exit 0 and no
+      unhandled errors; <code>npm run test:e2e</code> passed 80 of 80 tests (40 mobile and 40
+      desktop Chromium) with exit 0. This run was made by the founder, so it is not an independent
+      verification, and its log files are held on the founder&#39;s laptop, not in this repository.
+      It does not show that the unit suite is stable or that the cause of the earlier
+      <code>DatabaseClosedError</code> is known. About fifty untracked evidence files (screenshots,
+      reports and logs) exist on the laptop only and are not part of the commit.
+    </p>
+    <p>
       <strong>Earlier logged results, retained as history</strong> (founder&#39;s laptop, 28 October
       2026, on <strong>uncommitted</strong> changes at HEAD <code>3f91e8c</code>):
     </p>
@@ -1217,8 +1236,9 @@
       production server; real data of any kind; independent privacy or security review. The older
       register figures (434 unit tests, 64 end-to-end tests, at commit <code>2b03f53</code>) are
       superseded by the results above and are not quoted here. The Playwright end-to-end result
-      after the Phase 4C change (80 of 80) is founder-reported only: it has not been independently
-      rerun on the laptop or verified, and no log for it is held in
+      after the Phase 4C change was first founder-reported (29 October) and then reproduced in the
+      founder&#39;s laptop run of 31 October at commit <code>700525b</code> (80 of 80). It is not an
+      independent verification, and its logs are held on the founder&#39;s laptop, not in
       <code>artifacts/demo-evidence/</code>.
     </p>
     <h2 id="10-claims-that-must-not-be-made">10. Claims that must not be made</h2>

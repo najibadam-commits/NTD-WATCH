@@ -161,3 +161,15 @@ This note is added after section G and does not change sections A to G or any hi
 **Preparer's own run, for completeness.** While preparing a verification pass on 29 October, the pack preparer ran `npm run test:e2e` in a cloud copy of the laptop's project files (not on the laptop). It passed 80 of 80 (exit 0); the same copy passed `npx vitest run` (44 files, 554 of 554), typecheck, lint, build and `format:check`. That is a result for a copy of the files, not for the laptop's working tree, and the pack does not rely on it.
 
 **What this does not establish.** It does not show that the whole pack is independently verified, that the unit suite is stable, that the cause of the intermittent `DatabaseClosedError` is known, or that every reset/sync failure is eliminated. All clinical, synthetic-data, GIS privacy, small-count and production-readiness limitations stand. The laptop `git status --short` and `git diff --check` still need to be run by the founder on the day.
+
+## I. Supplementary note, 31 October 2026: laptop verification run at commit `700525b`
+
+This note is added after section H and does not change sections A to H or any historical test record.
+
+**What was run.** The founder ran a read-only verification script, prepared by the pack preparer, on the laptop at commit `700525b` (branch `feat/fgs-femtech-prep`, identical to GitHub after `git pull --ff-only`). The preparer read the console output and the unit-test and end-to-end logs.
+
+**Results.** Tracked files clean (50 untracked evidence files exist on the laptop only and are not in the commit); `git diff --check` clean; `npm run format:check` passed; `npm run typecheck`, `npm run lint` and `npm run build` exited 0; `npx vitest run` passed 44 files and 554 of 554 tests with exit 0 and no unhandled errors; `npm run test:e2e` passed 80 of 80 (40 mobile and 40 desktop Chromium) in 2.9 minutes, exit 0. Environment: node v24.22.1, npm 11.19.1.
+
+**This closes** the open points in section H about the laptop `git status --short` and `git diff --check`, and the missing run for the post-Phase-4C Playwright result, for commit `700525b`. The log files are on the founder's laptop and are not in this repository, so finding F6 (traceability) is reduced but not removed.
+
+**What it does not establish.** It is a founder-run result, not an independent verification of the whole pack. It does not show the unit suite is stable or that the cause of the earlier `DatabaseClosedError` is known. The pack screenshots still predate Phase 4C, the logo and the landing-page changes. The Docker image has not been built or run.
