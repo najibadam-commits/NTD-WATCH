@@ -4,7 +4,7 @@ Say "demonstration" and "synthetic" out loud early. Frame everything as a **prot
 
 ## Opening line (both versions)
 
-"This is NTD-WATCH, an internal prototype. Everything you will see is synthetic data and simulated roles. It shows one idea: connecting a community concern to a tracked action, and showing programme users where attention may be needed. It does not diagnose, and we have not yet shown that it is needed. That is what the next phase would test."
+"This is NTD-WATCH, a functional prototype. Everything you will see is synthetic data and simulated roles. It shows one idea: connecting a community concern to a tracked action, and showing programme users where attention may be needed. It does not diagnose, and we have not yet shown that it is needed. That is what the next phase would test."
 
 ## Part 1. Five-minute executive demo
 
@@ -22,7 +22,7 @@ Reset first (banner, **Reset demo**, **Yes, reset**). Open the app on the landin
 
 **Closing statement (read it):**
 
-> "NTD-WATCH is an internal functional prototype demonstrating a proposed community-to-action workflow. Today's demonstration uses synthetic data and illustrative rules. The purpose is to demonstrate the concept and gather feedback before formal stakeholder validation and pilot design."
+> "NTD-WATCH is a functional prototype demonstrating a proposed community-to-action workflow. Today's demonstration uses synthetic data and illustrative rules. The purpose is to demonstrate the concept and gather feedback before formal stakeholder validation and pilot design."
 
 ## Part 2. Ten to fifteen minute full demo
 
