@@ -68,10 +68,11 @@ export function IntelligenceSection({ summary }: { summary: ProgrammeSummary }) 
           </div>
         </dl>
         <h3>{t('intel.countsTitle')}</h3>
-        <ul className={styles.prioBands}>
+        <ul className={styles.prioCounts}>
           {PROGRAMME_PRIORITIES.map((p) => (
             <li key={p}>
-              <PriorityPill priority={p} /> {counts[p]}
+              <PriorityPill priority={p} />
+              <strong className={styles.prioCount}>{counts[p]}</strong>
             </li>
           ))}
         </ul>

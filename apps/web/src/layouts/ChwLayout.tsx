@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { CHW_BOTTOM_NAV } from '../nav/navigation';
 import { ConnectivityBanner } from '../chw/components/Shared';
 import { useSyncEngine } from '../chw/useSyncEngine';
@@ -9,6 +9,9 @@ import styles from './ChwLayout.module.css';
 export function ChwLayout() {
   const { t } = useTranslation();
   useSyncEngine();
+  const { pathname } = useLocation();
+  // The shortcut only appears on the dashboard and the assessments list, so it never covers a form, a result or a Back button.
+  const showFab = pathname === '/chw' || pathname === '/chw/assessments';
   return (
     <div className={styles.shell}>
       <div className={styles.bar}>
@@ -25,9 +28,11 @@ export function ChwLayout() {
         <ConnectivityBanner />
         <Outlet />
       </main>
-      <Link className={styles.fab} to="/chw/assessments/new">
-        + {t('chw.nav.newAssessment')}
-      </Link>
+      {showFab ? (
+        <Link className={styles.fab} to="/chw/assessments/new">
+          + {t('chw.nav.newAssessment')}
+        </Link>
+      ) : null}
       <nav className={styles.nav} aria-label={t('chw.nav.label')}>
         {CHW_BOTTOM_NAV.map((item) => (
           <NavLink key={item.path} to={item.path} end={item.end}>
