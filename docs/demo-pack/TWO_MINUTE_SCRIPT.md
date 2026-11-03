@@ -1,6 +1,6 @@
 # Two-minute demonstration script
 
-Status: internal presenter script (not for external copies) for a real founder to narrate over the **actual running application**. Every screen named here exists in the current build (routes checked against `apps/web/src/routes.tsx`). All data is synthetic.
+Status: presenter script for the live demonstration and recording for a real founder to narrate over the **actual running application**. Every screen named here exists in the current build (routes checked against `apps/web/src/routes.tsx`). All data is synthetic.
 
 Spoken words below: **260** (target 230 to 260). At a steady 120 to 125 words a minute this runs about two minutes. Rehearse once with a timer; the on-screen actions in the right-hand column are the part most likely to overrun, so rehearse the click path until it needs no thought.
 
@@ -17,7 +17,7 @@ Before starting: follow `LIVE_DEMO_CHECKLIST.md` (start the app, press **Reset d
 
 ## Words to keep out of the narration
 
-Do not say: diagnoses, detects, prevalence, hotspot, validated, production-ready, official, endorsed, pilot results, outcomes, "open source", "released". If asked, answer from `CLAIMS_AND_EVIDENCE.md`.
+Do not say: diagnoses, detects, prevalence, hotspot, validated, production-ready, official, endorsed, pilot results, outcomes, "field tested", "partnered with the Board" (until a signed letter is held). You may say "open source": the code is public under the Apache License 2.0, as a prototype. If asked, answer from `CLAIMS_AND_EVIDENCE.md`.
 
 ## If asked about testing
 
